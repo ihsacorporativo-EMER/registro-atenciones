@@ -238,17 +238,21 @@
   .pager button{width:38px;height:38px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--brand);font-size:20px;cursor:pointer}
   .pager button:disabled{opacity:.35;cursor:default}
 
-  /* [NUEVO · devolución] caja para escribirla (coordinador) y bloque para leerla (campo) */
-  .devol-box{margin-top:12px}
-  .devol-box label{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
-  .devol-box textarea{width:100%;min-height:64px;background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;resize:vertical}
-  .devol-box textarea:focus{outline:none;border-color:var(--brand)}
-  .devol-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px;font-size:13px;color:var(--muted);flex-wrap:wrap}
-  .devol{margin-top:10px;border-left:3px solid var(--brand);background:color-mix(in srgb,var(--brand) 6%,var(--card));border-radius:0 10px 10px 0;padding:8px 12px;font-size:14px}
-  .devol.nueva{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--card))}
-  .devol b{font-size:13px}
-  .devol small{color:var(--muted);margin-left:6px}
-  .devol p{margin:4px 0 0;white-space:pre-wrap}
+  /* [NUEVO · mensajes] conversación anidada bajo cada registro: burbujas azules del coordinador, naranjas de campo;
+     las propias van a la derecha. El cuadro para escribir está cerrado hasta tocar "Responder". */
+  .hilo{margin-top:12px;padding-left:12px;border-left:2px solid var(--line);display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+  .msg{max-width:92%;border-radius:12px;padding:8px 12px;font-size:14px;background:color-mix(in srgb,var(--brand) 8%,var(--card));border-top-left-radius:4px}
+  .msg.campo{background:color-mix(in srgb,var(--accent) 10%,var(--card))}
+  .msg.mio{align-self:flex-end;border-top-left-radius:12px;border-top-right-radius:4px}
+  .msg.nuevo{box-shadow:inset 0 0 0 1.5px var(--accent)}
+  .msg .quien{font-size:12.5px;font-weight:700;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .msg .quien small{color:var(--muted);font-weight:500}
+  .msg p{margin:3px 0 0;white-space:pre-wrap}
+  .resp-box{width:100%}
+  .resp-box textarea{width:100%;min-height:64px;background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;resize:vertical}
+  .resp-box textarea:focus{outline:none;border-color:var(--brand)}
+  .resp-actions{display:flex;justify-content:flex-end;gap:18px;margin-top:6px}
+  .resp-actions .cancelar{color:var(--muted)}
 
   /* Lightbox */
   .lb{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;place-items:center;z-index:20;cursor:zoom-out}
@@ -597,11 +601,7 @@
     const v = $('#view-'+tab); v.style.animation='none'; void v.offsetWidth; v.style.animation='rise .4s cubic-bezier(.2,.8,.2,1)';
     if (tab==='list') renderList(); if (tab==='board') renderBoard();
     if (MODO_COORD && !db && tab!=='form') cargarCentral();   // [NUEVO · envío] coordinador: refresca desde la planilla
-    if (tab==='list' && !MODO_COORD && !db){                  // [NUEVO · devolución] al abrir Registros, las devoluciones dejan de ser "nuevas"
-      let hubo = false;
-      registros.forEach(r => { if (r.devolucion && !r.devolucionVista){ r.devolucionVista = true; hubo = true; } });
-      if (hubo){ persistirLocal(); actualizarPuntoTab(); }    // el resaltado queda hasta el próximo render
-    }
+    if (tab==='list' && !db && FLOW_URL) marcarVisto();       // [NUEVO · campana] al abrir Registros no queda nada "sin ver" (las etiquetas Nuevo quedan hasta el próximo render)
   }));
 
   // ---- traslada ----
@@ -795,18 +795,44 @@
   let nuevoDesde = Infinity;                       // los registros posteriores a esta marca llevan la etiqueta "Nuevo"
   let tituloBase = document.title;
   const fmtFechaHora = ts => { const d = new Date(ts); const p=n=>String(n).padStart(2,'0'); return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`; };
-  const actualizarPuntoTab = () => $('#tabdot').classList.toggle('on', registros.some(r => r.devolucion && !r.devolucionVista));
+  // [NUEVO · mensajes] Conversación por registro: lista de {de:'coord'|'campo', texto, fecha}, la misma en los dos lados.
+  // Los registros viejos que solo tenían "devolucion" se leen como un primer mensaje del coordinador.
+  const YO = MODO_COORD ? 'coord' : 'campo';
+  const nombreDe = de => de === 'coord' ? 'Coordinador' : 'Personal de campo';
+  const mensajesDe = r => r.mensajes || (r.devolucion ? [{ de: 'coord', texto: r.devolucion.texto, fecha: r.devolucion.fecha }] : []);
+  // "sin ver" de un registro: mensajes del otro lado posteriores a la última mirada
+  // (coordinador: marca global nuevoDesde; campo: marca por registro vistoMsgHasta)
+  const noVistosDe = r => mensajesDe(r).filter(m => m.de !== YO && m.fecha > (MODO_COORD ? nuevoDesde : (r.vistoMsgHasta || 0))).length;
 
   // [NUEVO · envío] En modo campo con script configurado, cada registro muestra si ya llegó a los coordinadores
   const estadoEnvio = r => (!FLOW_URL || db || MODO_COORD) ? '' :
     r.enviado ? `<div class="estado"><span class="pill si">Enviado a coordinadores</span></div>`
               : `<div class="estado"><span class="pill pend">Pendiente de envío</span><button type="button" class="link retry">Reintentar</button></div>`;
-  // [NUEVO · devolución] lo que escribió el coordinador, visto desde el celular de campo
-  const bloqueDevolucion = r => !r.devolucion ? '' :
-    `<div class="devol ${r.devolucionVista ? '' : 'nueva'}"><b>Devolución del coordinador</b><small>${fmtFechaHora(r.devolucion.fecha)}</small><p>${esc(r.devolucion.texto)}</p></div>`;
   const botonFotos = r => r.nFotos ? `<button type="button" class="link fotos-btn">Ver ${r.nFotos} foto${r.nFotos>1?'s':''}</button>` : `<span class="hint">Sin fotos</span>`;
 
-  // Tarjeta completa (modo campo): todos los datos a la vista, estado de envío y devolución si la hay
+  // [NUEVO · mensajes] Hilo anidado bajo el registro. Los mensajes del otro lado posteriores a la última mirada llevan
+  // "Nuevo". El cuadro para escribir está cerrado; se abre con "Responder" y se cierra al enviar o cancelar.
+  const hiloHTML = r => {
+    const ms = mensajesDe(r);
+    const desde = MODO_COORD ? nuevoDesde : (r.vistoMsgHasta || 0);
+    const puede = MODO_COORD || !!r.enviado;               // campo solo puede escribir sobre registros ya enviados
+    const items = ms.map(m => { const nuevo = m.de !== YO && m.fecha > desde; return `
+        <div class="msg ${m.de} ${m.de === YO ? 'mio' : ''} ${nuevo ? 'nuevo' : ''}">
+          <div class="quien">${nombreDe(m.de)}<small>${fmtFechaHora(m.fecha)}</small>${nuevo ? '<span class="pill nuevo">Nuevo</span>' : ''}</div>
+          <p>${esc(m.texto)}</p>
+        </div>`; }).join('');
+    const vacio = ms.length ? '' : `<span class="hint">${MODO_COORD ? 'Sin devolución todavía.' : (puede ? 'Sin mensajes de coordinación.' : 'Los mensajes se habilitan cuando el registro se envía.')}</span>`;
+    const abrir = ms.length ? 'Responder' : (MODO_COORD ? 'Escribir devolución' : 'Escribir a coordinación');
+    const caja = !puede ? '' : `
+        <button type="button" class="link responder">${abrir}</button>
+        <div class="resp-box hidden">
+          <textarea class="resp-txt" placeholder="${MODO_COORD ? 'Ej.: Falta el destino del traslado. Gracias por las fotos.' : 'Ej.: Me olvidé de anotar que el paciente iba acompañado.'}"></textarea>
+          <div class="resp-actions"><button type="button" class="link cancelar">Cancelar</button><button type="button" class="link enviar-msg">Enviar</button></div>
+        </div>`;
+    return `<div class="hilo">${vacio}${items}${caja}</div>`;
+  };
+
+  // Tarjeta completa (modo campo): todos los datos a la vista, estado de envío y conversación
   const tarjetaCampo = r => `
       <article class="rec" data-id="${esc(r.id)}">
         <div class="top"><b>${esc(r.evento)}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
@@ -820,13 +846,16 @@
         </dl>
         <div class="fotos">${botonFotos(r)}</div>
         ${estadoEnvio(r)}
-        ${bloqueDevolucion(r)}
+        ${FLOW_URL && !db ? hiloHTML(r) : ''}
       </article>`;
 
-  // [NUEVO · coordinador] Tarjeta compacta: dos líneas de resumen; se toca y se despliega el detalle con fotos y devolución
+  // [NUEVO · coordinador] Tarjeta compacta: dos líneas de resumen; se toca y se despliega el detalle con fotos y conversación
+  const etiquetaTop = r => r.createdAt > nuevoDesde ? ' <span class="pill nuevo">Nuevo</span>'
+    : noVistosDe(r) ? ' <span class="pill nuevo">Respuesta nueva</span>'
+    : mensajesDe(r).length ? ' <span class="pill resp">Con mensajes</span>' : '';
   const tarjetaCompacta = r => `
       <article class="rec compact ${abiertos.has(r.id) ? 'open' : ''}" data-id="${esc(r.id)}">
-        <div class="top"><b>${esc(r.evento)}${r.createdAt > nuevoDesde ? ' <span class="pill nuevo">Nuevo</span>' : ''}${r.devolucion ? ' <span class="pill resp">Respondido</span>' : ''}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
+        <div class="top"><b>${esc(r.evento)}${etiquetaTop(r)}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
         <div class="sub">Móvil ${esc(r.movil)} · ${esc(r.paciente||'')}${r.edad ? ` (${esc(r.edad)})` : ''} · <span class="pill ${r.traslada==='si'?'si':'no'}">${r.traslada==='si'?'Traslada':'No traslada'}</span> · ${r.nFotos||0} foto${r.nFotos===1?'':'s'}</div>
         <div class="detalle">
           <dl>
@@ -835,19 +864,16 @@
             ${r.obs ? `<dt>Obs.</dt><dd>${esc(r.obs)}</dd>` : ''}
           </dl>
           <div class="fotos">${botonFotos(r)}</div>
-          <div class="devol-box">
-            <label>Devolución al personal de campo</label>
-            <textarea class="devol-txt" placeholder="Ej.: Falta el destino del traslado. Gracias por las fotos.">${esc(r.devolucion?.texto||'')}</textarea>
-            <div class="devol-actions"><small class="devol-info">${r.devolucion ? 'Enviada el ' + fmtFechaHora(r.devolucion.fecha) : 'Sin devolución'}</small><button type="button" class="link devol-send">Enviar devolución</button></div>
-          </div>
+          ${hiloHTML(r)}
         </div>
       </article>`;
 
   function renderList(){
     const q = $('#q').value.trim().toLowerCase();
     const rows = registros.filter(r => !q || [r.evento, r.movil, r.medico, r.paciente].some(x => String(x||'').toLowerCase().includes(q)));
-    $('#count').textContent = registros.length ? `(${registros.length})` : '';
-    actualizarPuntoTab();
+    // [CORREGIDO · campana] con script configurado, el contador de la pestaña es "sin ver" (lo pinta pintarNoVistos);
+    // sin script, sigue siendo el total como antes
+    if (!(FLOW_URL && !db)) $('#count').textContent = registros.length ? `(${registros.length})` : '';
     if (!rows.length){
       const vacio = q ? 'Sin resultados para esa búsqueda.' : (MODO_COORD && !db ? 'Todavía no hay registros enviados por el equipo.' : 'Todavía no hay registros cargados.');
       $('#list').innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg>${vacio}</div>`;
@@ -866,43 +892,58 @@
   }
   $('#q').addEventListener('input', () => { pagina = 0; renderList(); });
 
-  // [NUEVO · devolución] El coordinador escribe en la tarjeta; se guarda en la planilla y el celular de campo lo recibe
-  async function enviarDevolucion(btn){
+  // [NUEVO · mensajes] Envía un mensaje al hilo (coordinador con clave, campo sin clave). Al confirmar, el cuadro se
+  // cierra y el mensaje queda como burbuja; solo se vuelve a dibujar el hilo, así la tarjeta no se pliega.
+  async function enviarMensaje(btn){
     const art = btn.closest('.rec'); const id = art.dataset.id;
-    const texto = art.querySelector('.devol-txt').value.trim();
-    if (!texto){ toast('Escribí la devolución primero', 'err'); return; }
-    const clave = claveCoord(); if (!clave) return;
+    const texto = art.querySelector('.resp-txt').value.trim();
+    if (!texto){ toast('Escribí el mensaje primero', 'err'); return; }
+    const body = { accion: 'mensaje', de: YO, id, texto };
+    if (MODO_COORD){ const clave = claveCoord(); if (!clave) return; body.clave = clave; }
     btn.disabled = true; btn.textContent = 'Enviando…';
     try {
-      const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify({ accion: 'devolucion', clave, id, texto }) });
+      const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify(body) });
       const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script');
-      const reg = registros.find(x => x.id === id); if (reg) reg.devolucion = res.devolucion;
-      art.querySelector('.devol-info').textContent = 'Enviada el ' + fmtFechaHora(res.devolucion.fecha);
-      if (!art.querySelector('.pill.resp')) art.querySelector('.top b').insertAdjacentHTML('beforeend', ' <span class="pill resp">Respondido</span>');
-      toast('Devolución enviada. La verá en su celular.', 'ok');
-    } catch (e){ toast('No se pudo enviar: ' + e.message, 'err'); }
-    finally { btn.disabled = false; btn.textContent = 'Enviar devolución'; }
+      const reg = registros.find(x => x.id === id);
+      if (reg){
+        reg.mensajes = res.mensajes;
+        if (!MODO_COORD){ reg.vistoMsgHasta = res.mensajes.reduce((m, x) => Math.max(m, x.fecha), 0); persistirLocal(); }
+        art.querySelector('.hilo').outerHTML = hiloHTML(reg);
+        if (MODO_COORD && !art.querySelector('.top .pill')) art.querySelector('.top b').insertAdjacentHTML('beforeend', ' <span class="pill resp">Con mensajes</span>');
+      }
+      toast(MODO_COORD ? 'Devolución enviada. La verá en su celular.' : 'Mensaje enviado a coordinación', 'ok');
+    } catch (e){ toast('No se pudo enviar: ' + e.message, 'err'); btn.disabled = false; btn.textContent = 'Enviar'; }
   }
 
-  // [NUEVO · devolución] El celular de campo pregunta cada 60 s si alguno de sus registros enviados tiene devolución nueva
-  async function sondearDevoluciones(){
+  // [NUEVO · mensajes] El celular de campo pregunta cada 60 s por los hilos de sus registros enviados
+  async function sondearMensajes(){
     if (MODO_COORD || !FLOW_URL || db || document.hidden) return;
     const ids = registros.filter(r => r.enviado).map(r => r.id).slice(0, 200);
     if (!ids.length) return;
     try {
       const u = new URL(FLOW_URL); u.searchParams.set('devoluciones', ids.join(','));
       const res = await (await fetch(u)).json(); if (!res.ok) return;
-      let nuevas = 0;
+      let cambios = 0, antes = registros.reduce((n, r) => n + noVistosDe(r), 0);
       for (const r of registros){
-        const d = res.devoluciones?.[r.id];
-        if (d && (!r.devolucion || r.devolucion.fecha !== d.fecha)){ r.devolucion = d; r.devolucionVista = false; nuevas++; }
+        const d = res.devoluciones?.[r.id]; if (!d || !Array.isArray(d.mensajes)) continue;
+        const loc = mensajesDe(r);
+        const ultLoc = loc[loc.length - 1], ultSrv = d.mensajes[d.mensajes.length - 1];
+        if (d.mensajes.length !== loc.length || (ultSrv && ultLoc && ultSrv.fecha !== ultLoc.fecha)){ r.mensajes = d.mensajes; cambios++; }
       }
-      if (nuevas){ persistirLocal(); renderList(); toast('Tenés una devolución del coordinador', 'ok'); try { navigator.vibrate?.([120, 60, 120]); } catch {} }
+      if (cambios){
+        persistirLocal();
+        // no se redibuja si hay un cuadro de respuesta abierto, para no borrar lo que se está escribiendo
+        if (!$('#view-list').classList.contains('hidden') && !document.querySelector('.resp-box:not(.hidden)')) renderList();
+      }
+      const ahora = registros.reduce((n, r) => n + noVistosDe(r), 0);
+      if (ahora > antes) toast('Tenés un mensaje nuevo de coordinación', 'ok');
+      pintarNoVistos(ahora);
     } catch {}
   }
 
-  // [NUEVO · campana] Cada 30 s le pregunta al script cuántos registros llegaron después de la última vez que el
-  // coordinador miró la lista. Funciona con la app abierta en pantalla; con la app cerrada no hay aviso.
+  // [NUEVO · campana] Contador de "sin ver": campana, pestaña Registros "(n) •" y título de la pestaña del navegador.
+  // Coordinador: registros nuevos + respuestas de campo desde la última mirada (lo cuenta el script cada 30 s).
+  // Campo: mensajes de coordinación no leídos (se cuenta acá). Al abrir Registros, todo vuelve a cero.
   let vistoHasta = 0; try { vistoHasta = +(localStorage.getItem('coord_visto') || 0); } catch {}
   let nuevosPrev = 0;
   const claveGuardada = () => { try { return localStorage.getItem('coord_clave') || ''; } catch { return ''; } };
@@ -913,30 +954,41 @@
       o.frequency.value = 880; g.gain.value = 0.08; o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.18);
     } catch {}
   }
+  function pintarNoVistos(n){
+    $('#bell-n').textContent = n > 99 ? '99+' : n; $('#bell-n').classList.toggle('on', n > 0);
+    $('#count').textContent = n ? `(${n})` : ''; $('#tabdot').classList.toggle('on', n > 0);
+    document.title = (n ? `(${n}) ` : '') + tituloBase;
+    if (n > nuevosPrev){ avisar(); const bell = $('#bell'); bell.classList.remove('ring'); void bell.offsetWidth; bell.classList.add('ring'); }
+    nuevosPrev = n;
+  }
   async function sondearNuevos(){
     if (!MODO_COORD || !FLOW_URL || db || document.hidden || !claveGuardada()) return;
-    try {
-      const res = await pedirCentral({ desde: vistoHasta, solo: 'conteo' });
-      const n = res.nuevos || 0;
-      $('#bell-n').textContent = n > 99 ? '99+' : n; $('#bell-n').classList.toggle('on', n > 0);
-      document.title = (n ? `(${n}) ` : '') + tituloBase;
-      if (n > nuevosPrev){ avisar(); const bell = $('#bell'); bell.classList.remove('ring'); void bell.offsetWidth; bell.classList.add('ring'); }
-      nuevosPrev = n;
-    } catch {}
+    try { const res = await pedirCentral({ desde: vistoHasta, solo: 'conteo' }); pintarNoVistos(res.nuevos || 0); } catch {}
   }
+  // Al abrir Registros: ya se vio todo lo que había. Coordinador guarda una marca global; campo, una por registro.
   function marcarVisto(){
-    vistoHasta = registros.reduce((m, r) => Math.max(m, r.createdAt || 0), vistoHasta);
-    try { localStorage.setItem('coord_visto', String(vistoHasta)); } catch {}
-    nuevosPrev = 0; $('#bell-n').classList.remove('on'); document.title = tituloBase;
+    if (MODO_COORD){
+      vistoHasta = registros.reduce((m, r) => Math.max(m, r.createdAt || 0, ...mensajesDe(r).filter(x => x.de === 'campo').map(x => x.fecha)), vistoHasta);
+      try { localStorage.setItem('coord_visto', String(vistoHasta)); } catch {}
+    } else {
+      let hubo = false;
+      registros.forEach(r => { const mx = mensajesDe(r).reduce((m, x) => Math.max(m, x.fecha), 0); if (mx > (r.vistoMsgHasta || 0)){ r.vistoMsgHasta = mx; hubo = true; } });
+      if (hubo) persistirLocal();
+    }
+    nuevosPrev = 0; pintarNoVistos(0);
   }
   $('#bell').addEventListener('click', () => $('.tabs button[data-tab="list"]').click());   // la campana lleva a la lista y la recarga
   $('#list').addEventListener('click', async e => {
     if (e.target.closest('button.retry')){ reintentarPendientes(true); return; }   // [NUEVO · envío]
     const pg = e.target.closest('button.pg');                                       // [NUEVO · coordinador] flechas del paginado
     if (pg){ pagina += +pg.dataset.d; renderList(); $('#view-list').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
-    const send = e.target.closest('button.devol-send');                             // [NUEVO · devolución]
-    if (send){ enviarDevolucion(send); return; }
-    if (e.target.closest('.devol-box')) return;                                     // escribir en la caja no pliega la tarjeta
+    const abrirResp = e.target.closest('button.responder');                          // [NUEVO · mensajes] abre el cuadro para escribir
+    if (abrirResp){ const h = abrirResp.closest('.hilo'); abrirResp.classList.add('hidden'); h.querySelector('.resp-box').classList.remove('hidden'); h.querySelector('.resp-txt').focus(); return; }
+    const cancelar = e.target.closest('button.cancelar');
+    if (cancelar){ const h = cancelar.closest('.hilo'); h.querySelector('.resp-box').classList.add('hidden'); h.querySelector('.responder').classList.remove('hidden'); return; }
+    const enviar = e.target.closest('button.enviar-msg');
+    if (enviar){ enviarMensaje(enviar); return; }
+    if (e.target.closest('.hilo')) return;                                            // tocar dentro del hilo no pliega la tarjeta
     const b = e.target.closest('button.fotos-btn');
     if (b){
       const art = b.closest('.rec'); const id = art.dataset.id;
@@ -1072,6 +1124,7 @@
         // [NUEVO · envío] con script configurado, campo ve solo formulario y registros propios
         document.title = tituloBase = 'Registro de atención · Emergencias';
         $('.brand .tag').textContent = 'PERSONAL DE CAMPO';      // [NUEVO] etiqueta según el link
+        $('#bell').classList.remove('hidden');                   // [NUEVO · campana] también en campo: mensajes de coordinación sin leer
         $('.tabs button[data-tab="board"]').classList.add('hidden');
         $('#offline').textContent = 'Los registros se guardan en este celular y se envían a los coordinadores al guardar. Si no hay señal, quedan pendientes y se envían solos al volver la conexión.';
         $('#view-form .foot').textContent = 'Cada registro se envía a los coordinadores al guardarlo.';
@@ -1080,11 +1133,12 @@
       try { registros = JSON.parse(localStorage.getItem('reg_demo')||'[]'); } catch { registros = []; }
       await migrarFotosViejas();                                         // [CORREGIDO · fotos] localStorage → IndexedDB, una sola vez
       renderList();
+      if (FLOW_URL) pintarNoVistos(registros.reduce((n, r) => n + noVistosDe(r), 0));   // [NUEVO · campana] lo que quedó sin leer de la sesión anterior
       reintentarPendientes();                                            // [NUEVO · envío] lo que quedó sin señal
       window.addEventListener('online', () => reintentarPendientes());   // [NUEVO · envío] y al volver la conexión
-      sondearDevoluciones();                                             // [NUEVO · devolución] al abrir, cada 60 s y al volver a la app
-      setInterval(sondearDevoluciones, 60000);
-      document.addEventListener('visibilitychange', sondearDevoluciones);
+      sondearMensajes();                                                 // [NUEVO · mensajes] al abrir, cada 60 s y al volver a la app
+      setInterval(sondearMensajes, 60000);
+      document.addEventListener('visibilitychange', sondearMensajes);
       return;
     }
     unsub = db.collection('registros').orderBy('createdAt','desc').limit(200).onSnapshot(
