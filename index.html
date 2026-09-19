@@ -279,6 +279,8 @@
   .modal-actions{display:flex;justify-content:flex-end;align-items:center;gap:18px;margin-top:12px}
   .modal-actions .link{border:0;background:none;color:var(--muted);font-weight:700;cursor:pointer;padding:0;text-decoration:underline}
   .modal-actions .primary{width:auto;min-height:42px;padding:9px 18px;font-size:15px;border-radius:10px}
+  .modal ul{margin:10px 0 0 18px;padding:0;font-size:14px;line-height:1.5}   /* [NUEVO · novedades] */
+  .modal li{margin-bottom:4px}
 
   /* Lightbox */
   .lb{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;place-items:center;z-index:20;cursor:zoom-out}
@@ -569,6 +571,16 @@
   </div>
 </div>
 
+<!-- [NUEVO · novedades] qué cambió en la última versión; lo abre la campana hasta que se toca "Entendido" -->
+<div class="modal" id="modal-novedades" role="dialog" aria-modal="true">
+  <div class="box">
+    <h3>Se actualizó la app</h3>
+    <p class="hint" id="nv-version" style="margin:0"></p>
+    <ul id="nv-lista"></ul>
+    <div class="modal-actions"><button type="button" class="primary" id="nv-ok">Entendido</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="done" id="done" aria-live="polite">
   <div class="box">
@@ -598,6 +610,16 @@
   // Vacía = fase 1: el registro se guarda en este dispositivo y se exporta a mano desde el tablero.
   // Con valor: cada registro guardado se envía al script, que lo escribe en la planilla y guarda las fotos en Drive.
   const FLOW_URL = "https://script.google.com/macros/s/AKfycbxuZb9kSvPTeD1nu3r4y_HFLeAoHS0tCx2m9MjAJj-irW0BqXYkQnegeKOkOE_t6thifQ/exec";
+
+  // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
+  // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
+  // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
+  const VERSION = '2026-09-19 d';
+  const NOVEDADES = [
+    'Se reparó el error que, al escribir una devolución desde el celular, cerraba la burbuja de chat a cada rato.',
+    'La campana avisa cuando hay una versión nueva de la app y muestra qué cambió.',
+  ];
+  let novedadPendiente = false;
 
   // [NUEVO · envío] Dos modos según la URL con la que se abre la app:
   //  - modo campo (URL normal): formulario + registros propios. Cada registro se envía al guardar;
@@ -891,10 +913,29 @@
   const porPaginaLista = () => MODO_COORD ? (esCelular() ? 5 : 7) : (esCelular() ? 3 : 5);
   const porPaginaTabla = () => esCelular() ? 6 : 10;
   let pagina = 0, paginaTabla = 0;
-  let _redibujo; window.addEventListener('resize', () => {   // al girar el celular o achicar la ventana, se reacomoda
+  // [CORREGIDO · chat] Solo se redibuja si cambia el ANCHO (girar el celular, achicar la ventana). Abrir el teclado
+  // cambia la altura y antes disparaba un redibujo que cerraba la burbuja donde se estaba escribiendo.
+  let _redibujo, _anchoPrev = window.innerWidth;
+  window.addEventListener('resize', () => {
+    if (window.innerWidth === _anchoPrev) return;
+    _anchoPrev = window.innerWidth;
     clearTimeout(_redibujo);
     _redibujo = setTimeout(() => { if (!$('#view-list').classList.contains('hidden')) renderList(); if (!$('#view-board').classList.contains('hidden')) renderBoard(); }, 250);
   });
+  // [CORREGIDO · chat] Si hay una respuesta a medio escribir, se guarda antes de redibujar la lista y se restaura después
+  // (mismo registro, mismo texto, mismo foco), venga el redibujo de donde venga.
+  function borradorAbierto(){
+    const box = document.querySelector('#list .resp-box:not(.hidden)'); if (!box) return null;
+    const ta = box.querySelector('.resp-txt');
+    return { id: box.closest('.rec').dataset.id, texto: ta.value, foco: document.activeElement === ta };
+  }
+  function restaurarBorrador(b){
+    if (!b) return;
+    const art = Array.from(document.querySelectorAll('#list .rec')).find(a => a.dataset.id === b.id); if (!art) return;
+    const box = art.querySelector('.resp-box'), btn = art.querySelector('.responder'); if (!box) return;
+    box.classList.remove('hidden'); if (btn) btn.classList.add('hidden');
+    const ta = box.querySelector('.resp-txt'); ta.value = b.texto; if (b.foco) ta.focus();
+  }
   const acotar = (pag, total, por) => Math.min(Math.max(0, pag), Math.max(0, Math.ceil(total / por) - 1));
   const pagerHTML = (para, pag, total, por) => {   // `para` ('lista' o 'tabla') lo usa el manejador de clics
     const paginas = Math.max(1, Math.ceil(total / por)); const desde = pag * por, hasta = Math.min(total, desde + por);
@@ -1028,8 +1069,10 @@
     pagina = acotar(pagina, total, por);
     const visibles = rows.slice(pagina * por, (pagina + 1) * por);
     const nav = total > por ? pagerHTML('lista', pagina, total, por) : '';
+    const borrador = borradorAbierto();                                     // [CORREGIDO · chat]
     $('#list').innerHTML = nav + visibles.map(MODO_COORD && !db ? tarjetaCompacta : tarjetaCampo).join('') + nav;
     bajarHilos($('#list'));
+    restaurarBorrador(borrador);                                            // [CORREGIDO · chat]
   }
   $('#q').addEventListener('input', () => { pagina = 0; renderList(); });
 
@@ -1104,14 +1147,27 @@
       });
     } catch {}
   }
+  let totalPrev = 0;
   function pintarNoVistos(n){
+    const total = n + (novedadPendiente ? 1 : 0);   // [NUEVO · novedades] el aviso de versión nueva cuenta en la campana, no en la pestaña
     // [CORREGIDO · campana] con cero, el texto queda vacío y el círculo desaparece (ver .badge:empty)
-    $('#bell-n').textContent = n > 0 ? (n > 99 ? '99+' : String(n)) : ''; $('#bell-n').classList.toggle('on', n > 0);
+    $('#bell-n').textContent = total > 0 ? (total > 99 ? '99+' : String(total)) : ''; $('#bell-n').classList.toggle('on', total > 0);
     $('#count').textContent = n ? `(${n})` : ''; $('#tabdot').classList.toggle('on', n > 0);
-    document.title = (n ? `(${n}) ` : '') + tituloBase;
-    if (n > nuevosPrev){ avisar(); const bell = $('#bell'); bell.classList.remove('ring'); void bell.offsetWidth; bell.classList.add('ring'); }
-    nuevosPrev = n;
+    document.title = (total ? `(${total}) ` : '') + tituloBase;
+    if (total > totalPrev){ avisar(); const bell = $('#bell'); bell.classList.remove('ring'); void bell.offsetWidth; bell.classList.add('ring'); }
+    totalPrev = total; nuevosPrev = n;
   }
+  // [NUEVO · novedades] la campana muestra primero las novedades pendientes; después, lleva a la lista
+  function abrirNovedades(){
+    $('#nv-version').textContent = 'Versión ' + VERSION;
+    $('#nv-lista').innerHTML = NOVEDADES.map(t => `<li>${esc(t)}</li>`).join('');
+    $('#modal-novedades').classList.add('open');
+  }
+  $('#nv-ok').addEventListener('click', () => {
+    try { localStorage.setItem('version_vista', VERSION); } catch {}
+    novedadPendiente = false; $('#modal-novedades').classList.remove('open'); pintarNoVistos(nuevosPrev);
+  });
+  $('#modal-novedades').addEventListener('click', e => { if (e.target === $('#modal-novedades')) $('#modal-novedades').classList.remove('open'); });
   async function sondearNuevos(){
     if (!MODO_COORD || !FLOW_URL || db || document.hidden || !claveGuardada()) return;
     try {
@@ -1135,7 +1191,7 @@
     }
     nuevosPrev = 0; pintarNoVistos(0);
   }
-  $('#bell').addEventListener('click', () => $('.tabs button[data-tab="list"]').click());   // la campana lleva a la lista y la recarga
+  $('#bell').addEventListener('click', () => { if (novedadPendiente) abrirNovedades(); else $('.tabs button[data-tab="list"]').click(); });   // novedades primero; si no, a la lista
   $('#list').addEventListener('click', async e => {
     if (e.target.closest('button.retry')){ reintentarPendientes(true); return; }   // [NUEVO · envío]
     const ed = e.target.closest('button.editar');                                   // [NUEVO · edición]
@@ -1416,6 +1472,8 @@
     try { db = await (window.claude?.use ? window.claude.use('db') : Promise.resolve(null)); } catch { db = null; }
     try { downloads = await (window.claude?.use ? window.claude.use('downloads') : Promise.resolve(null)); } catch { downloads = null; }
     if (!db){
+      // [NUEVO · novedades] ¿esta persona ya vio la versión actual? Si no, la campana lo avisa
+      if (FLOW_URL){ try { novedadPendiente = localStorage.getItem('version_vista') !== VERSION; } catch { novedadPendiente = true; } }
       if (MODO_COORD){
         // [NUEVO · envío] Modo coordinador: sin formulario; Registros y Tablero salen de la planilla central
         document.title = tituloBase = 'Coordinación · Emergencias';
