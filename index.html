@@ -267,6 +267,18 @@
   #migra .box p{margin:0 0 8px}
   #migra label.chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--muted);margin:0 0 8px}
   #migra .primary{min-height:42px;padding:9px 16px;font-size:15px;border-radius:10px}
+  .tabla-titulo{margin:22px 0 8px;font-size:15px;font-weight:800}   /* [CORREGIDO · tablero] título de la tabla, ahora al final */
+  /* [NUEVO · período] ventana para elegir el período de descarga */
+  .modal{position:fixed;inset:0;background:rgba(7,42,102,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;place-items:center;z-index:30;padding:16px}
+  .modal.open{display:grid;animation:fade .2s}
+  .modal .box{background:var(--card);border-radius:18px;padding:20px 20px 16px;width:min(520px,100%);box-shadow:var(--shadow);animation:pop .3s cubic-bezier(.2,.8,.2,1)}
+  .modal h3{margin:0 0 4px;font-size:17px}
+  .periodos{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .periodos button{border:1.5px solid var(--line);background:var(--field);color:var(--ink);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:700;cursor:pointer}
+  .periodos button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff}
+  .modal-actions{display:flex;justify-content:flex-end;align-items:center;gap:18px;margin-top:12px}
+  .modal-actions .link{border:0;background:none;color:var(--muted);font-weight:700;cursor:pointer;padding:0;text-decoration:underline}
+  .modal-actions .primary{width:auto;min-height:42px;padding:9px 18px;font-size:15px;border-radius:10px}
 
   /* Lightbox */
   .lb{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;place-items:center;z-index:20;cursor:zoom-out}
@@ -497,14 +509,6 @@
       <div class="kpi"><b id="k-pct">0%</b><span>Tasa de traslado</span></div>
       <div class="kpi"><b id="k-mov">0</b><span>Móviles activos</span></div>
     </div>
-    <div id="pager-tabla-top"></div><!-- [NUEVO · paginado] barra de páginas de la tabla -->
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Fecha</th><th>Hora</th><th>Evento</th><th>Móvil</th><th>Paciente</th><th>Edad</th><th>Médico / interviniente</th><th>Motivo</th><th>Traslada</th><th>Observaciones</th><th>Fotos</th></tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-    <div id="pager-tabla-bottom"></div><!-- [NUEVO · paginado] -->
     <div class="mini">
       <div class="box"><h3>Por móvil</h3><div id="by-movil"></div></div>
       <div class="box"><h3>Por evento</h3><div id="by-evento"></div></div>
@@ -526,8 +530,44 @@
         </div>
       </div>
     </div>
+    <!-- [CORREGIDO · tablero] la tabla va al final, debajo de KPIs, gráficos y migración; de a 10 filas con flechas -->
+    <h3 class="tabla-titulo">Detalle de registros</h3>
+    <div id="pager-tabla-top"></div><!-- [NUEVO · paginado] barra de páginas de la tabla -->
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Fecha</th><th>Hora</th><th>Evento</th><th>Móvil</th><th>Paciente</th><th>Edad</th><th>Médico / interviniente</th><th>Motivo</th><th>Traslada</th><th>Observaciones</th><th>Fotos</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div id="pager-tabla-bottom"></div><!-- [NUEVO · paginado] -->
   </div>
 </main>
+
+<!-- [NUEVO · período] selector de período para descargar Excel o paquete cuando no hay fechas elegidas -->
+<div class="modal" id="modal-excel" role="dialog" aria-modal="true">
+  <div class="box">
+    <h3 id="mx-titulo">Descargar Excel</h3>
+    <p class="hint" style="margin:0 0 10px">¿Qué período querés descargar?</p>
+    <div class="periodos">
+      <button type="button" data-p="hoy" aria-pressed="false">Hoy</button>
+      <button type="button" data-p="semana" aria-pressed="false">Últimos 7 días</button>
+      <button type="button" data-p="mes" aria-pressed="false">Este mes</button>
+      <button type="button" data-p="mes-ant" aria-pressed="false">Mes anterior</button>
+      <button type="button" data-p="30" aria-pressed="false">Últimos 30 días</button>
+      <button type="button" data-p="anio" aria-pressed="false">Este año</button>
+      <button type="button" data-p="todo" aria-pressed="false">Todo</button>
+    </div>
+    <div class="row">
+      <div class="field"><label for="mx-desde">Desde</label><input id="mx-desde" type="date"></div>
+      <div class="field"><label for="mx-hasta">Hasta</label><input id="mx-hasta" type="date"></div>
+    </div>
+    <p class="hint" id="mx-info" style="margin:0"></p>
+    <div class="modal-actions">
+      <button type="button" class="link" id="mx-cancel">Cancelar</button>
+      <button type="button" class="primary" id="mx-ok">Descargar Excel</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="done" id="done" aria-live="polite">
@@ -622,17 +662,6 @@
   const fmtHora = ts => { const d = new Date(ts); const p=n=>String(n).padStart(2,'0'); return `${p(d.getHours())}:${p(d.getMinutes())}`; };
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-
-  // [CORREGIDO] Semana ISO 8601 (lunes a domingo; la semana 1 es la que contiene el primer jueves del año).
-  // Antes se usaba una fórmula aproximada que no coincidía con NUM.DE.SEMANA.ISO de Excel.
-  const semanaISO = iso => {
-    const d = new Date(iso + 'T00:00');
-    const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    const dia = t.getUTCDay() || 7;             // domingo cuenta como 7
-    t.setUTCDate(t.getUTCDate() + 4 - dia);     // me paro en el jueves de esa semana
-    const inicio = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
-    return Math.ceil(((t - inicio) / 864e5 + 1) / 7);
-  };
 
   // [CORREGIDO] Edad: antes se convertía con "+" y cualquier texto (ej. "45 años") salía como NaN en el Excel.
   // Ahora se toma el primer número que aparezca; si no hay ninguno, la celda queda vacía.
@@ -853,11 +882,19 @@
   });
 
   // ---- listado ----
-  // [NUEVO · paginado] Lista y tabla se muestran de a páginas, con la misma barra "‹ 1–20 de 143 ›" arriba y abajo.
-  // Coordinador: 20 tarjetas compactas por página. Campo: 10 tarjetas completas. Tablero: 25 filas.
-  const POR_PAGINA = MODO_COORD ? 20 : 10;
-  const POR_PAGINA_TABLA = 25;
+  // [NUEVO · paginado] Lista y tabla se muestran de a páginas, con la misma barra "‹ 1–7 de 143 ›" arriba y abajo.
+  // La cantidad depende de la pantalla: en celular (hasta 640 px de ancho) entran menos, para no scrollear.
+  //   Coordinador (tarjetas compactas): 7 en computadora, 5 en celular.
+  //   Campo (tarjetas completas):       5 en computadora, 3 en celular.
+  //   Tabla del tablero:                10 filas en computadora, 6 en celular.
+  const esCelular = () => { try { return window.matchMedia('(max-width: 640px)').matches; } catch { return false; } };
+  const porPaginaLista = () => MODO_COORD ? (esCelular() ? 5 : 7) : (esCelular() ? 3 : 5);
+  const porPaginaTabla = () => esCelular() ? 6 : 10;
   let pagina = 0, paginaTabla = 0;
+  let _redibujo; window.addEventListener('resize', () => {   // al girar el celular o achicar la ventana, se reacomoda
+    clearTimeout(_redibujo);
+    _redibujo = setTimeout(() => { if (!$('#view-list').classList.contains('hidden')) renderList(); if (!$('#view-board').classList.contains('hidden')) renderBoard(); }, 250);
+  });
   const acotar = (pag, total, por) => Math.min(Math.max(0, pag), Math.max(0, Math.ceil(total / por) - 1));
   const pagerHTML = (para, pag, total, por) => {   // `para` ('lista' o 'tabla') lo usa el manejador de clics
     const paginas = Math.max(1, Math.ceil(total / por)); const desde = pag * por, hasta = Math.min(total, desde + por);
@@ -882,6 +919,9 @@
   const bajarHilos = root => (root || document).querySelectorAll('.msgs').forEach(m => { m.scrollTop = m.scrollHeight; });
   // [NUEVO · foto] nombre de archivo para descargar una foto: fecha, evento y número
   const nombreFoto = (r, i) => `${r?.fecha || 'foto'}_${String(r?.evento || 'registro').replace(/[^\w áéíóúñÁÉÍÓÚÑ-]/g, '').trim().replace(/\s+/g, '-').slice(0, 24)}_foto${i + 1}.jpg`;
+  // [NUEVO · migración] nombre de la carpeta de un registro dentro del paquete ZIP: fecha_evento_id. Es lo que el Excel
+  // muestra en "Carpeta de fotos", así cada fila apunta a sus fotos.
+  const carpetaDe = r => `${r.fecha}_${String(r.evento || '').replace(/[^\w áéíóúñÁÉÍÓÚÑ-]/g, '').trim().replace(/\s+/g, '-').slice(0, 24)}_${r.id}`;
 
   // [NUEVO · envío] En modo campo con script configurado, cada registro muestra si ya llegó a los coordinadores
   const estadoEnvio = r => (!FLOW_URL || db || MODO_COORD) ? '' :
@@ -983,11 +1023,11 @@
       $('#list').innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg>${vacio}</div>`;
       return;
     }
-    // [NUEVO · paginado] en los dos modos: tarjetas compactas (coordinador) o completas (campo), de a POR_PAGINA
-    const total = rows.length;
-    pagina = acotar(pagina, total, POR_PAGINA);
-    const visibles = rows.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA);
-    const nav = total > POR_PAGINA ? pagerHTML('lista', pagina, total, POR_PAGINA) : '';
+    // [NUEVO · paginado] en los dos modos: tarjetas compactas (coordinador) o completas (campo), de a porPaginaLista()
+    const total = rows.length, por = porPaginaLista();
+    pagina = acotar(pagina, total, por);
+    const visibles = rows.slice(pagina * por, (pagina + 1) * por);
+    const nav = total > por ? pagerHTML('lista', pagina, total, por) : '';
     $('#list').innerHTML = nav + visibles.map(MODO_COORD && !db ? tarjetaCompacta : tarjetaCampo).join('') + nav;
     bajarHilos($('#list'));
   }
@@ -1172,21 +1212,21 @@
     $('#k-tras').textContent = tras;
     $('#k-pct').textContent = rows.length ? Math.round(tras/rows.length*100)+'%' : '0%';
     $('#k-mov').textContent = new Set(rows.map(r=>r.movil)).size;
-    // [NUEVO · paginado] la tabla muestra POR_PAGINA_TABLA filas por página; los KPIs, las barras y el Excel usan todas
-    const total = rows.length;
-    paginaTabla = acotar(paginaTabla, total, POR_PAGINA_TABLA);
-    const visibles = rows.slice(paginaTabla * POR_PAGINA_TABLA, (paginaTabla + 1) * POR_PAGINA_TABLA);
+    // [NUEVO · paginado] la tabla muestra porPaginaTabla() filas por página; los KPIs, las barras y el Excel usan todas
+    const total = rows.length, por = porPaginaTabla();
+    paginaTabla = acotar(paginaTabla, total, por);
+    const visibles = rows.slice(paginaTabla * por, (paginaTabla + 1) * por);
     $('#tbody').innerHTML = visibles.length ? visibles.map(r => `<tr>
       <td class="num">${fmtFecha(r.fecha)}</td><td class="num">${fmtHora(r.createdAt)}</td>
       <td>${esc(r.evento)}</td><td class="num">${esc(r.movil)}</td><td>${esc(r.paciente||'')}</td><td class="num">${esc(r.edad||'')}</td><td>${esc(r.medico)}</td>
       <td>${esc(r.motivo)}</td><td><span class="pill ${r.traslada==='si'?'si':'no'}">${r.traslada==='si'?'Sí':'No'}</span></td>
       <td>${esc(r.obs)}</td><td class="num">${r.nFotos||0}</td></tr>`).join('')
       : `<tr><td colspan="11" class="empty">No hay registros en ese rango.</td></tr>`;
-    const navTabla = total > POR_PAGINA_TABLA ? pagerHTML('tabla', paginaTabla, total, POR_PAGINA_TABLA) : '';
+    const navTabla = total > por ? pagerHTML('tabla', paginaTabla, total, por) : '';
     $('#pager-tabla-top').innerHTML = navTabla; $('#pager-tabla-bottom').innerHTML = navTabla;
     barras($('#by-movil'), agrupar(rows,'movil'), rows.length);
     barras($('#by-evento'), agrupar(rows,'evento'), rows.length);
-    $('#xlsx').disabled = !rows.length;
+    $('#xlsx').disabled = !registros.length;   // [NUEVO · período] con registros pero sin fechas, el botón abre el selector
   }
   $('#desde').addEventListener('change', () => { paginaTabla = 0; renderBoard(); });   // [NUEVO · paginado] al filtrar, vuelve a la página 1
   $('#hasta').addEventListener('change', () => { paginaTabla = 0; renderBoard(); });
@@ -1199,15 +1239,15 @@
   // [NUEVO · envío] Una fila con las columnas del Excel. La usan la exportación y el envío al script,
   // así la planilla central de Google y el Excel descargado tienen las mismas columnas en el mismo orden
   // (requisito de docs/arquitectura.md). Si agregás una columna acá, agregala también en COLUMNAS de Code.gs.
+  // [CORREGIDO · excel] Se quitaron Año, Mes, Día y Semana (redundantes con Fecha) y "Cantidad de fotos" pasó a ser
+  // "Carpeta de fotos": el nombre de la carpeta de ese registro dentro del paquete ZIP, para ubicar sus fotos.
   function filaExcel(r){
     const p = n => String(n).padStart(2,'0'); const d = new Date(r.createdAt);
     return {
       'ID': r.id, 'Fecha': fmtFecha(r.fecha), 'Hora': fmtHora(r.createdAt),
-      'Año': +r.fecha.slice(0,4), 'Mes': +r.fecha.slice(5,7), 'Día': +r.fecha.slice(8,10),
-      'Semana': semanaISO(r.fecha),                       // [CORREGIDO] ver semanaISO arriba
       'Evento': r.evento, 'Móvil': r.movil, 'Paciente': r.paciente||'', 'Edad': edadNum(r.edad), 'Médico / interviniente': r.medico,   // [CORREGIDO] ver edadNum arriba
       'Motivo de consulta': r.motivo, 'Traslada': r.traslada==='si'?'Sí':'No', 'Traslada (1/0)': r.traslada==='si'?1:0,
-      'Observaciones': r.obs||'', 'Cantidad de fotos': r.nFotos||0,
+      'Observaciones': r.obs||'', 'Carpeta de fotos': r.nFotos ? `fotos/${carpetaDe(r)}` : '',
       'Registrado el': `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${fmtHora(r.createdAt)}`,
     };
   }
@@ -1215,8 +1255,8 @@
     const datos = rows.map(filaExcel);
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(datos);
-    ws['!cols'] = [8,11,7,6,5,5,7,26,8,24,6,24,36,9,12,36,10,18].map(w=>({wch:w}));
-    ws['!autofilter'] = { ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:datos.length, c:17}}) };
+    ws['!cols'] = [8,11,7,26,8,24,6,24,36,9,12,36,40,18].map(w=>({wch:w}));   // [CORREGIDO · excel] 14 columnas
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:datos.length, c:13}}) };
     XLSX.utils.book_append_sheet(wb, ws, 'Registros');
     const res = (key, nombre) => {
       const m = {}; rows.forEach(r => { const k = r[key]||'—'; m[k] = m[k]||{n:0,t:0}; m[k].n++; if(r.traslada==='si') m[k].t++; });
@@ -1237,12 +1277,12 @@
     }
     return XLSX.write(wb, { bookType:'xlsx', type:'array' });
   }
-  $('#xlsx').addEventListener('click', async () => {
-    const rows = filtrados(); if (!rows.length) return;
+  async function descargarExcel(){
+    const rows = filtrados(); if (!rows.length){ toast('No hay registros en ese rango', 'err'); return; }
     const btn = $('#xlsx'); btn.disabled = true; btn.textContent = 'Armando…';
     try {
       const buf = armarExcel(rows);
-      const f = `registros-emergencias-${todayISO()}.xlsx`;
+      const f = `registros-emergencias-${$('#desde').value || 'inicio'}_${$('#hasta').value || todayISO()}.xlsx`;   // el nombre dice el período
       if (downloads){ await downloads.save({ filename: f, data: buf }); toast('Excel descargado', 'ok'); }
       else {
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf],{type:'application/octet-stream'})); a.download = f; a.click();
@@ -1250,7 +1290,53 @@
       }
     } catch(e){ if (e && e.code !== 'declined') { console.error(e); toast('No se pudo descargar el Excel', 'err'); } }
     finally { btn.disabled = false; btn.textContent = 'Descargar Excel'; }
+  }
+
+  // [NUEVO · período] Sin fechas elegidas en el tablero, "Descargar Excel" y "Descargar paquete" abren una ventana con
+  // períodos rápidos (hoy, 7 días, este mes, mes anterior, 30 días, este año, todo) o desde/hasta a mano, muestran
+  // cuántos registros entran, y recién al confirmar descargan. El período elegido queda aplicado en el tablero.
+  let accionPeriodo = null;
+  const isoDe = d => { const p = n => String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
+  function rangoPreset(p){
+    const h = new Date(), d = new Date();
+    if (p === 'semana') d.setDate(h.getDate() - 6);
+    else if (p === '30') d.setDate(h.getDate() - 29);
+    else if (p === 'mes') d.setDate(1);
+    else if (p === 'mes-ant'){ d.setMonth(h.getMonth() - 1, 1); h.setDate(0); }   // del 1 al último día del mes pasado
+    else if (p === 'anio') d.setMonth(0, 1);
+    else if (p === 'todo') return ['', ''];
+    return [isoDe(d), isoDe(h)];
+  }
+  function infoPeriodo(){
+    const a = $('#mx-desde').value, b = $('#mx-hasta').value;
+    const n = registros.filter(r => (!a || r.fecha >= a) && (!b || r.fecha <= b)).length;
+    $('#mx-info').textContent = (!a && !b) ? `Sin fechas se descarga todo: ${n} registro${n === 1 ? '' : 's'}.` : `${n} registro${n === 1 ? '' : 's'} en ese período.`;
+    $('#mx-ok').disabled = !n;
+  }
+  function abrirPeriodo(titulo, accion){
+    accionPeriodo = accion;
+    $('#mx-titulo').textContent = titulo; $('#mx-ok').textContent = titulo;
+    $('#mx-desde').value = ''; $('#mx-hasta').value = '';
+    document.querySelectorAll('.periodos button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    infoPeriodo(); $('#modal-excel').classList.add('open');
+  }
+  const cerrarPeriodo = () => $('#modal-excel').classList.remove('open');
+  $('#modal-excel').addEventListener('click', e => {
+    if (e.target === $('#modal-excel') || e.target.closest('#mx-cancel')){ cerrarPeriodo(); return; }
+    const p = e.target.closest('.periodos button');
+    if (p){
+      const [a, b] = rangoPreset(p.dataset.p); $('#mx-desde').value = a; $('#mx-hasta').value = b;
+      document.querySelectorAll('.periodos button').forEach(x => x.setAttribute('aria-pressed', x === p)); infoPeriodo(); return;
+    }
+    if (e.target.closest('#mx-ok')){
+      $('#desde').value = $('#mx-desde').value; $('#hasta').value = $('#mx-hasta').value;
+      paginaTabla = 0; renderBoard(); cerrarPeriodo();
+      if (accionPeriodo) accionPeriodo();
+    }
   });
+  ['#mx-desde', '#mx-hasta'].forEach(s => $(s).addEventListener('change', () => { document.querySelectorAll('.periodos button').forEach(x => x.setAttribute('aria-pressed', 'false')); infoPeriodo(); }));
+  const hayFechas = () => !!($('#desde').value || $('#hasta').value);
+  $('#xlsx').addEventListener('click', () => hayFechas() ? descargarExcel() : abrirPeriodo('Descargar Excel', descargarExcel));
 
   // ---- [NUEVO · migración] aviso mensual, paquete completo y archivado (modo coordinador) ----
   const postCoord = async body => {
@@ -1275,7 +1361,6 @@
   });
 
   // Paquete: Excel + fotos en carpetas, en un ZIP. Las fotos se piden al script de a 5 registros por llamada.
-  const carpetaDe = r => `${r.fecha}_${String(r.evento || '').replace(/[^\w áéíóúñÁÉÍÓÚÑ-]/g, '').trim().replace(/\s+/g, '-').slice(0, 24)}_${r.id}`;
   async function descargarPaquete(){
     const rows = filtrados(); if (!rows.length){ toast('No hay registros en ese rango', 'err'); return; }
     if (!window.JSZip){ toast('No se cargó el compresor. Revisá la conexión y recargá la página.', 'err'); return; }
@@ -1297,7 +1382,7 @@
       zip.file('LEEME.txt', [`Paquete generado el ${fmtFechaHora(Date.now())}`, `Registros: ${rows.length}`, `Fotos: ${hechas}`, '',
         'registros.xlsx: hojas Registros, Por móvil, Por evento, Por día, Por médico y Conversaciones.',
         'fotos/: una carpeta por registro, con nombre fecha_evento_id, y adentro foto-1.jpg, foto-2.jpg, etc.',
-        'La columna ID del Excel coincide con el final del nombre de cada carpeta.'].join('\n'));
+        'La columna "Carpeta de fotos" del Excel tiene la ruta exacta de la carpeta de cada registro.'].join('\n'));
       btn.textContent = 'Comprimiendo…';
       const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });   // las fotos ya vienen comprimidas
       const f = `paquete-registros-${todayISO()}.zip`;
@@ -1307,7 +1392,7 @@
     } catch (e){ if (e && e.code !== 'declined'){ console.error(e); toast('No se pudo armar el paquete: ' + e.message, 'err'); } }
     finally { btn.disabled = false; btn.textContent = 'Descargar paquete'; }
   }
-  $('#paquete').addEventListener('click', descargarPaquete);
+  $('#paquete').addEventListener('click', () => hayFechas() ? descargarPaquete() : abrirPeriodo('Descargar paquete', descargarPaquete));   // [NUEVO · período]
 
   // Archivar: pide confirmación con el número exacto de registros y recuerda descargar el paquete antes
   $('#archivar').addEventListener('click', async () => {
