@@ -253,11 +253,22 @@
   .resp-box textarea:focus{outline:none;border-color:var(--brand)}
   .resp-actions{display:flex;justify-content:flex-end;gap:18px;margin-top:6px}
   .resp-actions .cancelar{color:var(--muted)}
+  .badge:empty{display:none !important}   /* [CORREGIDO · campana] sin número no hay círculo: nunca se muestra un cero */
+  /* [NUEVO · mensajes] el hilo tiene alto máximo y scroll propio; se abre en el último mensaje */
+  .msgs{width:100%;max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;align-items:flex-start;padding-right:4px;-webkit-overflow-scrolling:touch}
+  .msg.sistema{align-self:center;max-width:100%;background:transparent;border:1px dashed var(--line);color:var(--muted);font-size:12.5px;text-align:center;border-radius:999px;padding:4px 12px}
+  /* [NUEVO · edición] aviso de que se está editando un registro ya guardado */
+  #editando{border-left-color:var(--brand);background:color-mix(in srgb,var(--brand) 8%,var(--card))}
+  #editando .link{border:0;background:none;color:var(--brand);font-weight:700;cursor:pointer;padding:0;text-decoration:underline;margin-left:6px;font-size:14px}
 
   /* Lightbox */
   .lb{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;place-items:center;z-index:20;cursor:zoom-out}
   .lb.open{display:grid}
   .lb img{max-width:96vw;max-height:92vh;border-radius:8px}
+  /* [NUEVO · foto] botón de descarga en la esquina de la foto ampliada */
+  .lb-dl{position:fixed;top:calc(14px + env(safe-area-inset-top));right:14px;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.15);color:#fff;display:grid;place-items:center;cursor:pointer;z-index:21}
+  .lb-dl svg{width:22px;height:22px}
+  .lb-dl:hover{background:rgba(255,255,255,.3)}
 
   /* ===== Celular ===== */
   header{padding-top:calc(18px + env(safe-area-inset-top))}
@@ -366,6 +377,11 @@
 
     <div id="offline" class="notice hidden">
       Versión de prueba: los registros se guardan solo en este dispositivo para que veas cómo funciona el tablero y la descarga a Excel.
+    </div>
+    <!-- [NUEVO · edición] aparece cuando se carga un registro ya guardado para modificarlo -->
+    <div id="editando" class="notice hidden">
+      Estás editando un registro ya guardado. Al guardar, coordinación lo recibe como una <b>actualización</b>.
+      <button type="button" class="link" id="cancelar-edicion">Cancelar edición</button>
     </div>
 
     <section class="card">
@@ -491,7 +507,11 @@
     <b>Registro guardado</b><span>Ya lo puede ver el equipo</span>
   </div>
 </div>
-<div class="lb" id="lb"><img alt="Foto ampliada"></div>
+<div class="lb" id="lb">
+  <img alt="Foto ampliada">
+  <!-- [NUEVO · foto] descarga la foto ampliada -->
+  <button type="button" class="lb-dl" id="lb-dl" aria-label="Descargar foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg></button>
+</div>
 
 <script>
 (function(){
@@ -499,6 +519,7 @@
   const MAX_FOTOS = 8;
   const MAX_BYTES = 170 * 1024;   // el documento de la base admite 256 KiB; dejamos margen
   let fotos = [];                 // dataURLs comprimidas
+  let editandoId = null;          // [NUEVO · edición] id del registro cargado en el formulario para modificar; null = alta nueva
   let traslada = null;
   let db = null;
   let unsub = null;
@@ -681,25 +702,36 @@
     $('#fecha').value = todayISO(); traslada = null; fotos = []; renderThumbs();
     document.querySelectorAll('.seg button').forEach(b => { b.setAttribute('aria-pressed','false'); b.style.borderColor=''; });
     document.querySelectorAll('.field.invalid').forEach(f => f.classList.remove('invalid'));
+    editandoId = null; $('#editando').classList.add('hidden'); $('#save').textContent = 'Guardar registro';   // [NUEVO · edición]
   }
 
   // ---- guardar ----
   $('#save').addEventListener('click', async () => {
     const d = leer(); if (!d) return;
     if (!db){
-      const id = uid(); const reg = { ...d, id, nFotos: fotos.length, createdAt: Date.now() };
+      // [NUEVO · edición] si se está editando, se reemplaza el registro con la misma ID y sube la versión;
+      // el envío va como "actualizar" y el coordinador lo ve marcado como actualización
+      const editando = editandoId ? registros.find(x => x.id === editandoId) : null;
+      const id = editando ? editando.id : uid();
+      const reg = editando
+        ? Object.assign(editando, d, { nFotos: fotos.length, version: (editando.version || 1) + 1, actualizadoEn: Date.now() })
+        : { ...d, id, nFotos: fotos.length, createdAt: Date.now() };
       if (FLOW_URL) reg.enviado = false;                     // [NUEVO · envío] pendiente hasta que el script confirme
       const fotosReg = fotos.slice();                        // copia: limpiar() vacía "fotos" enseguida
-      registros.unshift(reg);
+      if (!editando) registros.unshift(reg);
       persistirLocal();
       await guardarFotos(id, fotosReg);                      // [CORREGIDO · fotos] a IndexedDB, junto con el registro
       podarFotos();
-      limpiar(); renderList(); const dn=$('#done'); dn.classList.add('show'); setTimeout(()=>dn.classList.remove('show'),1900); window.scrollTo({top:0,behavior:'smooth'});
+      limpiar(); renderList();
+      const dn = $('#done');
+      dn.querySelector('b').textContent = editando ? 'Cambios guardados' : 'Registro guardado';
+      dn.querySelector('span').textContent = editando ? 'Coordinación lo recibe como actualización' : 'Ya lo puede ver el equipo';
+      dn.classList.add('show'); setTimeout(()=>dn.classList.remove('show'),1900); window.scrollTo({top:0,behavior:'smooth'});
       // [NUEVO · envío] Se envía DESPUÉS de guardar: el registro nunca se pierde aunque no haya señal.
       if (FLOW_URL){
         const ok = await enviarAlFlujo(reg, fotosReg);
         reg.enviado = ok; persistirLocal(); renderList();
-        toast(ok ? 'Enviado a los coordinadores' : 'Sin conexión: se enviará solo cuando vuelva la señal', ok ? 'ok' : 'err');
+        toast(ok ? (editando ? 'Actualización enviada a los coordinadores' : 'Enviado a los coordinadores') : 'Sin conexión: se enviará solo cuando vuelva la señal', ok ? 'ok' : 'err');
       }
       return;
     }
@@ -720,12 +752,15 @@
   // [NUEVO · envío] Manda un registro con sus fotos al script. Devuelve true si el script confirmó.
   // OJO: no se pone Content-Type application/json a propósito. Con text/plain (el default) el navegador
   // no hace preflight CORS, y Apps Script no responde preflights: con el header puesto, fallaría siempre.
+  const paraEnvio = r => { const c = { ...r }; ['enviado', 'vistoMsgHasta', 'mensajes', 'devolucion', 'fotoIds', 'carpetaId'].forEach(k => delete c[k]); return c; };
   async function enviarAlFlujo(reg, fotosReg){
     if (!FLOW_URL) return false;
     try {
       const r = await fetch(FLOW_URL, {
         method: 'POST',
-        body: JSON.stringify({ registro: reg, fila: filaExcel(reg), fotos: fotosReg || [] }),
+        // [NUEVO · edición] versión > 1 = el registro ya se había enviado y se editó: va como actualización.
+        // No se mandan los campos de uso interno del celular (estado de envío, mensajes leídos, etc.).
+        body: JSON.stringify({ accion: (reg.version || 1) > 1 ? 'actualizar' : 'alta', registro: paraEnvio(reg), fila: filaExcel(reg), fotos: fotosReg || [] }),
       });
       const res = await r.json();
       if (!res.ok) throw new Error(res.error || 'Respuesta no válida del script');
@@ -798,25 +833,38 @@
   // [NUEVO · mensajes] Conversación por registro: lista de {de:'coord'|'campo', texto, fecha}, la misma en los dos lados.
   // Los registros viejos que solo tenían "devolucion" se leen como un primer mensaje del coordinador.
   const YO = MODO_COORD ? 'coord' : 'campo';
-  const nombreDe = de => de === 'coord' ? 'Coordinador' : 'Personal de campo';
+  const nombreDe = de => de === 'coord' ? 'Coordinador' : de === 'campo' ? 'Personal de campo' : 'Sistema';
   const mensajesDe = r => r.mensajes || (r.devolucion ? [{ de: 'coord', texto: r.devolucion.texto, fecha: r.devolucion.fecha }] : []);
-  // "sin ver" de un registro: mensajes del otro lado posteriores a la última mirada
+  // Qué mensajes cuentan como "del otro lado": para el coordinador, los de campo y los avisos del sistema (ej. registro
+  // editado); para campo, solo los del coordinador (sus propias ediciones no le avisan a él mismo).
+  const esAjeno = m => MODO_COORD ? m.de !== 'coord' : m.de === 'coord';
+  // "sin ver" de un registro: mensajes ajenos posteriores a la última mirada
   // (coordinador: marca global nuevoDesde; campo: marca por registro vistoMsgHasta)
-  const noVistosDe = r => mensajesDe(r).filter(m => m.de !== YO && m.fecha > (MODO_COORD ? nuevoDesde : (r.vistoMsgHasta || 0))).length;
+  const noVistosDe = r => mensajesDe(r).filter(m => esAjeno(m) && m.fecha > (MODO_COORD ? nuevoDesde : (r.vistoMsgHasta || 0))).length;
+  // [NUEVO · mensajes] el hilo tiene alto máximo con scroll; al dibujarlo se lleva al último mensaje
+  const bajarHilos = root => (root || document).querySelectorAll('.msgs').forEach(m => { m.scrollTop = m.scrollHeight; });
+  // [NUEVO · foto] nombre de archivo para descargar una foto: fecha, evento y número
+  const nombreFoto = (r, i) => `${r?.fecha || 'foto'}_${String(r?.evento || 'registro').replace(/[^\w áéíóúñÁÉÍÓÚÑ-]/g, '').trim().replace(/\s+/g, '-').slice(0, 24)}_foto${i + 1}.jpg`;
 
   // [NUEVO · envío] En modo campo con script configurado, cada registro muestra si ya llegó a los coordinadores
   const estadoEnvio = r => (!FLOW_URL || db || MODO_COORD) ? '' :
-    r.enviado ? `<div class="estado"><span class="pill si">Enviado a coordinadores</span></div>`
-              : `<div class="estado"><span class="pill pend">Pendiente de envío</span><button type="button" class="link retry">Reintentar</button></div>`;
+    r.enviado ? `<span class="pill si">Enviado a coordinadores</span>`
+              : `<span class="pill pend">Pendiente de envío</span><button type="button" class="link retry">Reintentar</button>`;
+  // [NUEVO · edición] línea de estado en campo: envío, versión si se editó, y el botón Editar
+  const lineaEstado = r => MODO_COORD ? '' :
+    `<div class="estado">${estadoEnvio(r)}${r.version > 1 ? `<span class="pill resp">Editado · v${r.version}</span>` : ''}<button type="button" class="link editar">Editar</button></div>`;
   const botonFotos = r => r.nFotos ? `<button type="button" class="link fotos-btn">Ver ${r.nFotos} foto${r.nFotos>1?'s':''}</button>` : `<span class="hint">Sin fotos</span>`;
 
-  // [NUEVO · mensajes] Hilo anidado bajo el registro. Los mensajes del otro lado posteriores a la última mirada llevan
-  // "Nuevo". El cuadro para escribir está cerrado; se abre con "Responder" y se cierra al enviar o cancelar.
+  // [NUEVO · mensajes] Hilo anidado bajo el registro, con scroll propio. Los mensajes ajenos posteriores a la última
+  // mirada llevan "Nuevo". Los avisos del sistema (registro editado) van centrados. El cuadro para escribir está
+  // cerrado; se abre con "Responder" y se cierra al enviar o cancelar.
   const hiloHTML = r => {
     const ms = mensajesDe(r);
     const desde = MODO_COORD ? nuevoDesde : (r.vistoMsgHasta || 0);
     const puede = MODO_COORD || !!r.enviado;               // campo solo puede escribir sobre registros ya enviados
-    const items = ms.map(m => { const nuevo = m.de !== YO && m.fecha > desde; return `
+    const items = ms.map(m => {
+      if (m.de === 'sistema') return `<div class="msg sistema">${esc(m.texto)} · ${fmtFechaHora(m.fecha)}</div>`;
+      const nuevo = esAjeno(m) && m.fecha > desde; return `
         <div class="msg ${m.de} ${m.de === YO ? 'mio' : ''} ${nuevo ? 'nuevo' : ''}">
           <div class="quien">${nombreDe(m.de)}<small>${fmtFechaHora(m.fecha)}</small>${nuevo ? '<span class="pill nuevo">Nuevo</span>' : ''}</div>
           <p>${esc(m.texto)}</p>
@@ -829,10 +877,10 @@
           <textarea class="resp-txt" placeholder="${MODO_COORD ? 'Ej.: Falta el destino del traslado. Gracias por las fotos.' : 'Ej.: Me olvidé de anotar que el paciente iba acompañado.'}"></textarea>
           <div class="resp-actions"><button type="button" class="link cancelar">Cancelar</button><button type="button" class="link enviar-msg">Enviar</button></div>
         </div>`;
-    return `<div class="hilo">${vacio}${items}${caja}</div>`;
+    return `<div class="hilo">${vacio}${items ? `<div class="msgs">${items}</div>` : ''}${caja}</div>`;
   };
 
-  // Tarjeta completa (modo campo): todos los datos a la vista, estado de envío y conversación
+  // Tarjeta completa (modo campo): todos los datos a la vista, estado de envío, botón Editar y conversación
   const tarjetaCampo = r => `
       <article class="rec" data-id="${esc(r.id)}">
         <div class="top"><b>${esc(r.evento)}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
@@ -845,13 +893,16 @@
           ${r.obs ? `<dt>Obs.</dt><dd>${esc(r.obs)}</dd>` : ''}
         </dl>
         <div class="fotos">${botonFotos(r)}</div>
-        ${estadoEnvio(r)}
+        ${lineaEstado(r)}
         ${FLOW_URL && !db ? hiloHTML(r) : ''}
       </article>`;
 
-  // [NUEVO · coordinador] Tarjeta compacta: dos líneas de resumen; se toca y se despliega el detalle con fotos y conversación
+  // [NUEVO · coordinador] Tarjeta compacta: dos líneas de resumen; se toca y se despliega el detalle con fotos y conversación.
+  // [NUEVO · edición] Un registro editado desde campo se marca "Actualizado" hasta la próxima mirada y muestra la versión.
   const etiquetaTop = r => r.createdAt > nuevoDesde ? ' <span class="pill nuevo">Nuevo</span>'
+    : (r.actualizadoEn || 0) > nuevoDesde ? ' <span class="pill nuevo">Actualizado</span>'
     : noVistosDe(r) ? ' <span class="pill nuevo">Respuesta nueva</span>'
+    : r.version > 1 ? ` <span class="pill resp">Editado · v${r.version}</span>`
     : mensajesDe(r).length ? ' <span class="pill resp">Con mensajes</span>' : '';
   const tarjetaCompacta = r => `
       <article class="rec compact ${abiertos.has(r.id) ? 'open' : ''}" data-id="${esc(r.id)}">
@@ -862,11 +913,27 @@
             <dt>Médico</dt><dd>${esc(r.medico)}</dd>
             <dt>Motivo</dt><dd>${esc(r.motivo)}</dd>
             ${r.obs ? `<dt>Obs.</dt><dd>${esc(r.obs)}</dd>` : ''}
+            ${r.version > 1 ? `<dt>Actualizado</dt><dd>${fmtFechaHora(r.actualizadoEn)} · versión ${r.version}</dd>` : ''}
           </dl>
           <div class="fotos">${botonFotos(r)}</div>
           ${hiloHTML(r)}
         </div>
       </article>`;
+
+  // [NUEVO · edición] Carga un registro ya guardado en el formulario, fotos incluidas. Al guardar se reemplaza (misma ID,
+  // versión +1) y se reenvía como actualización: el coordinador lo ve marcado "Actualizado" y con un aviso en el hilo.
+  async function editarRegistro(id){
+    const r = registros.find(x => x.id === id); if (!r) return;
+    editandoId = id;
+    $('#fecha').value = r.fecha || todayISO();
+    ['movil','evento','paciente','edad','medico','motivo','obs'].forEach(k => { $('#'+k).value = r[k] || ''; });
+    traslada = r.traslada || null;
+    document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.val === traslada));
+    fotos = (await leerFotos(id)).slice(); renderThumbs();
+    $('#editando').classList.remove('hidden'); $('#save').textContent = 'Guardar cambios';
+    $('.tabs button[data-tab="form"]').click(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  $('#cancelar-edicion').addEventListener('click', () => { limpiar(); toast('Edición cancelada'); });
 
   function renderList(){
     const q = $('#q').value.trim().toLowerCase();
@@ -886,9 +953,11 @@
       const desde = pagina * POR_PAGINA, hasta = Math.min(total, desde + POR_PAGINA);
       const nav = `<div class="pager"><button type="button" class="pg" data-d="-1" ${pagina===0?'disabled':''} aria-label="Anterior">‹</button><span>${desde+1}–${hasta} de ${total}</span><button type="button" class="pg" data-d="1" ${pagina>=paginas-1?'disabled':''} aria-label="Siguiente">›</button></div>`;
       $('#list').innerHTML = nav + rows.slice(desde, hasta).map(tarjetaCompacta).join('') + (total > POR_PAGINA ? nav : '');
+      bajarHilos($('#list'));
       return;
     }
     $('#list').innerHTML = rows.map(tarjetaCampo).join('');
+    bajarHilos($('#list'));
   }
   $('#q').addEventListener('input', () => { pagina = 0; renderList(); });
 
@@ -908,7 +977,7 @@
       if (reg){
         reg.mensajes = res.mensajes;
         if (!MODO_COORD){ reg.vistoMsgHasta = res.mensajes.reduce((m, x) => Math.max(m, x.fecha), 0); persistirLocal(); }
-        art.querySelector('.hilo').outerHTML = hiloHTML(reg);
+        art.querySelector('.hilo').outerHTML = hiloHTML(reg); bajarHilos(art);
         if (MODO_COORD && !art.querySelector('.top .pill')) art.querySelector('.top b').insertAdjacentHTML('beforeend', ' <span class="pill resp">Con mensajes</span>');
       }
       toast(MODO_COORD ? 'Devolución enviada. La verá en su celular.' : 'Mensaje enviado a coordinación', 'ok');
@@ -955,7 +1024,8 @@
     } catch {}
   }
   function pintarNoVistos(n){
-    $('#bell-n').textContent = n > 99 ? '99+' : n; $('#bell-n').classList.toggle('on', n > 0);
+    // [CORREGIDO · campana] con cero, el texto queda vacío y el círculo desaparece (ver .badge:empty)
+    $('#bell-n').textContent = n > 0 ? (n > 99 ? '99+' : String(n)) : ''; $('#bell-n').classList.toggle('on', n > 0);
     $('#count').textContent = n ? `(${n})` : ''; $('#tabdot').classList.toggle('on', n > 0);
     document.title = (n ? `(${n}) ` : '') + tituloBase;
     if (n > nuevosPrev){ avisar(); const bell = $('#bell'); bell.classList.remove('ring'); void bell.offsetWidth; bell.classList.add('ring'); }
@@ -968,7 +1038,7 @@
   // Al abrir Registros: ya se vio todo lo que había. Coordinador guarda una marca global; campo, una por registro.
   function marcarVisto(){
     if (MODO_COORD){
-      vistoHasta = registros.reduce((m, r) => Math.max(m, r.createdAt || 0, ...mensajesDe(r).filter(x => x.de === 'campo').map(x => x.fecha)), vistoHasta);
+      vistoHasta = registros.reduce((m, r) => Math.max(m, r.createdAt || 0, r.actualizadoEn || 0, ...mensajesDe(r).filter(x => x.de !== 'coord').map(x => x.fecha)), vistoHasta);
       try { localStorage.setItem('coord_visto', String(vistoHasta)); } catch {}
     } else {
       let hubo = false;
@@ -980,6 +1050,8 @@
   $('#bell').addEventListener('click', () => $('.tabs button[data-tab="list"]').click());   // la campana lleva a la lista y la recarga
   $('#list').addEventListener('click', async e => {
     if (e.target.closest('button.retry')){ reintentarPendientes(true); return; }   // [NUEVO · envío]
+    const ed = e.target.closest('button.editar');                                   // [NUEVO · edición]
+    if (ed){ editarRegistro(ed.closest('.rec').dataset.id); return; }
     const pg = e.target.closest('button.pg');                                       // [NUEVO · coordinador] flechas del paginado
     if (pg){ pagina += +pg.dataset.d; renderList(); $('#view-list').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     const abrirResp = e.target.closest('button.responder');                          // [NUEVO · mensajes] abre el cuadro para escribir
@@ -1003,19 +1075,31 @@
         }
         else list = (await leerFotos(id)).map((data,orden)=>({data,orden}));   // [CORREGIDO · fotos] desde IndexedDB
         if (!list.length){ b.disabled=false; b.textContent='No se encontraron las fotos de este registro'; return; }
-        art.querySelector('.fotos').innerHTML = `<div class="grid">${list.map((f,i)=>`<div class="thumb"><img src="${f.data}" alt="Foto ${i+1}"></div>`).join('')}</div>`;
+        const regFotos = registros.find(x => x.id === id);
+        art.querySelector('.fotos').innerHTML = `<div class="grid">${list.map((f,i)=>`<div class="thumb"><img src="${f.data}" alt="Foto ${i+1}" data-nombre="${esc(nombreFoto(regFotos, i))}"></div>`).join('')}</div>`;
       } catch { b.disabled=false; b.textContent='No se pudieron cargar las fotos'; }
       return;
     }
     const img = e.target.closest('.thumb img');
-    if (img){ $('#lb img').src = img.src; $('#lb').classList.add('open'); return; }
+    if (img){ $('#lb img').src = img.src; $('#lb').dataset.nombre = img.dataset.nombre || 'foto.jpg'; $('#lb').classList.add('open'); return; }
     const cab = e.target.closest('.rec.compact .top, .rec.compact .sub');          // [NUEVO · coordinador] desplegar / plegar
     if (cab){
       const art = cab.closest('.rec'); art.classList.toggle('open');
-      art.classList.contains('open') ? abiertos.add(art.dataset.id) : abiertos.delete(art.dataset.id);
+      if (art.classList.contains('open')){ abiertos.add(art.dataset.id); bajarHilos(art); } else abiertos.delete(art.dataset.id);
     }
   });
   $('#lb').addEventListener('click', () => $('#lb').classList.remove('open'));
+  // [NUEVO · foto] descarga la foto ampliada. Se pasa a Blob porque varios navegadores ignoran "download" en dataURLs largas.
+  $('#lb-dl').addEventListener('click', e => {
+    e.stopPropagation();
+    try {
+      const [meta, b64] = $('#lb img').src.split(',');
+      const bin = atob(b64); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes], { type: (meta.match(/data:([^;]+)/) || [])[1] || 'image/jpeg' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = $('#lb').dataset.nombre || 'foto.jpg';
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    } catch { toast('No se pudo descargar la foto', 'err'); }
+  });
 
 
   // ---- tablero ----
