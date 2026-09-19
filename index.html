@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b3d91">
+<title>Registro de atención · Emergencias (prueba)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  /* ===== Colores de marca (cambiá acá si querés ajustar al manual de IHSA) ===== */
+  :root{
+    --brand:#0b3d91;        /* azul Emergencias */
+    --brand-deep:#072a66;
+    --accent:#f26522;       /* naranja Emergencias */
+    --accent-deep:#d4521a;
+    --bg:#eef2f8;
+    --card:#ffffff;
+    --ink:#14213d;
+    --muted:#5b6478;
+    --line:#d9deea;
+    --field:#ffffff;
+    --ok:#1f8a4c;
+    --danger:#c62828;
+    --shadow:0 1px 2px rgba(11,61,145,.05), 0 10px 30px -14px rgba(11,61,145,.22);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1420; --card:#171d2b; --ink:#eef1f7; --muted:#a3acbf; --line:#2a3245; --field:#1e2536;
+      --brand:#1d55b8; --brand-deep:#0b2f70;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1420; --card:#171d2b; --ink:#eef1f7; --muted:#a3acbf; --line:#2a3245; --field:#1e2536;
+    --brand:#1d55b8; --brand-deep:#0b2f70;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size:16px; line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  button,input,select,textarea{font:inherit;color:inherit}
+
+  /* ===== Cabecera ===== */
+  header{
+    background:linear-gradient(160deg,var(--brand) 0%,var(--brand-deep) 100%);
+    color:#fff; padding:18px 20px 22px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;max-width:640px;margin:0 auto}
+  .mark{
+    width:44px;height:44px;border-radius:12px;background:var(--accent);
+    display:grid;place-items:center;font-weight:800;font-size:22px;color:#fff;
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,.18);flex:none;
+  }
+  .brand b{display:block;font-size:17px;font-weight:800;letter-spacing:.2px}
+  .brand span{display:block;font-size:13px;opacity:.8}
+  .brand .tag{
+    margin-left:auto;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);
+    border-radius:999px;padding:4px 11px;font-size:12px;font-weight:700;letter-spacing:.4px;
+  }
+  .tabs{max-width:640px;margin:18px auto 0;display:flex;gap:6px;background:rgba(0,0,0,.18);padding:4px;border-radius:12px}
+  .tabs button{
+    flex:1;border:0;background:transparent;color:rgba(255,255,255,.75);border-radius:9px;
+    padding:9px 10px;font-weight:700;cursor:pointer;
+  }
+  .tabs button[aria-selected="true"]{background:#fff;color:var(--brand-deep)}
+  .tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* ===== Contenido ===== */
+  main{max-width:640px;margin:0 auto;padding:18px 16px 40px;transition:max-width .3s}
+  main.wide{max-width:1100px}
+  h1{font-size:26px;line-height:1.15;margin:8px 0 4px;font-weight:800}
+  .lead{margin:0 0 18px;color:var(--muted)}
+  section.card{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:18px 16px 20px;margin-bottom:14px;box-shadow:var(--shadow);
+  }
+  section.card h2{
+    display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:17px;font-weight:800;
+  }
+  section.card h2 .n{
+    width:26px;height:26px;border-radius:8px;background:var(--brand);color:#fff;
+    display:grid;place-items:center;font-size:13px;font-weight:800;flex:none;
+  }
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:14px;font-weight:700;margin-bottom:6px}
+  .field label .opt{color:var(--muted);font-weight:500}
+  .field input[type=text],.field input[type=date],.field input[type=tel],.field textarea{
+    width:100%;background:var(--field);border:1.5px solid var(--line);border-radius:11px;
+    padding:12px 13px;min-height:46px;
+  }
+  .field textarea{min-height:88px;resize:vertical}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(11,61,145,.15)}
+  .field.invalid input,.field.invalid textarea{border-color:var(--danger)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:420px){.row{grid-template-columns:1fr}}
+
+  /* Traslada sí/no */
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .seg button{
+    border:1.5px solid var(--line);background:var(--field);border-radius:11px;padding:12px;
+    font-weight:700;cursor:pointer;min-height:46px;
+  }
+  .seg button[aria-pressed="true"]{border-color:var(--brand);background:var(--brand);color:#fff}
+  .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* Fotos */
+  .photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .photo-actions label{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    border:1.5px dashed var(--brand);border-radius:14px;padding:16px 10px;cursor:pointer;
+    text-align:center;background:color-mix(in srgb,var(--brand) 6%,var(--card));
+  }
+  .photo-actions label:active{transform:scale(.98)}
+  .photo-actions label:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+  .photo-actions label b{font-size:15px}
+  .photo-actions label small{color:var(--muted)}
+  .photo-actions svg{width:28px;height:28px;color:var(--brand);margin-bottom:2px}
+  .photo-actions input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+  .thumb{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--line)}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;max-width:100%}
+  .thumb button{
+    position:absolute;top:5px;right:5px;width:26px;height:26px;border-radius:50%;border:0;
+    background:rgba(0,0,0,.65);color:#fff;font-size:15px;line-height:1;cursor:pointer;
+  }
+  .hint{font-size:13px;color:var(--muted);margin:10px 0 0}
+
+  /* Botón principal */
+  .primary{
+    width:100%;border:0;border-radius:13px;padding:15px;font-size:17px;font-weight:800;
+    background:var(--accent);color:#fff;cursor:pointer;box-shadow:0 4px 14px -4px rgba(242,101,34,.6);
+    display:flex;justify-content:center;align-items:center;gap:8px;min-height:52px;
+  }
+  .primary:hover{background:var(--accent-deep)}
+  .primary:disabled{opacity:.6;cursor:progress}
+  .primary:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+  .foot{font-size:13px;color:var(--muted);text-align:center;margin-top:14px}
+  .foot.small{margin-top:26px;opacity:.8}
+
+  /* Estado / toast */
+  .toast{
+    position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;
+    opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center;z-index:10;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.ok{background:var(--ok);color:#fff}
+  .toast.err{background:var(--danger);color:#fff}
+  .notice{
+    border-left:4px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--card));
+    border-radius:0 12px 12px 0;padding:10px 14px;font-size:14px;margin-bottom:14px;
+  }
+  .hidden{display:none !important}
+
+  /* Registros */
+  .rec{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow)}
+  .rec .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .rec .top b{font-size:16px}
+  .rec .when{color:var(--muted);font-size:13px;white-space:nowrap}
+  .rec dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:10px 0 0;font-size:14px}
+  .rec dt{color:var(--muted)}
+  .rec dd{margin:0}
+  .pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700}
+  .pill.si{background:color-mix(in srgb,var(--ok) 15%,var(--card));color:var(--ok)}
+  .pill.no{background:var(--line);color:var(--muted)}
+  .rec .fotos{margin-top:10px}
+  .rec button.link{border:0;background:none;color:var(--brand);font-weight:700;cursor:pointer;padding:0;text-decoration:underline}
+  /* [NUEVO · envío] estado de envío de cada registro (modo campo) y botón de reintento */
+  .rec .estado{margin-top:10px;display:flex;gap:10px;align-items:center;font-size:13px;flex-wrap:wrap}
+  .pill.pend{background:color-mix(in srgb,var(--accent) 15%,var(--card));color:var(--accent-deep)}
+  .rec .fotos .grid{margin-top:8px}
+  .rec .fotos .thumb img{cursor:zoom-in}
+  .empty{text-align:center;color:var(--muted);padding:30px 10px}
+  .empty svg{width:40px;height:40px;color:var(--line);display:block;margin:0 auto 8px}
+  .search{width:100%;background:var(--field);border:1.5px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:12px}
+  .search:focus{outline:none;border-color:var(--brand)}
+
+  /* Tablero */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+  @media (max-width:520px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
+  .kpi b{display:block;font-size:26px;line-height:1.1;color:var(--brand)}
+  .kpi span{font-size:12.5px;color:var(--muted)}
+  .kpi.acc b{color:var(--accent)}
+  .filters{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-bottom:12px}
+  @media (max-width:520px){.filters{grid-template-columns:1fr 1fr}.filters .primary{grid-column:1/-1}}
+  .filters label{font-size:12.5px;font-weight:700;display:block;margin-bottom:4px}
+  .filters input{width:100%;background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:9px 10px;min-height:42px}
+  .filters .primary{min-height:42px;padding:9px 16px;font-size:15px;border-radius:10px}
+  .tablewrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);-webkit-overflow-scrolling:touch}
+  table{border-collapse:collapse;width:100%;min-width:900px;font-size:13.5px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{position:sticky;top:0;background:var(--brand);color:#fff;font-weight:700;white-space:nowrap}
+  th:first-child{border-radius:14px 0 0 0}th:last-child{border-radius:0 14px 0 0}
+  tbody tr:nth-child(even){background:color-mix(in srgb,var(--brand) 3%,var(--card))}
+  tbody tr:hover{background:color-mix(in srgb,var(--accent) 8%,var(--card))}
+  td.num{text-align:right;white-space:nowrap}
+  .mini{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  @media (max-width:520px){.mini{grid-template-columns:1fr}}
+  .mini .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
+  .mini h3{margin:0 0 8px;font-size:14px}
+  .bar{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;font-size:13px;margin:4px 0}
+  .bar i{display:block;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--brand),var(--accent))}
+  .bar em{font-style:normal;color:var(--muted);min-width:70px}
+
+  /* Lightbox */
+  .lb{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;place-items:center;z-index:20;cursor:zoom-out}
+  .lb.open{display:grid}
+  .lb img{max-width:96vw;max-height:92vh;border-radius:8px}
+
+  /* ===== Celular ===== */
+  header{padding-top:calc(18px + env(safe-area-inset-top))}
+  @media (max-width:640px){
+    main{padding:14px 12px calc(96px + env(safe-area-inset-bottom))}
+    h1{font-size:23px}
+    section.card{border-radius:14px;padding:16px 14px 18px}
+    .sticky{position:fixed;left:0;right:0;bottom:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+      background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+      border-top:1px solid var(--line);z-index:5}
+    .sticky .primary{margin-top:0}
+    .foot{display:none}
+  }
+
+  /* ===== Estilo y animaciones ===== */
+  header{position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;opacity:.14;pointer-events:none;
+    background:repeating-linear-gradient(-55deg,transparent 0 22px,rgba(255,255,255,.35) 22px 34px);
+    mask-image:linear-gradient(90deg,transparent 35%,#000);-webkit-mask-image:linear-gradient(90deg,transparent 35%,#000)}
+  header::after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border-radius:50%;
+    background:radial-gradient(circle,rgba(242,101,34,.45),transparent 65%);pointer-events:none}
+  .brand,.tabs{position:relative;z-index:1}
+  .mark{animation:pulse 3.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),0 0 0 0 rgba(242,101,34,.55)}
+    60%{box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),0 0 0 12px rgba(242,101,34,0)}}
+  .tabs button{transition:color .2s,background .25s,transform .15s}
+  .tabs button:active{transform:scale(.97)}
+
+  h1,.lead,section.card,.sticky,.foot{animation:rise .55s cubic-bezier(.2,.8,.2,1) both}
+  .lead{animation-delay:.05s}
+  section.card:nth-of-type(1){animation-delay:.12s}
+  section.card:nth-of-type(2){animation-delay:.22s}
+  .sticky,.foot{animation-delay:.32s}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  section.card{transition:box-shadow .3s,transform .3s}
+  section.card:focus-within{box-shadow:0 1px 2px rgba(11,61,145,.06),0 18px 40px -18px rgba(11,61,145,.35);transform:translateY(-1px)}
+  .field input,.field textarea{transition:border-color .2s,box-shadow .2s,background .2s}
+  .field input:not(:placeholder-shown),.field textarea:not(:placeholder-shown){background:color-mix(in srgb,var(--brand) 3%,var(--field))}
+  .field.invalid input,.field.invalid textarea{animation:shake .35s}
+  @keyframes shake{20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
+  .seg button{transition:background .25s,color .2s,border-color .2s,transform .15s}
+  .seg button:active{transform:scale(.97)}
+  .seg button[aria-pressed="true"]{animation:pop .3s cubic-bezier(.2,.8,.2,1)}
+  @keyframes pop{0%{transform:scale(.94)}60%{transform:scale(1.03)}100%{transform:none}}
+  .photo-actions label{transition:background .25s,border-color .25s,transform .15s}
+  .photo-actions label:hover{background:color-mix(in srgb,var(--brand) 11%,var(--card))}
+  .thumb{animation:pop .35s cubic-bezier(.2,.8,.2,1) both;transition:transform .2s}
+  .thumb:hover{transform:translateY(-2px)}
+  .thumb button{transition:background .2s,transform .15s}
+  .thumb button:hover{background:var(--danger);transform:scale(1.1)}
+  .primary{transition:background .25s,transform .15s,box-shadow .25s;position:relative;overflow:hidden}
+  .primary:active{transform:scale(.98)}
+  .primary::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.28) 50%,transparent 70%);
+    transform:translateX(-120%);transition:transform .6s}
+  .primary:hover::after{transform:translateX(120%)}
+  .rec{animation:rise .45s cubic-bezier(.2,.8,.2,1) both;transition:transform .2s,box-shadow .3s}
+  .rec:hover{transform:translateY(-2px)}
+  .lb{animation:fade .2s}
+  .lb img{animation:pop .3s cubic-bezier(.2,.8,.2,1)}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+
+  /* Confirmación de guardado */
+  .done{position:fixed;inset:0;display:none;place-items:center;background:rgba(7,42,102,.55);backdrop-filter:blur(6px);z-index:30}
+  .done.show{display:grid;animation:fade .25s}
+  .done .box{background:var(--card);border-radius:22px;padding:28px 30px;text-align:center;animation:pop .4s cubic-bezier(.2,.8,.2,1);max-width:300px}
+  .done svg{width:78px;height:78px;display:block;margin:0 auto 10px}
+  .done circle{fill:none;stroke:var(--ok);stroke-width:3;stroke-dasharray:230;stroke-dashoffset:230;animation:draw .6s .1s ease-out forwards}
+  .done path{fill:none;stroke:var(--ok);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:60;stroke-dashoffset:60;animation:draw .4s .5s ease-out forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .done b{display:block;font-size:19px;margin-bottom:2px}
+  .done span{color:var(--muted);font-size:14px}
+
+  /* [CORREGIDO] Había dos reglas de prefers-reduced-motion; la segunda repetía lo que ya hacía la primera */
+  @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="mark" aria-hidden="true">E</div>
+    <div>
+      <b>Emergencias</b>
+      <span>Grupo IHSA · Registro de atenciones</span>
+    </div>
+    <div class="tag">USO INTERNO</div>
+  </div>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="form">Nuevo registro</button>
+    <button role="tab" aria-selected="false" data-tab="list">Registros <span id="count"></span></button>
+    <button role="tab" aria-selected="false" data-tab="board">Tablero</button>
+  </div>
+</header>
+
+<main>
+  <!-- ===== FORMULARIO ===== -->
+  <div id="view-form">
+    <h1>Registro de atención</h1>
+    <p class="lead">Cargá los datos del evento desde el lugar y adjuntá las fotos.</p>
+
+    <div id="offline" class="notice hidden">
+      Versión de prueba: los registros se guardan solo en este dispositivo para que veas cómo funciona el tablero y la descarga a Excel.
+    </div>
+
+    <section class="card">
+      <h2><span class="n">1</span>Datos del evento</h2>
+
+      <div class="row">
+        <div class="field">
+          <label for="fecha">Fecha</label>
+          <input id="fecha" type="date" required>
+        </div>
+        <div class="field">
+          <label for="movil">Nro. de móvil</label>
+          <input id="movil" type="tel" inputmode="numeric" placeholder="Ej.: 154" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="evento">Nombre del evento</label>
+        <input id="evento" type="text" placeholder="Ej.: Recital Movistar Arena" required autocomplete="off">
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="paciente">Nombre del paciente</label>
+          <input id="paciente" type="text" placeholder="Apellido y nombre" required autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="edad">Edad</label>
+          <input id="edad" type="tel" inputmode="numeric" placeholder="Años" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="medico">Médico / interviniente</label>
+        <input id="medico" type="text" placeholder="Apellido y nombre" required autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label for="motivo">Motivo de consulta</label>
+        <textarea id="motivo" placeholder="Describí brevemente el motivo" required></textarea>
+      </div>
+
+      <div class="field">
+        <label>¿Traslada?</label>
+        <div class="seg" role="group" aria-label="Traslada">
+          <button type="button" data-val="si" aria-pressed="false">Sí</button>
+          <button type="button" data-val="no" aria-pressed="false">No</button>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:0">
+        <label for="obs">Observaciones <span class="opt">(opcional)</span></label>
+        <textarea id="obs" placeholder="Destino del traslado, estado del paciente, etc."></textarea>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="n">2</span>Fotos</h2>
+      <div class="photo-actions">
+        <label>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2h6l2 2h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          <b>Sacar foto</b><small>Abre la cámara</small>
+          <input type="file" accept="image/*" capture="environment" id="cam">
+        </label>
+        <label>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/></svg>
+          <b>Subir foto</b><small>Desde la galería</small>
+          <input type="file" accept="image/*" multiple id="gal">
+        </label>
+      </div>
+      <div class="grid" id="thumbs"></div>
+      <p class="hint" id="photo-hint">Hasta 8 fotos por registro. Se comprimen automáticamente.</p>
+    </section>
+
+    <div class="sticky">
+      <button class="primary" id="save" type="button">Guardar registro</button>
+      <button class="primary hidden" id="copy" type="button" style="background:var(--brand)">Copiar resumen</button>
+    </div>
+    <p class="foot">Los registros quedan guardados en esta página y los puede ver el equipo desde la pestaña <b>Registros</b>.</p>
+    <p class="foot small">Uso interno · Emergencias · Grupo IHSA</p>
+  </div>
+
+  <!-- ===== LISTADO ===== -->
+  <div id="view-list" class="hidden">
+    <h1>Registros</h1>
+    <p class="lead">Últimos registros cargados por el equipo.</p>
+    <input class="search" id="q" type="search" placeholder="Buscar por evento, móvil, paciente o médico">
+    <div id="list"></div>
+  </div>
+
+<!-- ===== TABLERO ===== -->
+  <div id="view-board" class="hidden" style="max-width:none">
+    <h1>Tablero</h1>
+    <p class="lead">Datos estructurados de todos los registros. Descargalos en Excel para armar tu dashboard.</p>
+    <div class="filters">
+      <div><label for="desde">Desde</label><input id="desde" type="date"></div>
+      <div><label for="hasta">Hasta</label><input id="hasta" type="date"></div>
+      <button class="primary" id="xlsx" type="button">Descargar Excel</button>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><b id="k-total">0</b><span>Registros</span></div>
+      <div class="kpi acc"><b id="k-tras">0</b><span>Traslados</span></div>
+      <div class="kpi"><b id="k-pct">0%</b><span>Tasa de traslado</span></div>
+      <div class="kpi"><b id="k-mov">0</b><span>Móviles activos</span></div>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Fecha</th><th>Hora</th><th>Evento</th><th>Móvil</th><th>Paciente</th><th>Edad</th><th>Médico / interviniente</th><th>Motivo</th><th>Traslada</th><th>Observaciones</th><th>Fotos</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="mini">
+      <div class="box"><h3>Por móvil</h3><div id="by-movil"></div></div>
+      <div class="box"><h3>Por evento</h3><div id="by-evento"></div></div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="done" id="done" aria-live="polite">
+  <div class="box">
+    <svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="36"/><path d="M25 41l10 10 20-22"/></svg>
+    <b>Registro guardado</b><span>Ya lo puede ver el equipo</span>
+  </div>
+</div>
+<div class="lb" id="lb"><img alt="Foto ampliada"></div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const MAX_FOTOS = 8;
+  const MAX_BYTES = 170 * 1024;   // el documento de la base admite 256 KiB; dejamos margen
+  let fotos = [];                 // dataURLs comprimidas
+  let traslada = null;
+  let db = null;
+  let unsub = null;
+  let registros = [];
+
+  // [NUEVO · envío] URL del script de Google Apps Script (app/apps-script/Code.gs, ver docs/apps-script.md).
+  // Vacía = fase 1: el registro se guarda en este dispositivo y se exporta a mano desde el tablero.
+  // Con valor: cada registro guardado se envía al script, que lo escribe en la planilla y guarda las fotos en Drive.
+  const FLOW_URL = "https://script.google.com/macros/s/AKfycbxuZb9kSvPTeD1nu3r4y_HFLeAoHS0tCx2m9MjAJj-irW0BqXYkQnegeKOkOE_t6thifQ/exec";
+
+  // [NUEVO · envío] Dos modos según la URL con la que se abre la app:
+  //  - modo campo (URL normal): formulario + registros propios. Cada registro se envía al guardar;
+  //    si no hay señal queda "pendiente" y se reintenta solo al volver la conexión.
+  //  - modo coordinador (?modo=coordinador): Registros y Tablero muestran lo que envió todo el equipo,
+  //    leído de la planilla central. Pide la clave definida en Code.gs.
+  const MODO_COORD = new URLSearchParams(location.search).get('modo') === 'coordinador';
+  const persistirLocal = () => { try { localStorage.setItem('reg_demo', JSON.stringify(registros.slice(0,200))); } catch {} };
+
+  // [CORREGIDO] Las fotos de la demo vivían solo en memoria y se perdían al recargar la página.
+  // Ahora se guardan en localStorage bajo 'reg_demo_fotos' (registroId → lista de dataURLs).
+  // localStorage admite ~5 MB: si no entran todas, se descartan primero las de los registros más viejos.
+  let fotosLocal = {};
+  function guardarFotosLocal(){
+    const LIMITE = 4 * 1024 * 1024;        // presupuesto en caracteres, con margen bajo los ~5 MB típicos
+    const sub = {}; let total = 0;
+    for (const r of registros){            // registros va de más nuevo a más viejo
+      const f = fotosLocal[r.id]; if (!f) continue;
+      const peso = f.reduce((n, s) => n + s.length, 0);
+      if (total + peso > LIMITE) break;
+      sub[r.id] = f; total += peso;
+    }
+    for (;;){
+      try { localStorage.setItem('reg_demo_fotos', JSON.stringify(sub)); fotosLocal = sub; return; }
+      catch {
+        const ids = Object.keys(sub); if (!ids.length) return;
+        delete sub[ids[ids.length - 1]];   // no entró: saco el más viejo y vuelvo a intentar
+      }
+    }
+  }
+
+  // ---- utilidades ----
+  const toast = (msg, cls='') => {
+    const t = $('#toast'); t.textContent = msg; t.className = 'toast show ' + cls;
+    clearTimeout(t._t); t._t = setTimeout(()=> t.className='toast', 2600);
+  };
+  const todayISO = () => {
+    const d = new Date(); const p = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+  };
+  const fmtFecha = iso => { if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; };
+  const fmtHora = ts => { const d = new Date(ts); const p=n=>String(n).padStart(2,'0'); return `${p(d.getHours())}:${p(d.getMinutes())}`; };
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  // [CORREGIDO] Semana ISO 8601 (lunes a domingo; la semana 1 es la que contiene el primer jueves del año).
+  // Antes se usaba una fórmula aproximada que no coincidía con NUM.DE.SEMANA.ISO de Excel.
+  const semanaISO = iso => {
+    const d = new Date(iso + 'T00:00');
+    const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dia = t.getUTCDay() || 7;             // domingo cuenta como 7
+    t.setUTCDate(t.getUTCDate() + 4 - dia);     // me paro en el jueves de esa semana
+    const inicio = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+    return Math.ceil(((t - inicio) / 864e5 + 1) / 7);
+  };
+
+  // [CORREGIDO] Edad: antes se convertía con "+" y cualquier texto (ej. "45 años") salía como NaN en el Excel.
+  // Ahora se toma el primer número que aparezca; si no hay ninguno, la celda queda vacía.
+  const edadNum = v => { const m = String(v ?? '').match(/\d+/); return m ? +m[0] : ''; };
+
+  $('#fecha').value = todayISO();
+
+  // ---- pestañas ----
+  document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x===b));
+    const tab = b.dataset.tab;
+    $('#view-form').classList.toggle('hidden', tab!=='form');
+    $('#view-list').classList.toggle('hidden', tab!=='list');
+    $('#view-board').classList.toggle('hidden', tab!=='board');
+    document.querySelector('main').classList.toggle('wide', tab==='board');
+    const v = $('#view-'+tab); v.style.animation='none'; void v.offsetWidth; v.style.animation='rise .4s cubic-bezier(.2,.8,.2,1)';
+    if (tab==='list') renderList(); if (tab==='board') renderBoard();
+    if (MODO_COORD && !db && tab!=='form') cargarCentral();   // [NUEVO · envío] coordinador: refresca desde la planilla
+  }));
+
+  // ---- traslada ----
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+    traslada = b.dataset.val;
+    document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x===b));
+  }));
+
+  // ---- fotos ----
+  async function compress(file){
+    const img = await new Promise((res, rej) => {
+      const u = URL.createObjectURL(file); const i = new Image();
+      i.onload = () => { URL.revokeObjectURL(u); res(i); };
+      i.onerror = () => { URL.revokeObjectURL(u); rej(new Error('No se pudo leer la imagen')); };
+      i.src = u;
+    });
+    let max = 1280, q = 0.78, out;
+    for (let i = 0; i < 6; i++){
+      const s = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      out = c.toDataURL('image/jpeg', q);
+      if (out.length <= MAX_BYTES) break;
+      q -= 0.12; if (q < 0.45) { q = 0.6; max = Math.round(max * 0.75); }
+    }
+    return out;
+  }
+  async function addFiles(list){
+    const files = Array.from(list || []);
+    if (!files.length) return;
+    if (fotos.length + files.length > MAX_FOTOS){ toast(`Máximo ${MAX_FOTOS} fotos por registro`, 'err'); }
+    for (const f of files.slice(0, MAX_FOTOS - fotos.length)){
+      try { fotos.push(await compress(f)); }
+      catch(e){ toast(e.message, 'err'); }
+    }
+    renderThumbs();
+  }
+  $('#cam').addEventListener('change', e => { addFiles(e.target.files); e.target.value=''; });
+  $('#gal').addEventListener('change', e => { addFiles(e.target.files); e.target.value=''; });
+  function renderThumbs(){
+    $('#thumbs').innerHTML = fotos.map((src,i) =>
+      `<div class="thumb"><img src="${src}" alt="Foto ${i+1}"><button type="button" data-i="${i}" aria-label="Quitar foto ${i+1}">×</button></div>`).join('');
+    $('#photo-hint').textContent = fotos.length ? `${fotos.length} de ${MAX_FOTOS} fotos` : `Hasta ${MAX_FOTOS} fotos por registro. Se comprimen automáticamente.`;
+  }
+  $('#thumbs').addEventListener('click', e => {
+    const b = e.target.closest('button'); if(!b) return;
+    fotos.splice(+b.dataset.i, 1); renderThumbs();
+  });
+
+  // ---- validación ----
+  function leer(){
+    const v = id => $('#'+id).value.trim();
+    const data = {
+      fecha: v('fecha'), movil: v('movil'), evento: v('evento'), paciente: v('paciente'), edad: v('edad'), medico: v('medico'),
+      motivo: v('motivo'), traslada, obs: v('obs'),
+    };
+    let ok = true;
+    for (const id of ['fecha','movil','evento','paciente','edad','medico','motivo']){
+      const bad = !data[id]; $('#'+id).closest('.field').classList.toggle('invalid', bad); if (bad) ok = false;
+    }
+    if (!traslada){ ok = false; document.querySelectorAll('.seg button').forEach(b=> b.style.borderColor='var(--danger)'); }
+    else document.querySelectorAll('.seg button').forEach(b=> b.style.borderColor='');
+    if (!ok) toast('Completá los campos marcados', 'err');
+    return ok ? data : null;
+  }
+  function resumen(d){
+    return [
+      `Fecha: ${fmtFecha(d.fecha)}`, `Evento: ${d.evento}`, `Móvil: ${d.movil}`, `Paciente: ${d.paciente} (${d.edad} años)`,
+      `Médico/interviniente: ${d.medico}`, `Motivo de consulta: ${d.motivo}`,
+      `Traslada: ${d.traslada==='si'?'Sí':'No'}`, d.obs ? `Observaciones: ${d.obs}` : null,
+      fotos.length ? `Fotos: ${fotos.length}` : null,
+    ].filter(Boolean).join('\n');
+  }
+  function limpiar(){
+    ['movil','evento','paciente','edad','medico','motivo','obs'].forEach(id => $('#'+id).value='');
+    $('#fecha').value = todayISO(); traslada = null; fotos = []; renderThumbs();
+    document.querySelectorAll('.seg button').forEach(b => { b.setAttribute('aria-pressed','false'); b.style.borderColor=''; });
+    document.querySelectorAll('.field.invalid').forEach(f => f.classList.remove('invalid'));
+  }
+
+  // ---- guardar ----
+  $('#save').addEventListener('click', async () => {
+    const d = leer(); if (!d) return;
+    if (!db){
+      const id = uid(); const reg = { ...d, id, nFotos: fotos.length, createdAt: Date.now() };
+      if (FLOW_URL) reg.enviado = false;                     // [NUEVO · envío] pendiente hasta que el script confirme
+      registros.unshift(reg); fotosLocal[id] = fotos.slice();
+      persistirLocal();
+      guardarFotosLocal();                                   // [CORREGIDO] persiste las fotos junto con el registro
+      limpiar(); renderList(); const dn=$('#done'); dn.classList.add('show'); setTimeout(()=>dn.classList.remove('show'),1900); window.scrollTo({top:0,behavior:'smooth'});
+      // [NUEVO · envío] Se envía DESPUÉS de guardar: el registro nunca se pierde aunque no haya señal.
+      if (FLOW_URL){
+        const ok = await enviarAlFlujo(reg, fotosLocal[id]);
+        reg.enviado = ok; persistirLocal(); renderList();
+        toast(ok ? 'Enviado a los coordinadores' : 'Sin conexión: se enviará solo cuando vuelva la señal', ok ? 'ok' : 'err');
+      }
+      return;
+    }
+    const btn = $('#save'); btn.disabled = true; btn.textContent = 'Guardando…';
+    const id = uid();
+    try {
+      await db.doc('registros/' + id).set({ ...d, nFotos: fotos.length, createdAt: Date.now() });
+      for (let i = 0; i < fotos.length; i++){
+        await db.doc('fotos/' + id + '-' + i).set({ registroId: id, orden: i, data: fotos[i] });
+      }
+      limpiar(); const dn=$('#done'); dn.classList.add('show'); setTimeout(()=>dn.classList.remove('show'),1900); window.scrollTo({top:0,behavior:'smooth'});
+    } catch (e){
+      console.error(e);
+      toast(e.code === 'quota_exceeded' ? 'La base está llena: avisale al supervisor' : 'No se pudo guardar. Probá de nuevo.', 'err');
+    } finally { btn.disabled = false; btn.textContent = 'Guardar registro'; }
+  });
+
+  // [NUEVO · envío] Manda un registro con sus fotos al script. Devuelve true si el script confirmó.
+  // OJO: no se pone Content-Type application/json a propósito. Con text/plain (el default) el navegador
+  // no hace preflight CORS, y Apps Script no responde preflights: con el header puesto, fallaría siempre.
+  async function enviarAlFlujo(reg, fotosReg){
+    if (!FLOW_URL) return false;
+    try {
+      const r = await fetch(FLOW_URL, {
+        method: 'POST',
+        body: JSON.stringify({ registro: reg, fila: filaExcel(reg), fotos: fotosReg || [] }),
+      });
+      const res = await r.json();
+      if (!res.ok) throw new Error(res.error || 'Respuesta no válida del script');
+      return true;
+    } catch (e){ console.error(e); return false; }
+  }
+
+  // [NUEVO · envío] Reintenta los registros que quedaron sin enviar (al abrir la app, al volver la señal
+  // o con el botón Reintentar). Si las fotos de un registro viejo ya no están en localStorage, va sin fotos.
+  let reintentando = false;
+  async function reintentarPendientes(manual){
+    if (!FLOW_URL || reintentando) return;
+    const pend = registros.filter(r => !r.enviado);
+    if (!pend.length) return;
+    reintentando = true; let n = 0;
+    try {
+      for (const r of pend){ if (await enviarAlFlujo(r, fotosLocal[r.id])) { r.enviado = true; n++; } }
+    } finally { reintentando = false; }
+    persistirLocal(); renderList();
+    if (n) toast(`${n} registro${n>1?'s':''} pendiente${n>1?'s':''} enviado${n>1?'s':''}`, 'ok');
+    else if (manual) toast('Sigue sin conexión con el script', 'err');
+  }
+
+  // [NUEVO · envío] Modo coordinador: lectura de la planilla central a través del script.
+  function claveCoord(){
+    let c = ''; try { c = localStorage.getItem('coord_clave') || ''; } catch {}
+    if (!c){
+      c = (prompt('Clave de coordinador') || '').trim();
+      if (c) try { localStorage.setItem('coord_clave', c); } catch {}
+    }
+    return c;
+  }
+  async function pedirCentral(params){
+    const clave = claveCoord(); if (!clave) throw new Error('Sin clave');
+    const u = new URL(FLOW_URL); u.searchParams.set('clave', clave);
+    Object.entries(params || {}).forEach(([k,v]) => u.searchParams.set(k, v));
+    const res = await (await fetch(u)).json();
+    if (!res.ok){
+      if (/clave/i.test(res.error || '')) { try { localStorage.removeItem('coord_clave'); } catch {} }   // la vuelve a pedir
+      throw new Error(res.error || 'Error del script');
+    }
+    return res;
+  }
+  async function cargarCentral(){
+    if (!FLOW_URL){ toast('Falta configurar FLOW_URL en el HTML', 'err'); return; }
+    try {
+      const res = await pedirCentral();
+      registros = res.registros || []; renderList(); renderBoard();
+    } catch (e){
+      toast(e.message === 'Sin clave' ? 'Necesitás la clave de coordinador' : 'No se pudieron cargar los registros: ' + e.message, 'err');
+    }
+  }
+
+  $('#copy').addEventListener('click', async () => {
+    const d = leer(); if (!d) return;
+    try { await navigator.clipboard.writeText(resumen(d)); const dn=$('#done'); dn.querySelector('b').textContent='Resumen copiado'; dn.querySelector('span').textContent='Pegalo en WhatsApp'; dn.classList.add('show'); setTimeout(()=>dn.classList.remove('show'),1700); }
+    catch { toast('No se pudo copiar', 'err'); }
+  });
+
+  // ---- listado ----
+  function renderList(){
+    const q = $('#q').value.trim().toLowerCase();
+    const rows = registros.filter(r => !q || [r.evento, r.movil, r.medico, r.paciente].some(x => String(x||'').toLowerCase().includes(q)));
+    $('#count').textContent = registros.length ? `(${registros.length})` : '';
+    if (!rows.length){
+      const vacio = q ? 'Sin resultados para esa búsqueda.' : (MODO_COORD && !db ? 'Todavía no hay registros enviados por el equipo.' : 'Todavía no hay registros cargados.');
+      $('#list').innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg>${vacio}</div>`;
+      return;
+    }
+    // [NUEVO · envío] En modo campo con script configurado, cada registro muestra si ya llegó a los coordinadores
+    const estadoEnvio = r => (!FLOW_URL || db || MODO_COORD) ? '' :
+      r.enviado ? `<div class="estado"><span class="pill si">Enviado a coordinadores</span></div>`
+                : `<div class="estado"><span class="pill pend">Pendiente de envío</span><button type="button" class="link retry">Reintentar</button></div>`;
+    $('#list').innerHTML = rows.map(r => `
+      <article class="rec" data-id="${esc(r.id)}">
+        <div class="top"><b>${esc(r.evento)}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
+        <dl>
+          <dt>Móvil</dt><dd>${esc(r.movil)}</dd>
+          <dt>Paciente</dt><dd>${esc(r.paciente||'')}${r.edad?` · ${esc(r.edad)} años`:''}</dd>
+          <dt>Médico</dt><dd>${esc(r.medico)}</dd>
+          <dt>Motivo</dt><dd>${esc(r.motivo)}</dd>
+          <dt>Traslada</dt><dd><span class="pill ${r.traslada==='si'?'si':'no'}">${r.traslada==='si'?'Sí':'No'}</span></dd>
+          ${r.obs ? `<dt>Obs.</dt><dd>${esc(r.obs)}</dd>` : ''}
+        </dl>
+        <div class="fotos">${r.nFotos ? `<button type="button" class="link fotos-btn">Ver ${r.nFotos} foto${r.nFotos>1?'s':''}</button>` : `<span class="hint">Sin fotos</span>`}</div>
+        ${estadoEnvio(r)}
+      </article>`).join('');
+  }
+  $('#q').addEventListener('input', renderList);
+  $('#list').addEventListener('click', async e => {
+    if (e.target.closest('button.retry')){ reintentarPendientes(true); return; }   // [NUEVO · envío]
+    const b = e.target.closest('button.fotos-btn');
+    if (b){
+      const art = b.closest('.rec'); const id = art.dataset.id;
+      b.disabled = true; b.textContent = 'Cargando…';
+      try {
+        let list;
+        if (db){ const snap = await db.collection('fotos').where('registroId','==',id).get(); list = snap.docs.map(d => d.data()).sort((a,b)=>a.orden-b.orden); }
+        else if (MODO_COORD){
+          // [NUEVO · envío] coordinador: las fotos están en Drive y llegan a través del script, sin compartir la carpeta
+          const rec = registros.find(x => x.id === id);
+          list = await Promise.all((rec?.fotoIds || []).map(async (fid, orden) => ({ data: (await pedirCentral({ foto: fid })).data, orden })));
+        }
+        else list = (fotosLocal[id]||[]).map((data,orden)=>({data,orden}));
+        // [CORREGIDO] Antes decía que las fotos no se conservaban al recargar; ahora sí, salvo que no hayan entrado en localStorage
+        if (!list.length){ b.disabled=false; b.textContent='No se encontraron las fotos de este registro'; return; }
+        art.querySelector('.fotos').innerHTML = `<div class="grid">${list.map((f,i)=>`<div class="thumb"><img src="${f.data}" alt="Foto ${i+1}"></div>`).join('')}</div>`;
+      } catch { b.disabled=false; b.textContent='No se pudieron cargar las fotos'; }
+      return;
+    }
+    const img = e.target.closest('.thumb img');
+    if (img){ $('#lb img').src = img.src; $('#lb').classList.add('open'); }
+  });
+  $('#lb').addEventListener('click', () => $('#lb').classList.remove('open'));
+
+
+  // ---- tablero ----
+  let downloads = null;
+  const filtrados = () => {
+    const a = $('#desde').value, b = $('#hasta').value;
+    return registros.filter(r => (!a || r.fecha >= a) && (!b || r.fecha <= b));
+  };
+  const agrupar = (rows, key) => {
+    const m = {}; rows.forEach(r => { const k = r[key] || '—'; m[k] = (m[k]||0)+1; });
+    return Object.entries(m).sort((x,y)=>y[1]-x[1]).slice(0,8);
+  };
+  function barras(el, pares, total){
+    el.innerHTML = pares.length ? pares.map(([k,n]) =>
+      `<div class="bar"><em title="${esc(k)}">${esc(String(k).slice(0,18))}</em><i style="width:${Math.max(4, n/(pares[0][1]||1)*100)}%"></i><span>${n}</span></div>`).join('')
+      : '<span class="hint">Sin datos</span>';
+  }
+  function renderBoard(){
+    const rows = filtrados();
+    const tras = rows.filter(r => r.traslada==='si').length;
+    $('#k-total').textContent = rows.length;
+    $('#k-tras').textContent = tras;
+    $('#k-pct').textContent = rows.length ? Math.round(tras/rows.length*100)+'%' : '0%';
+    $('#k-mov').textContent = new Set(rows.map(r=>r.movil)).size;
+    $('#tbody').innerHTML = rows.length ? rows.map(r => `<tr>
+      <td class="num">${fmtFecha(r.fecha)}</td><td class="num">${fmtHora(r.createdAt)}</td>
+      <td>${esc(r.evento)}</td><td class="num">${esc(r.movil)}</td><td>${esc(r.paciente||'')}</td><td class="num">${esc(r.edad||'')}</td><td>${esc(r.medico)}</td>
+      <td>${esc(r.motivo)}</td><td><span class="pill ${r.traslada==='si'?'si':'no'}">${r.traslada==='si'?'Sí':'No'}</span></td>
+      <td>${esc(r.obs)}</td><td class="num">${r.nFotos||0}</td></tr>`).join('')
+      : `<tr><td colspan="11" class="empty">No hay registros en ese rango.</td></tr>`;
+    barras($('#by-movil'), agrupar(rows,'movil'), rows.length);
+    barras($('#by-evento'), agrupar(rows,'evento'), rows.length);
+    $('#xlsx').disabled = !rows.length;
+  }
+  $('#desde').addEventListener('change', renderBoard);
+  $('#hasta').addEventListener('change', renderBoard);
+
+  // [NUEVO · envío] Una fila con las columnas del Excel. La usan la exportación y el envío al script,
+  // así la planilla central de Google y el Excel descargado tienen las mismas columnas en el mismo orden
+  // (requisito de docs/arquitectura.md). Si agregás una columna acá, agregala también en COLUMNAS de Code.gs.
+  function filaExcel(r){
+    const p = n => String(n).padStart(2,'0'); const d = new Date(r.createdAt);
+    return {
+      'ID': r.id, 'Fecha': fmtFecha(r.fecha), 'Hora': fmtHora(r.createdAt),
+      'Año': +r.fecha.slice(0,4), 'Mes': +r.fecha.slice(5,7), 'Día': +r.fecha.slice(8,10),
+      'Semana': semanaISO(r.fecha),                       // [CORREGIDO] ver semanaISO arriba
+      'Evento': r.evento, 'Móvil': r.movil, 'Paciente': r.paciente||'', 'Edad': edadNum(r.edad), 'Médico / interviniente': r.medico,   // [CORREGIDO] ver edadNum arriba
+      'Motivo de consulta': r.motivo, 'Traslada': r.traslada==='si'?'Sí':'No', 'Traslada (1/0)': r.traslada==='si'?1:0,
+      'Observaciones': r.obs||'', 'Cantidad de fotos': r.nFotos||0,
+      'Registrado el': `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${fmtHora(r.createdAt)}`,
+    };
+  }
+  function armarExcel(rows){
+    const datos = rows.map(filaExcel);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(datos);
+    ws['!cols'] = [8,11,7,6,5,5,7,26,8,24,6,24,36,9,12,36,10,18].map(w=>({wch:w}));
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:datos.length, c:17}}) };
+    XLSX.utils.book_append_sheet(wb, ws, 'Registros');
+    const res = (key, nombre) => {
+      const m = {}; rows.forEach(r => { const k = r[key]||'—'; m[k] = m[k]||{n:0,t:0}; m[k].n++; if(r.traslada==='si') m[k].t++; });
+      const arr = Object.entries(m).sort((a,b)=>b[1].n-a[1].n).map(([k,v]) => ({ [nombre]: k, 'Registros': v.n, 'Traslados': v.t, 'Sin traslado': v.n-v.t, '% traslado': v.n ? +(v.t/v.n).toFixed(3) : 0 }));
+      const w = XLSX.utils.json_to_sheet(arr); w['!cols']=[{wch:28},{wch:10},{wch:10},{wch:12},{wch:11}];
+      return w;
+    };
+    XLSX.utils.book_append_sheet(wb, res('movil','Móvil'), 'Por móvil');
+    XLSX.utils.book_append_sheet(wb, res('evento','Evento'), 'Por evento');
+    XLSX.utils.book_append_sheet(wb, res('fecha','Fecha'), 'Por día');
+    XLSX.utils.book_append_sheet(wb, res('medico','Médico'), 'Por médico');
+    return XLSX.write(wb, { bookType:'xlsx', type:'array' });
+  }
+  $('#xlsx').addEventListener('click', async () => {
+    const rows = filtrados(); if (!rows.length) return;
+    const btn = $('#xlsx'); btn.disabled = true; btn.textContent = 'Armando…';
+    try {
+      const buf = armarExcel(rows);
+      const f = `registros-emergencias-${todayISO()}.xlsx`;
+      if (downloads){ await downloads.save({ filename: f, data: buf }); toast('Excel descargado', 'ok'); }
+      else {
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf],{type:'application/octet-stream'})); a.download = f; a.click();
+        setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+      }
+    } catch(e){ if (e && e.code !== 'declined') { console.error(e); toast('No se pudo descargar el Excel', 'err'); } }
+    finally { btn.disabled = false; btn.textContent = 'Descargar Excel'; }
+  });
+
+  // ---- conexión con la base ----
+  (async () => {
+    try { db = await (window.claude?.use ? window.claude.use('db') : Promise.resolve(null)); } catch { db = null; }
+    try { downloads = await (window.claude?.use ? window.claude.use('downloads') : Promise.resolve(null)); } catch { downloads = null; }
+    if (!db){
+      if (MODO_COORD){
+        // [NUEVO · envío] Modo coordinador: sin formulario; Registros y Tablero salen de la planilla central
+        $('.tabs button[data-tab="form"]').classList.add('hidden');
+        $('#view-list .lead').textContent = 'Registros enviados por el equipo de campo. Tocá la pestaña para actualizar.';
+        $('.tabs button[data-tab="list"]').click();          // dispara cargarCentral (pide la clave la primera vez)
+        return;
+      }
+      // Modo campo
+      if (FLOW_URL){
+        // [NUEVO · envío] con script configurado, campo ve solo formulario y registros propios
+        $('.tabs button[data-tab="board"]').classList.add('hidden');
+        $('#offline').textContent = 'Los registros se guardan en este celular y se envían a los coordinadores al guardar. Si no hay señal, quedan pendientes y se envían solos al volver la conexión.';
+        $('#view-form .foot').textContent = 'Cada registro se envía a los coordinadores al guardarlo.';
+      }
+      $('#offline').classList.remove('hidden');
+      try { registros = JSON.parse(localStorage.getItem('reg_demo')||'[]'); } catch { registros = []; }
+      try { fotosLocal = JSON.parse(localStorage.getItem('reg_demo_fotos')||'{}'); } catch { fotosLocal = {}; }   // [CORREGIDO] recupera las fotos guardadas
+      renderList();
+      reintentarPendientes();                                            // [NUEVO · envío] lo que quedó sin señal
+      window.addEventListener('online', () => reintentarPendientes());   // [NUEVO · envío] y al volver la conexión
+      return;
+    }
+    unsub = db.collection('registros').orderBy('createdAt','desc').limit(200).onSnapshot(
+      snap => { registros = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderList(); if(!$('#view-board').classList.contains('hidden')) renderBoard(); },
+      err => { console.error(err); toast('Se perdió la conexión con los registros', 'err'); }
+    );
+    // [CORREGIDO] unsub se guardaba pero nunca se usaba: ahora corta la suscripción a la base al cerrar la página
+    window.addEventListener('pagehide', () => { if (typeof unsub === 'function') unsub(); });
+  })();
+})();
+</script>
+</body>
+</html>
