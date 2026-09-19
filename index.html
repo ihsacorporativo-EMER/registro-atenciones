@@ -213,6 +213,43 @@
   .bar i{display:block;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--brand),var(--accent))}
   .bar em{font-style:normal;color:var(--muted);min-width:70px}
 
+  /* [NUEVO · campana] botón con contador en la cabecera (modo coordinador) y punto en la pestaña Registros (modo campo) */
+  .bell{margin-left:auto;position:relative;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
+  .bell svg{width:20px;height:20px}
+  .bell:not(.hidden) + .tag{margin-left:0}
+  .badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:none;place-items:center;line-height:1}
+  .badge.on{display:grid}
+  @keyframes ring{0%,100%{transform:rotate(0)}20%{transform:rotate(15deg)}40%{transform:rotate(-12deg)}60%{transform:rotate(8deg)}80%{transform:rotate(-4deg)}}
+  .bell.ring svg{animation:ring .8s}
+  .tabdot{display:none;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-left:5px;vertical-align:middle}
+  .tabdot.on{display:inline-block}
+
+  /* [NUEVO · coordinador] tarjetas compactas (se tocan para desplegar) y paginado */
+  .rec.compact{padding:12px 14px}
+  .rec.compact .top,.rec.compact .sub{cursor:pointer}
+  .rec.compact .top b{font-size:15px}
+  .rec.compact .sub{font-size:13px;color:var(--muted);margin-top:4px}
+  .rec.compact .detalle{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  .rec.compact.open .detalle{display:block}
+  .rec.compact .detalle dl{margin-top:0}
+  .pill.nuevo{background:var(--accent);color:#fff}
+  .pill.resp{background:color-mix(in srgb,var(--brand) 12%,var(--card));color:var(--brand)}
+  .pager{display:flex;justify-content:center;align-items:center;gap:14px;margin:4px 0 12px;font-size:13px;color:var(--muted)}
+  .pager button{width:38px;height:38px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--brand);font-size:20px;cursor:pointer}
+  .pager button:disabled{opacity:.35;cursor:default}
+
+  /* [NUEVO · devolución] caja para escribirla (coordinador) y bloque para leerla (campo) */
+  .devol-box{margin-top:12px}
+  .devol-box label{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
+  .devol-box textarea{width:100%;min-height:64px;background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;resize:vertical}
+  .devol-box textarea:focus{outline:none;border-color:var(--brand)}
+  .devol-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+  .devol{margin-top:10px;border-left:3px solid var(--brand);background:color-mix(in srgb,var(--brand) 6%,var(--card));border-radius:0 10px 10px 0;padding:8px 12px;font-size:14px}
+  .devol.nueva{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--card))}
+  .devol b{font-size:13px}
+  .devol small{color:var(--muted);margin-left:6px}
+  .devol p{margin:4px 0 0;white-space:pre-wrap}
+
   /* Lightbox */
   .lb{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;place-items:center;z-index:20;cursor:zoom-out}
   .lb.open{display:grid}
@@ -303,11 +340,16 @@
       <b>Emergencias</b>
       <span>Grupo IHSA · Registro de atenciones</span>
     </div>
-    <div class="tag">USO INTERNO</div>
+    <!-- [NUEVO · campana] solo se muestra en modo coordinador -->
+    <button class="bell hidden" id="bell" type="button" aria-label="Registros nuevos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      <span class="badge" id="bell-n"></span>
+    </button>
+    <div class="tag">USO INTERNO</div><!-- [NUEVO] se reemplaza por PERSONAL DE CAMPO o COORDINADOR según el link -->
   </div>
   <div class="tabs" role="tablist">
     <button role="tab" aria-selected="true" data-tab="form">Nuevo registro</button>
-    <button role="tab" aria-selected="false" data-tab="list">Registros <span id="count"></span></button>
+    <button role="tab" aria-selected="false" data-tab="list">Registros <span id="count"></span><span class="tabdot" id="tabdot"></span></button>
     <button role="tab" aria-selected="false" data-tab="board">Tablero</button>
   </div>
 </header>
@@ -471,27 +513,47 @@
   const MODO_COORD = new URLSearchParams(location.search).get('modo') === 'coordinador';
   const persistirLocal = () => { try { localStorage.setItem('reg_demo', JSON.stringify(registros.slice(0,200))); } catch {} };
 
-  // [CORREGIDO] Las fotos de la demo vivían solo en memoria y se perdían al recargar la página.
-  // Ahora se guardan en localStorage bajo 'reg_demo_fotos' (registroId → lista de dataURLs).
-  // localStorage admite ~5 MB: si no entran todas, se descartan primero las de los registros más viejos.
-  let fotosLocal = {};
-  function guardarFotosLocal(){
-    const LIMITE = 4 * 1024 * 1024;        // presupuesto en caracteres, con margen bajo los ~5 MB típicos
-    const sub = {}; let total = 0;
-    for (const r of registros){            // registros va de más nuevo a más viejo
-      const f = fotosLocal[r.id]; if (!f) continue;
-      const peso = f.reduce((n, s) => n + s.length, 0);
-      if (total + peso > LIMITE) break;
-      sub[r.id] = f; total += peso;
-    }
-    for (;;){
-      try { localStorage.setItem('reg_demo_fotos', JSON.stringify(sub)); fotosLocal = sub; return; }
-      catch {
-        const ids = Object.keys(sub); if (!ids.length) return;
-        delete sub[ids[ids.length - 1]];   // no entró: saco el más viejo y vuelvo a intentar
-      }
-    }
+  // [CORREGIDO · fotos] Las fotos del celular iban a localStorage, que admite ~5 MB: 3 o 4 registros con
+  // fotos sin señal y los más viejos se enviaban sin fotos. Ahora van a IndexedDB (registroId → lista de
+  // dataURLs), que admite cientos de MB. Si el navegador no lo permite, quedan en memoria hasta cerrar.
+  const idb = (() => {
+    let abierta = null;
+    const abrir = () => abierta || (abierta = new Promise((res, rej) => {
+      try {
+        const rq = indexedDB.open('reg_demo', 1);
+        rq.onupgradeneeded = () => rq.result.createObjectStore('fotos');
+        rq.onsuccess = () => res(rq.result);
+        rq.onerror = () => rej(rq.error);
+      } catch (e) { rej(e); }
+    }));
+    const op = async (modo, fn) => {
+      const d = await abrir();
+      return new Promise((res, rej) => {
+        const tx = d.transaction('fotos', modo); const rq = fn(tx.objectStore('fotos'));
+        tx.oncomplete = () => res(rq && rq.result); tx.onerror = () => rej(tx.error);
+      });
+    };
+    return {
+      get:  id => op('readonly',  s => s.get(id)),
+      put:  (id, v) => op('readwrite', s => s.put(v, id)),
+      del:  id => op('readwrite', s => s.delete(id)),
+      keys: () => op('readonly',  s => s.getAllKeys()),
+    };
+  })();
+  const memFotos = {};                                   // respaldo si IndexedDB falla (incógnito, navegador raro)
+  async function guardarFotos(id, arr){ memFotos[id] = arr; try { await idb.put(id, arr); } catch (e) { console.warn('IndexedDB no disponible', e); } }
+  async function leerFotos(id){ try { const v = await idb.get(id); if (v) return v; } catch {} return memFotos[id] || []; }
+  async function podarFotos(){                           // borra fotos de registros que ya salieron de la lista (tope 200)
+    try { const vivos = new Set(registros.map(r => r.id)); for (const k of await idb.keys()) if (!vivos.has(k)) await idb.del(k); } catch {}
   }
+  async function migrarFotosViejas(){                    // pasa a IndexedDB lo que hubiera quedado en localStorage
+    try {
+      const raw = localStorage.getItem('reg_demo_fotos'); if (!raw) return;
+      for (const [id, arr] of Object.entries(JSON.parse(raw))) await guardarFotos(id, arr);
+      localStorage.removeItem('reg_demo_fotos');
+    } catch {}
+  }
+  try { navigator.storage?.persist?.(); } catch {}      // le pide al navegador que no borre el almacenamiento por su cuenta
 
   // ---- utilidades ----
   const toast = (msg, cls='') => {
@@ -535,6 +597,11 @@
     const v = $('#view-'+tab); v.style.animation='none'; void v.offsetWidth; v.style.animation='rise .4s cubic-bezier(.2,.8,.2,1)';
     if (tab==='list') renderList(); if (tab==='board') renderBoard();
     if (MODO_COORD && !db && tab!=='form') cargarCentral();   // [NUEVO · envío] coordinador: refresca desde la planilla
+    if (tab==='list' && !MODO_COORD && !db){                  // [NUEVO · devolución] al abrir Registros, las devoluciones dejan de ser "nuevas"
+      let hubo = false;
+      registros.forEach(r => { if (r.devolucion && !r.devolucionVista){ r.devolucionVista = true; hubo = true; } });
+      if (hubo){ persistirLocal(); actualizarPuntoTab(); }    // el resaltado queda hasta el próximo render
+    }
   }));
 
   // ---- traslada ----
@@ -622,13 +689,15 @@
     if (!db){
       const id = uid(); const reg = { ...d, id, nFotos: fotos.length, createdAt: Date.now() };
       if (FLOW_URL) reg.enviado = false;                     // [NUEVO · envío] pendiente hasta que el script confirme
-      registros.unshift(reg); fotosLocal[id] = fotos.slice();
+      const fotosReg = fotos.slice();                        // copia: limpiar() vacía "fotos" enseguida
+      registros.unshift(reg);
       persistirLocal();
-      guardarFotosLocal();                                   // [CORREGIDO] persiste las fotos junto con el registro
+      await guardarFotos(id, fotosReg);                      // [CORREGIDO · fotos] a IndexedDB, junto con el registro
+      podarFotos();
       limpiar(); renderList(); const dn=$('#done'); dn.classList.add('show'); setTimeout(()=>dn.classList.remove('show'),1900); window.scrollTo({top:0,behavior:'smooth'});
       // [NUEVO · envío] Se envía DESPUÉS de guardar: el registro nunca se pierde aunque no haya señal.
       if (FLOW_URL){
-        const ok = await enviarAlFlujo(reg, fotosLocal[id]);
+        const ok = await enviarAlFlujo(reg, fotosReg);
         reg.enviado = ok; persistirLocal(); renderList();
         toast(ok ? 'Enviado a los coordinadores' : 'Sin conexión: se enviará solo cuando vuelva la señal', ok ? 'ok' : 'err');
       }
@@ -665,7 +734,7 @@
   }
 
   // [NUEVO · envío] Reintenta los registros que quedaron sin enviar (al abrir la app, al volver la señal
-  // o con el botón Reintentar). Si las fotos de un registro viejo ya no están en localStorage, va sin fotos.
+  // o con el botón Reintentar). Las fotos se leen de IndexedDB.
   let reintentando = false;
   async function reintentarPendientes(manual){
     if (!FLOW_URL || reintentando) return;
@@ -673,7 +742,7 @@
     if (!pend.length) return;
     reintentando = true; let n = 0;
     try {
-      for (const r of pend){ if (await enviarAlFlujo(r, fotosLocal[r.id])) { r.enviado = true; n++; } }
+      for (const r of pend){ if (await enviarAlFlujo(r, await leerFotos(r.id))) { r.enviado = true; n++; } }
     } finally { reintentando = false; }
     persistirLocal(); renderList();
     if (n) toast(`${n} registro${n>1?'s':''} pendiente${n>1?'s':''} enviado${n>1?'s':''}`, 'ok');
@@ -704,7 +773,9 @@
     if (!FLOW_URL){ toast('Falta configurar FLOW_URL en el HTML', 'err'); return; }
     try {
       const res = await pedirCentral();
+      nuevoDesde = vistoHasta || Infinity;                   // [NUEVO · campana] lo posterior a la última mirada lleva "Nuevo" (la primera vez, nada)
       registros = res.registros || []; renderList(); renderBoard();
+      marcarVisto();                                         // [NUEVO · campana] ya lo vio: contador a cero
     } catch (e){
       toast(e.message === 'Sin clave' ? 'Necesitás la clave de coordinador' : 'No se pudieron cargar los registros: ' + e.message, 'err');
     }
@@ -717,20 +788,26 @@
   });
 
   // ---- listado ----
-  function renderList(){
-    const q = $('#q').value.trim().toLowerCase();
-    const rows = registros.filter(r => !q || [r.evento, r.movil, r.medico, r.paciente].some(x => String(x||'').toLowerCase().includes(q)));
-    $('#count').textContent = registros.length ? `(${registros.length})` : '';
-    if (!rows.length){
-      const vacio = q ? 'Sin resultados para esa búsqueda.' : (MODO_COORD && !db ? 'Todavía no hay registros enviados por el equipo.' : 'Todavía no hay registros cargados.');
-      $('#list').innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg>${vacio}</div>`;
-      return;
-    }
-    // [NUEVO · envío] En modo campo con script configurado, cada registro muestra si ya llegó a los coordinadores
-    const estadoEnvio = r => (!FLOW_URL || db || MODO_COORD) ? '' :
-      r.enviado ? `<div class="estado"><span class="pill si">Enviado a coordinadores</span></div>`
-                : `<div class="estado"><span class="pill pend">Pendiente de envío</span><button type="button" class="link retry">Reintentar</button></div>`;
-    $('#list').innerHTML = rows.map(r => `
+  // [NUEVO · coordinador] estado del listado paginado
+  const POR_PAGINA = 20;
+  let pagina = 0;
+  const abiertos = new Set();                      // ids de tarjetas desplegadas, para que sobrevivan al re-render
+  let nuevoDesde = Infinity;                       // los registros posteriores a esta marca llevan la etiqueta "Nuevo"
+  let tituloBase = document.title;
+  const fmtFechaHora = ts => { const d = new Date(ts); const p=n=>String(n).padStart(2,'0'); return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`; };
+  const actualizarPuntoTab = () => $('#tabdot').classList.toggle('on', registros.some(r => r.devolucion && !r.devolucionVista));
+
+  // [NUEVO · envío] En modo campo con script configurado, cada registro muestra si ya llegó a los coordinadores
+  const estadoEnvio = r => (!FLOW_URL || db || MODO_COORD) ? '' :
+    r.enviado ? `<div class="estado"><span class="pill si">Enviado a coordinadores</span></div>`
+              : `<div class="estado"><span class="pill pend">Pendiente de envío</span><button type="button" class="link retry">Reintentar</button></div>`;
+  // [NUEVO · devolución] lo que escribió el coordinador, visto desde el celular de campo
+  const bloqueDevolucion = r => !r.devolucion ? '' :
+    `<div class="devol ${r.devolucionVista ? '' : 'nueva'}"><b>Devolución del coordinador</b><small>${fmtFechaHora(r.devolucion.fecha)}</small><p>${esc(r.devolucion.texto)}</p></div>`;
+  const botonFotos = r => r.nFotos ? `<button type="button" class="link fotos-btn">Ver ${r.nFotos} foto${r.nFotos>1?'s':''}</button>` : `<span class="hint">Sin fotos</span>`;
+
+  // Tarjeta completa (modo campo): todos los datos a la vista, estado de envío y devolución si la hay
+  const tarjetaCampo = r => `
       <article class="rec" data-id="${esc(r.id)}">
         <div class="top"><b>${esc(r.evento)}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
         <dl>
@@ -741,13 +818,125 @@
           <dt>Traslada</dt><dd><span class="pill ${r.traslada==='si'?'si':'no'}">${r.traslada==='si'?'Sí':'No'}</span></dd>
           ${r.obs ? `<dt>Obs.</dt><dd>${esc(r.obs)}</dd>` : ''}
         </dl>
-        <div class="fotos">${r.nFotos ? `<button type="button" class="link fotos-btn">Ver ${r.nFotos} foto${r.nFotos>1?'s':''}</button>` : `<span class="hint">Sin fotos</span>`}</div>
+        <div class="fotos">${botonFotos(r)}</div>
         ${estadoEnvio(r)}
-      </article>`).join('');
+        ${bloqueDevolucion(r)}
+      </article>`;
+
+  // [NUEVO · coordinador] Tarjeta compacta: dos líneas de resumen; se toca y se despliega el detalle con fotos y devolución
+  const tarjetaCompacta = r => `
+      <article class="rec compact ${abiertos.has(r.id) ? 'open' : ''}" data-id="${esc(r.id)}">
+        <div class="top"><b>${esc(r.evento)}${r.createdAt > nuevoDesde ? ' <span class="pill nuevo">Nuevo</span>' : ''}${r.devolucion ? ' <span class="pill resp">Respondido</span>' : ''}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
+        <div class="sub">Móvil ${esc(r.movil)} · ${esc(r.paciente||'')}${r.edad ? ` (${esc(r.edad)})` : ''} · <span class="pill ${r.traslada==='si'?'si':'no'}">${r.traslada==='si'?'Traslada':'No traslada'}</span> · ${r.nFotos||0} foto${r.nFotos===1?'':'s'}</div>
+        <div class="detalle">
+          <dl>
+            <dt>Médico</dt><dd>${esc(r.medico)}</dd>
+            <dt>Motivo</dt><dd>${esc(r.motivo)}</dd>
+            ${r.obs ? `<dt>Obs.</dt><dd>${esc(r.obs)}</dd>` : ''}
+          </dl>
+          <div class="fotos">${botonFotos(r)}</div>
+          <div class="devol-box">
+            <label>Devolución al personal de campo</label>
+            <textarea class="devol-txt" placeholder="Ej.: Falta el destino del traslado. Gracias por las fotos.">${esc(r.devolucion?.texto||'')}</textarea>
+            <div class="devol-actions"><small class="devol-info">${r.devolucion ? 'Enviada el ' + fmtFechaHora(r.devolucion.fecha) : 'Sin devolución'}</small><button type="button" class="link devol-send">Enviar devolución</button></div>
+          </div>
+        </div>
+      </article>`;
+
+  function renderList(){
+    const q = $('#q').value.trim().toLowerCase();
+    const rows = registros.filter(r => !q || [r.evento, r.movil, r.medico, r.paciente].some(x => String(x||'').toLowerCase().includes(q)));
+    $('#count').textContent = registros.length ? `(${registros.length})` : '';
+    actualizarPuntoTab();
+    if (!rows.length){
+      const vacio = q ? 'Sin resultados para esa búsqueda.' : (MODO_COORD && !db ? 'Todavía no hay registros enviados por el equipo.' : 'Todavía no hay registros cargados.');
+      $('#list').innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg>${vacio}</div>`;
+      return;
+    }
+    if (MODO_COORD && !db){
+      // [NUEVO · coordinador] de a POR_PAGINA registros, con flechas arriba y abajo
+      const total = rows.length, paginas = Math.ceil(total / POR_PAGINA);
+      pagina = Math.min(Math.max(0, pagina), paginas - 1);
+      const desde = pagina * POR_PAGINA, hasta = Math.min(total, desde + POR_PAGINA);
+      const nav = `<div class="pager"><button type="button" class="pg" data-d="-1" ${pagina===0?'disabled':''} aria-label="Anterior">‹</button><span>${desde+1}–${hasta} de ${total}</span><button type="button" class="pg" data-d="1" ${pagina>=paginas-1?'disabled':''} aria-label="Siguiente">›</button></div>`;
+      $('#list').innerHTML = nav + rows.slice(desde, hasta).map(tarjetaCompacta).join('') + (total > POR_PAGINA ? nav : '');
+      return;
+    }
+    $('#list').innerHTML = rows.map(tarjetaCampo).join('');
   }
-  $('#q').addEventListener('input', renderList);
+  $('#q').addEventListener('input', () => { pagina = 0; renderList(); });
+
+  // [NUEVO · devolución] El coordinador escribe en la tarjeta; se guarda en la planilla y el celular de campo lo recibe
+  async function enviarDevolucion(btn){
+    const art = btn.closest('.rec'); const id = art.dataset.id;
+    const texto = art.querySelector('.devol-txt').value.trim();
+    if (!texto){ toast('Escribí la devolución primero', 'err'); return; }
+    const clave = claveCoord(); if (!clave) return;
+    btn.disabled = true; btn.textContent = 'Enviando…';
+    try {
+      const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify({ accion: 'devolucion', clave, id, texto }) });
+      const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script');
+      const reg = registros.find(x => x.id === id); if (reg) reg.devolucion = res.devolucion;
+      art.querySelector('.devol-info').textContent = 'Enviada el ' + fmtFechaHora(res.devolucion.fecha);
+      if (!art.querySelector('.pill.resp')) art.querySelector('.top b').insertAdjacentHTML('beforeend', ' <span class="pill resp">Respondido</span>');
+      toast('Devolución enviada. La verá en su celular.', 'ok');
+    } catch (e){ toast('No se pudo enviar: ' + e.message, 'err'); }
+    finally { btn.disabled = false; btn.textContent = 'Enviar devolución'; }
+  }
+
+  // [NUEVO · devolución] El celular de campo pregunta cada 60 s si alguno de sus registros enviados tiene devolución nueva
+  async function sondearDevoluciones(){
+    if (MODO_COORD || !FLOW_URL || db || document.hidden) return;
+    const ids = registros.filter(r => r.enviado).map(r => r.id).slice(0, 200);
+    if (!ids.length) return;
+    try {
+      const u = new URL(FLOW_URL); u.searchParams.set('devoluciones', ids.join(','));
+      const res = await (await fetch(u)).json(); if (!res.ok) return;
+      let nuevas = 0;
+      for (const r of registros){
+        const d = res.devoluciones?.[r.id];
+        if (d && (!r.devolucion || r.devolucion.fecha !== d.fecha)){ r.devolucion = d; r.devolucionVista = false; nuevas++; }
+      }
+      if (nuevas){ persistirLocal(); renderList(); toast('Tenés una devolución del coordinador', 'ok'); try { navigator.vibrate?.([120, 60, 120]); } catch {} }
+    } catch {}
+  }
+
+  // [NUEVO · campana] Cada 30 s le pregunta al script cuántos registros llegaron después de la última vez que el
+  // coordinador miró la lista. Funciona con la app abierta en pantalla; con la app cerrada no hay aviso.
+  let vistoHasta = 0; try { vistoHasta = +(localStorage.getItem('coord_visto') || 0); } catch {}
+  let nuevosPrev = 0;
+  const claveGuardada = () => { try { return localStorage.getItem('coord_clave') || ''; } catch { return ''; } };
+  function avisar(){
+    try { navigator.vibrate?.([120, 60, 120]); } catch {}
+    try {                                                  // un "tin" corto; el navegador lo permite después del primer toque en la página
+      const ac = new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(); const g = ac.createGain();
+      o.frequency.value = 880; g.gain.value = 0.08; o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.18);
+    } catch {}
+  }
+  async function sondearNuevos(){
+    if (!MODO_COORD || !FLOW_URL || db || document.hidden || !claveGuardada()) return;
+    try {
+      const res = await pedirCentral({ desde: vistoHasta, solo: 'conteo' });
+      const n = res.nuevos || 0;
+      $('#bell-n').textContent = n > 99 ? '99+' : n; $('#bell-n').classList.toggle('on', n > 0);
+      document.title = (n ? `(${n}) ` : '') + tituloBase;
+      if (n > nuevosPrev){ avisar(); const bell = $('#bell'); bell.classList.remove('ring'); void bell.offsetWidth; bell.classList.add('ring'); }
+      nuevosPrev = n;
+    } catch {}
+  }
+  function marcarVisto(){
+    vistoHasta = registros.reduce((m, r) => Math.max(m, r.createdAt || 0), vistoHasta);
+    try { localStorage.setItem('coord_visto', String(vistoHasta)); } catch {}
+    nuevosPrev = 0; $('#bell-n').classList.remove('on'); document.title = tituloBase;
+  }
+  $('#bell').addEventListener('click', () => $('.tabs button[data-tab="list"]').click());   // la campana lleva a la lista y la recarga
   $('#list').addEventListener('click', async e => {
     if (e.target.closest('button.retry')){ reintentarPendientes(true); return; }   // [NUEVO · envío]
+    const pg = e.target.closest('button.pg');                                       // [NUEVO · coordinador] flechas del paginado
+    if (pg){ pagina += +pg.dataset.d; renderList(); $('#view-list').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    const send = e.target.closest('button.devol-send');                             // [NUEVO · devolución]
+    if (send){ enviarDevolucion(send); return; }
+    if (e.target.closest('.devol-box')) return;                                     // escribir en la caja no pliega la tarjeta
     const b = e.target.closest('button.fotos-btn');
     if (b){
       const art = b.closest('.rec'); const id = art.dataset.id;
@@ -760,15 +949,19 @@
           const rec = registros.find(x => x.id === id);
           list = await Promise.all((rec?.fotoIds || []).map(async (fid, orden) => ({ data: (await pedirCentral({ foto: fid })).data, orden })));
         }
-        else list = (fotosLocal[id]||[]).map((data,orden)=>({data,orden}));
-        // [CORREGIDO] Antes decía que las fotos no se conservaban al recargar; ahora sí, salvo que no hayan entrado en localStorage
+        else list = (await leerFotos(id)).map((data,orden)=>({data,orden}));   // [CORREGIDO · fotos] desde IndexedDB
         if (!list.length){ b.disabled=false; b.textContent='No se encontraron las fotos de este registro'; return; }
         art.querySelector('.fotos').innerHTML = `<div class="grid">${list.map((f,i)=>`<div class="thumb"><img src="${f.data}" alt="Foto ${i+1}"></div>`).join('')}</div>`;
       } catch { b.disabled=false; b.textContent='No se pudieron cargar las fotos'; }
       return;
     }
     const img = e.target.closest('.thumb img');
-    if (img){ $('#lb img').src = img.src; $('#lb').classList.add('open'); }
+    if (img){ $('#lb img').src = img.src; $('#lb').classList.add('open'); return; }
+    const cab = e.target.closest('.rec.compact .top, .rec.compact .sub');          // [NUEVO · coordinador] desplegar / plegar
+    if (cab){
+      const art = cab.closest('.rec'); art.classList.toggle('open');
+      art.classList.contains('open') ? abiertos.add(art.dataset.id) : abiertos.delete(art.dataset.id);
+    }
   });
   $('#lb').addEventListener('click', () => $('#lb').classList.remove('open'));
 
@@ -864,24 +1057,34 @@
     if (!db){
       if (MODO_COORD){
         // [NUEVO · envío] Modo coordinador: sin formulario; Registros y Tablero salen de la planilla central
+        document.title = tituloBase = 'Coordinación · Emergencias';
+        $('.brand .tag').textContent = 'COORDINADOR';            // [NUEVO] etiqueta según el link
+        $('#bell').classList.remove('hidden');                   // [NUEVO · campana]
         $('.tabs button[data-tab="form"]').classList.add('hidden');
-        $('#view-list .lead').textContent = 'Registros enviados por el equipo de campo. Tocá la pestaña para actualizar.';
-        $('.tabs button[data-tab="list"]').click();          // dispara cargarCentral (pide la clave la primera vez)
+        $('#view-list .lead').textContent = 'Registros enviados por el equipo de campo. Tocá una tarjeta para ver el detalle; tocá la pestaña para actualizar.';
+        $('.tabs button[data-tab="list"]').click();              // dispara cargarCentral (pide la clave la primera vez)
+        setInterval(sondearNuevos, 30000);                       // [NUEVO · campana] cada 30 s
+        document.addEventListener('visibilitychange', sondearNuevos);
         return;
       }
       // Modo campo
       if (FLOW_URL){
         // [NUEVO · envío] con script configurado, campo ve solo formulario y registros propios
+        document.title = tituloBase = 'Registro de atención · Emergencias';
+        $('.brand .tag').textContent = 'PERSONAL DE CAMPO';      // [NUEVO] etiqueta según el link
         $('.tabs button[data-tab="board"]').classList.add('hidden');
         $('#offline').textContent = 'Los registros se guardan en este celular y se envían a los coordinadores al guardar. Si no hay señal, quedan pendientes y se envían solos al volver la conexión.';
         $('#view-form .foot').textContent = 'Cada registro se envía a los coordinadores al guardarlo.';
       }
       $('#offline').classList.remove('hidden');
       try { registros = JSON.parse(localStorage.getItem('reg_demo')||'[]'); } catch { registros = []; }
-      try { fotosLocal = JSON.parse(localStorage.getItem('reg_demo_fotos')||'{}'); } catch { fotosLocal = {}; }   // [CORREGIDO] recupera las fotos guardadas
+      await migrarFotosViejas();                                         // [CORREGIDO · fotos] localStorage → IndexedDB, una sola vez
       renderList();
       reintentarPendientes();                                            // [NUEVO · envío] lo que quedó sin señal
       window.addEventListener('online', () => reintentarPendientes());   // [NUEVO · envío] y al volver la conexión
+      sondearDevoluciones();                                             // [NUEVO · devolución] al abrir, cada 60 s y al volver a la app
+      setInterval(sondearDevoluciones, 60000);
+      document.addEventListener('visibilitychange', sondearDevoluciones);
       return;
     }
     unsub = db.collection('registros').orderBy('createdAt','desc').limit(200).onSnapshot(
