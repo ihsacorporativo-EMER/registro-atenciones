@@ -300,7 +300,8 @@
   /* [NUEVO · período] ventana para elegir el período de descarga */
   .modal{position:fixed;inset:0;background:rgba(7,42,102,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;place-items:center;z-index:30;padding:16px}
   .modal.open{display:grid;animation:fade .2s}
-  .modal .box{background:var(--card);border-radius:18px;padding:20px 20px 16px;width:min(520px,100%);box-shadow:var(--shadow);animation:pop .3s cubic-bezier(.2,.8,.2,1)}
+  /* [CORREGIDO · modal] en celular el cuadro no puede superar la pantalla: se desplaza adentro y el botón queda a la vista */
+  .modal .box{background:var(--card);border-radius:18px;padding:20px 20px 16px;width:min(520px,100%);box-shadow:var(--shadow);animation:pop .3s cubic-bezier(.2,.8,.2,1);max-height:calc(100vh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
   .modal h3{margin:0 0 4px;font-size:17px}
   .periodos{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
   .periodos button{border:1.5px solid var(--line);background:var(--field);color:var(--ink);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:700;cursor:pointer}
@@ -786,20 +787,13 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-20 g';
+  const VERSION = '2026-09-20 h';
   const NOVEDADES = [
-    'Nuevo link de usuarios: cada persona entra con su ID y PIN, y sus registros quedan firmados con su nombre y rol.',
-    'Coordinación tiene el panel "Usuarios": aprueba solicitudes, asigna roles y restablece PIN.',
-    'Los usuarios con rol Coordinador o Supervisor entran directo al panel de coordinación con su propia cuenta.',
-    'En el panel Usuarios se puede eliminar un usuario definitivamente, además de darlo de baja.',
-    'Los usuarios que no son médicos (chofer, enfermero, socorrista…) tienen el campo "Interviniente" para anotar quién atendió.',
-    'Cada registro recibe un número de 9 dígitos al llegar a la planilla, correlativo, que se ve en el detalle.',
-    'Nuevo modo administrador con la pestaña Configuración: archivar, borrar fotos, eliminar usuarios e importar paquetes ZIP.',
-    'En el Tablero, coordinación administra los mails que reciben copia de cada registro o el aviso mensual.',
-    'Móvil y Evento ahora se eligen de una lista que filtra al escribir. Si falta uno, "Solicitar agregar" se lo pide a coordinación y la respuesta llega a la campana.',
-    'Coordinación tiene la pestaña Catálogo: acepta o devuelve solicitudes y administra las listas de móviles y eventos.',
-    'Logo oficial de Grupo IHSA en la cabecera.',
-    'Cada registro y cada mensaje muestran quién lo cargó.',
+    'Móvil y Evento se eligen de una lista que filtra al escribir. Si falta uno, "Solicitar agregar" se lo pide a coordinación y la respuesta llega a la campana.',
+    'Coordinación tiene la pestaña Catálogo para aceptar solicitudes y administrar las listas de móviles y eventos.',
+    'Los usuarios que no son médicos tienen el campo "Interviniente" para anotar quién atendió.',
+    'Cada registro recibe un número de 9 dígitos al llegar a la planilla; se ve en el detalle.',
+    'Logo de Grupo IHSA en la cabecera, y este aviso ahora se puede desplazar en el celular.',
   ];
   let novedadPendiente = false;
 
