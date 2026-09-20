@@ -264,9 +264,13 @@
   .notice .link{border:0;background:none;color:var(--brand);font-weight:700;cursor:pointer;padding:0;text-decoration:underline;margin-left:6px;font-size:14px}
   /* [NUEVO · migración] cartel de aviso mensual y sección del tablero */
   .alerta-acciones{display:inline-flex;gap:12px;flex-wrap:wrap;margin-left:2px}
-  #migra .box p{margin:0 0 8px}
-  #migra label.chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--muted);margin:0 0 8px}
-  #migra .primary{min-height:42px;padding:9px 16px;font-size:15px;border-radius:10px}
+  #migra .box p,#config .box p{margin:0 0 8px}
+  #migra label.chk,#config label.chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--muted);margin:0 0 8px}
+  #migra .primary,#config .primary{min-height:42px;padding:9px 16px;font-size:15px;border-radius:10px}
+  /* [NUEVO · mails] filas de direcciones */
+  .mailrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--ink)}
+  .mailrow b{flex:1;min-width:160px;word-break:break-all}
+  .mailrow label{display:flex;gap:5px;align-items:center;color:var(--muted);font-size:12.5px}
   .tabla-titulo{margin:22px 0 8px;font-size:15px;font-weight:800}   /* [CORREGIDO · tablero] título de la tabla, ahora al final */
   /* [NUEVO · período] ventana para elegir el período de descarga */
   .modal{position:fixed;inset:0;background:rgba(7,42,102,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;place-items:center;z-index:30;padding:16px}
@@ -299,6 +303,7 @@
   .usec{font-size:13px;font-weight:800;margin:16px 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
   .pill.rol{background:color-mix(in srgb,var(--brand) 12%,var(--card));color:var(--brand)}
   .pill.reset{background:color-mix(in srgb,var(--accent) 15%,var(--card));color:var(--accent-deep)}
+  .link-btn.peligro{color:var(--danger)}
   #cr-thumb .thumb{max-width:110px}
 
   /* Lightbox */
@@ -406,7 +411,8 @@
     <button role="tab" aria-selected="true" data-tab="form">Nuevo registro</button>
     <button role="tab" aria-selected="false" data-tab="list">Registros <span id="count"></span><span class="tabdot" id="tabdot"></span></button>
     <button role="tab" aria-selected="false" data-tab="board">Tablero</button>
-    <button role="tab" aria-selected="false" data-tab="users" class="hidden">Usuarios <span id="ucount"></span></button><!-- [NUEVO · usuarios] solo coordinador -->
+    <button role="tab" aria-selected="false" data-tab="users" class="hidden">Usuarios <span id="ucount"></span></button><!-- [NUEVO · usuarios] coordinador y administrador -->
+    <button role="tab" aria-selected="false" data-tab="config" class="hidden">Configuración</button><!-- [NUEVO · admin] solo administrador -->
   </div>
 </header>
 
@@ -579,6 +585,30 @@
     <div id="ulist"></div>
   </div>
 
+  <!-- ===== [NUEVO · admin] CONFIGURACIÓN (solo administrador) ===== -->
+  <div id="view-config" class="hidden">
+    <h1>Configuración</h1>
+    <p class="lead">Limpieza del sistema e importación de paquetes. Solo el administrador ve esta pestaña.</p>
+    <div class="mini" id="config" style="margin-top:0">
+      <div class="box">
+        <h3>Archivar lo descargado</h3>
+        <p class="hint">Mueve los registros con fecha hasta el día elegido a una hoja "Archivo AAAA" de la misma planilla. La lista del coordinador queda liviana. Hacelo después de descargar el paquete desde el Tablero.</p>
+        <label class="chk"><input type="checkbox" id="arch-fotos"> Borrar también sus fotos de Drive (quedan en el paquete; van a la papelera 30 días)</label>
+        <div class="filters" style="grid-template-columns:1fr auto;margin:0">
+          <div><label for="arch-hasta">Hasta</label><input id="arch-hasta" type="date"></div>
+          <button class="primary" id="archivar" type="button" style="background:var(--brand)">Archivar</button>
+        </div>
+      </div>
+      <div class="box">
+        <h3>Importar paquete</h3>
+        <p class="hint">Subí un ZIP bajado con "Descargar paquete". Los registros vuelven a la lista activa con sus fotos y conversaciones. Los que ya existen se saltean. Hacelo desde una computadora.</p>
+        <input type="file" id="imp-zip" accept=".zip,application/zip" style="margin-bottom:10px;max-width:100%">
+        <button class="primary" id="imp-ok" type="button" disabled>Importar</button>
+        <p class="hint" id="imp-info" style="margin:8px 0 0"></p>
+      </div>
+    </div>
+  </div>
+
 <!-- ===== TABLERO ===== -->
   <div id="view-board" class="hidden" style="max-width:none">
     <h1>Tablero</h1>
@@ -605,13 +635,14 @@
         <p class="hint">Un ZIP con el Excel (registros, resúmenes y conversaciones) y las fotos en una carpeta por registro. Usa el rango de fechas de arriba. Conviene hacerlo desde una computadora.</p>
         <button class="primary" id="paquete" type="button">Descargar paquete</button>
       </div>
+      <!-- [NUEVO · mails] coordinador y administrador -->
       <div class="box">
-        <h3>Archivar lo descargado</h3>
-        <p class="hint">Mueve los registros con fecha hasta el día elegido a una hoja "Archivo AAAA" de la misma planilla. La lista del coordinador queda liviana. Hacelo después de descargar el paquete.</p>
-        <label class="chk"><input type="checkbox" id="arch-fotos"> Borrar también sus fotos de Drive (quedan en el paquete; van a la papelera 30 días)</label>
-        <div class="filters" style="grid-template-columns:1fr auto;margin:0">
-          <div><label for="arch-hasta">Hasta</label><input id="arch-hasta" type="date"></div>
-          <button class="primary" id="archivar" type="button" style="background:var(--brand)">Archivar</button>
+        <h3>Mails que reciben información</h3>
+        <p class="hint">Cada dirección puede recibir una copia de cada registro con sus fotos, el aviso mensual de migración, o los dos.</p>
+        <div id="mails-lista" class="hint">Cargando…</div>
+        <div class="filters" style="grid-template-columns:1fr auto;margin:8px 0 0">
+          <div><label for="mail-nuevo">Agregar dirección</label><input id="mail-nuevo" type="email" placeholder="nombre@empresa.com" autocomplete="off"></div>
+          <button class="primary" id="mail-add" type="button" style="background:var(--brand)">Agregar</button>
         </div>
       </div>
     </div>
@@ -697,11 +728,16 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-19 f';
+  const VERSION = '2026-09-20 c';
   const NOVEDADES = [
     'Nuevo link de usuarios: cada persona entra con su ID y PIN, y sus registros quedan firmados con su nombre y rol.',
     'Coordinación tiene el panel "Usuarios": aprueba solicitudes, asigna roles y restablece PIN.',
     'Los usuarios con rol Coordinador o Supervisor entran directo al panel de coordinación con su propia cuenta.',
+    'En el panel Usuarios se puede eliminar un usuario definitivamente, además de darlo de baja.',
+    'Los usuarios que no son médicos (chofer, enfermero, socorrista…) tienen el campo "Interviniente" para anotar quién atendió.',
+    'Cada registro recibe un número de 9 dígitos al llegar a la planilla, correlativo, que se ve en el detalle.',
+    'Nuevo modo administrador con la pestaña Configuración: archivar, borrar fotos, eliminar usuarios e importar paquetes ZIP.',
+    'En el Tablero, coordinación administra los mails que reciben copia de cada registro o el aviso mensual.',
     'Cada registro y cada mensaje muestran quién lo cargó.',
   ];
   let novedadPendiente = false;
@@ -711,16 +747,23 @@
   //    si no hay señal queda "pendiente" y se reintenta solo al volver la conexión.
   //  - modo coordinador (?modo=coordinador): Registros y Tablero muestran lo que envió todo el equipo,
   //    leído de la planilla central. Pide la clave definida en Code.gs.
-  const MODO_COORD = new URLSearchParams(location.search).get('modo') === 'coordinador';
+  // [NUEVO · admin] ?modo=administrador: todo lo del coordinador más la pestaña Configuración (limpieza e importación).
+  // Pide la clave de administrador (CLAVE_ADMIN en el script) o la sesión de un usuario con rol Administrador.
+  const modoURL = new URLSearchParams(location.search).get('modo');
+  const MODO_ADMIN = modoURL === 'administrador';
+  const MODO_COORD = modoURL === 'coordinador' || MODO_ADMIN;
   // [NUEVO · usuarios] ?modo=usuario: igual que campo, pero con ingreso por ID y PIN. La sesión queda guardada en el
   // celular. Los registros locales se guardan por usuario (reg_u_<ID>), así dos personas en el mismo teléfono no se mezclan.
   const MODO_USUARIO = new URLSearchParams(location.search).get('modo') === 'usuario';
   let sesion = null; try { sesion = JSON.parse(localStorage.getItem('sesion_usuario') || 'null'); } catch {}
   const claveLocal = () => (MODO_USUARIO && sesion) ? 'reg_u_' + sesion.id : 'reg_demo';
   // [NUEVO · roles coord] Coordinador y Supervisor usan el panel de coordinación con su propia sesión (sin clave compartida)
-  const ROLES_COORD = ['Coordinador', 'Supervisor'];
+  const ROLES_COORD = ['Coordinador', 'Supervisor', 'Administrador'];
   const esRolCoord = r => ROLES_COORD.includes(r);
+  const esRolAdmin = r => r === 'Administrador';
   const sesionCoord = () => (sesion && sesion.token && sesion.estado === 'activo' && esRolCoord(sesion.rol)) ? sesion : null;
+  const sesionAdmin = () => (sesionCoord() && esRolAdmin(sesion.rol)) ? sesion : null;
+  const esAdminActual = () => MODO_ADMIN || !!sesionAdmin();   // [NUEVO · admin] decide qué acciones de limpieza se muestran
   const persistirLocal = () => { try { localStorage.setItem(claveLocal(), JSON.stringify(registros.slice(0,200))); } catch {} };
 
   // [CORREGIDO · fotos] Las fotos del celular iban a localStorage, que admite ~5 MB: 3 o 4 registros con
@@ -789,12 +832,13 @@
   document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
     document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x===b));
     const tab = b.dataset.tab;
-    ['form','list','board','users','login'].forEach(n => $('#view-'+n).classList.toggle('hidden', tab!==n));   // [NUEVO · usuarios] + vistas users y login
+    ['form','list','board','users','config','login'].forEach(n => $('#view-'+n).classList.toggle('hidden', tab!==n));   // [NUEVO · usuarios / admin] + vistas users, config y login
     document.querySelector('main').classList.toggle('wide', tab==='board');
     const v = $('#view-'+tab); v.style.animation='none'; void v.offsetWidth; v.style.animation='rise .4s cubic-bezier(.2,.8,.2,1)';
     if (tab==='list') renderList(); if (tab==='board') renderBoard();
     if (MODO_COORD && !db && (tab==='list' || tab==='board')) cargarCentral();   // [NUEVO · envío] coordinador: refresca desde la planilla
     if (tab==='users') cargarUsuarios();                        // [NUEVO · usuarios]
+    if (tab==='board' && MODO_COORD && !db) cargarMails();      // [NUEVO · mails]
     if (tab==='list' && !db && FLOW_URL) marcarVisto();       // [NUEVO · campana] al abrir Registros no queda nada "sin ver" (las etiquetas Nuevo quedan hasta el próximo render)
   }));
 
@@ -853,9 +897,12 @@
       fecha: v('fecha'), movil: v('movil'), evento: v('evento'), paciente: v('paciente'), edad: v('edad'), medico: v('medico'),
       motivo: v('motivo'), traslada, obs: v('obs'),
     };
-    if (MODO_USUARIO && sesion) data.medico = `${sesion.nombre} ${sesion.apellido}`;   // [NUEVO · usuarios] el interviniente es quien está logueado
+    // [NUEVO · interviniente] Si el usuario logueado es Médico, él es el interviniente y no se pide. Cualquier otro rol
+    // (Chofer, Enfermero, Socorrista, Coordinador…) escribe en "Interviniente" quién fue el médico o personal que intervino.
+    const esMedico = MODO_USUARIO && sesion && sesion.rol === 'Médico';
+    if (esMedico) data.medico = `${sesion.nombre} ${sesion.apellido}`;
     let ok = true;
-    for (const id of ['fecha','movil','evento','paciente','edad', ...(MODO_USUARIO && sesion ? [] : ['medico']), 'motivo']){
+    for (const id of ['fecha','movil','evento','paciente','edad', ...(esMedico ? [] : ['medico']), 'motivo']){
       const bad = !data[id]; $('#'+id).closest('.field').classList.toggle('invalid', bad); if (bad) ok = false;
     }
     if (!traslada){ ok = false; document.querySelectorAll('.seg button').forEach(b=> b.style.borderColor='var(--danger)'); }
@@ -939,8 +986,18 @@
       });
       const res = await r.json();
       if (!res.ok) throw new Error(res.error || 'Respuesta no válida del script');
+      if (res.id && res.id !== reg.id) await renombrarRegistro(reg, res.id);   // [NUEVO · id numérico] llegó el definitivo
       return true;
     } catch (e){ console.error(e); return false; }
+  }
+  // [NUEVO · id numérico] El script asigna el ID definitivo (9 dígitos). Se reemplaza el provisorio en el registro local
+  // y en sus fotos guardadas, así los mensajes y las ediciones posteriores usan el mismo número que la planilla.
+  async function renombrarRegistro(reg, nuevoId){
+    const viejo = reg.id; reg.idLocal = viejo; reg.id = nuevoId;
+    try { const f = await idb.get(viejo); if (f){ await idb.put(nuevoId, f); await idb.del(viejo); } } catch {}
+    if (memFotos[viejo]){ memFotos[nuevoId] = memFotos[viejo]; delete memFotos[viejo]; }
+    if (editandoId === viejo) editandoId = nuevoId;
+    persistirLocal();
   }
 
   // [NUEVO · envío] Reintenta los registros que quedaron sin enviar (al abrir la app, al volver la señal
@@ -968,12 +1025,21 @@
     }
     return c;
   }
-  // [NUEVO · roles coord] credencial para el script: la sesión de un Coordinador/Supervisor, o la clave maestra
-  const credCoord = () => sesionCoord() ? { token: sesion.token } : { clave: claveCoord() };
-  const hayCred = c => !!(c.token || c.clave);
+  // [NUEVO · admin] clave de administrador, guardada en el celular como la de coordinador
+  function claveAdmin(){
+    let c = ''; try { c = localStorage.getItem('admin_clave') || ''; } catch {}
+    if (!c){ c = (prompt('Contraseña de administrador') || '').trim(); if (c) try { localStorage.setItem('admin_clave', c); } catch {} }
+    return c;
+  }
+  // [NUEVO · roles coord] credencial para el script: en modo administrador, la sesión de un Administrador o la clave de
+  // administrador; en modo coordinador, la sesión de un Coordinador/Supervisor/Administrador o la clave maestra
+  const credCoord = () => MODO_ADMIN
+    ? (sesionAdmin() ? { token: sesion.token } : { claveAdmin: claveAdmin() })
+    : (sesionCoord() ? { token: sesion.token } : { clave: claveCoord() });
+  const hayCred = c => !!(c.token || c.clave || c.claveAdmin);
   function credRechazada(){                                 // el script no aceptó la credencial
-    if (sesionCoord()){ guardarSesion(null); toast('Tu sesión ya no es válida. Volvé a entrar.', 'err'); setTimeout(() => location.replace(location.pathname + '?modo=usuario'), 1500); }
-    else { try { localStorage.removeItem('coord_clave'); } catch {} }   // la vuelve a pedir
+    if ((MODO_ADMIN && sesionAdmin()) || (!MODO_ADMIN && sesionCoord())){ guardarSesion(null); toast('Tu sesión ya no es válida. Volvé a entrar.', 'err'); setTimeout(() => location.replace(location.pathname + '?modo=usuario'), 1500); }
+    else { try { localStorage.removeItem(MODO_ADMIN ? 'admin_clave' : 'coord_clave'); } catch {} }   // la vuelve a pedir
   }
   async function pedirCentral(params){
     const cred = credCoord(); if (!hayCred(cred)) throw new Error('Sin clave');
@@ -1106,6 +1172,7 @@
       <article class="rec" data-id="${esc(r.id)}">
         <div class="top"><b>${esc(r.evento)}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
         <dl>
+          ${/^\d{9}$/.test(r.id) ? `<dt>N.º</dt><dd>${esc(r.id)}</dd>` : ''}
           <dt>Móvil</dt><dd>${esc(r.movil)}</dd>
           <dt>Paciente</dt><dd>${esc(r.paciente||'')}${r.edad?` · ${esc(r.edad)} años`:''}</dd>
           <dt>Médico</dt><dd>${esc(r.medico)}</dd>
@@ -1131,6 +1198,7 @@
         <div class="sub">Móvil ${esc(r.movil)} · ${esc(r.paciente||'')}${r.edad ? ` (${esc(r.edad)})` : ''} · <span class="pill ${r.traslada==='si'?'si':'no'}">${r.traslada==='si'?'Traslada':'No traslada'}</span> · ${r.nFotos||0} foto${r.nFotos===1?'':'s'} · ${esc(r.usuarioNombre || 'genérico')}</div>
         <div class="detalle">
           <dl>
+            ${/^\d{9}$/.test(r.id) ? `<dt>N.º</dt><dd>${esc(r.id)}</dd>` : ''}
             <dt>Cargado por</dt><dd>${esc(r.usuarioNombre || 'Personal de campo (genérico)')}${r.rol ? ` <span class="pill rol">${esc(r.rol)}</span>` : ''}</dd>
             <dt>Médico</dt><dd>${esc(r.medico)}</dd>
             <dt>Motivo</dt><dd>${esc(r.motivo)}</dd>
@@ -1234,7 +1302,7 @@
   // Campo: mensajes de coordinación no leídos (se cuenta acá). Al abrir Registros, todo vuelve a cero.
   let vistoHasta = 0; try { vistoHasta = +(localStorage.getItem('coord_visto') || 0); } catch {}
   let nuevosPrev = 0;
-  const claveGuardada = () => { if (sesionCoord()) return 'sesion'; try { return localStorage.getItem('coord_clave') || ''; } catch { return ''; } };   // [NUEVO · roles coord]
+  const claveGuardada = () => { if (MODO_ADMIN ? sesionAdmin() : sesionCoord()) return 'sesion'; try { return localStorage.getItem(MODO_ADMIN ? 'admin_clave' : 'coord_clave') || ''; } catch { return ''; } };   // [NUEVO · roles coord / admin]
   // [NUEVO · sonido] Doble bip corto, tipo handy: onda cuadrada, 1000 Hz y 800 Hz, 90 ms cada uno. El navegador
   // lo permite después del primer toque en la página. La vibración acompaña con el mismo ritmo.
   let audioCtx = null;
@@ -1538,6 +1606,7 @@
     try {
       const zip = new JSZip();
       zip.file('registros.xlsx', armarExcel(rows));
+      zip.file('datos.json', JSON.stringify(rows));   // [NUEVO · importar] la ficha completa de cada registro, para reimportar exacto
       const conFotos = rows.filter(r => r.fotoIds && r.fotoIds.length);
       const total = conFotos.reduce((n, r) => n + r.fotoIds.length, 0);
       let hechas = 0;
@@ -1600,7 +1669,9 @@
       $('#sesion-bar').classList.remove('hidden');
       $('#ses-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`; $('#ses-rol').textContent = sesion.rol || '';
       $('#ses-coord').classList.toggle('hidden', !esRolCoord(sesion.rol));   // [NUEVO · roles coord] vuelta al panel
-      $('#medico').closest('.field').classList.add('hidden');
+      // [NUEVO · interviniente] Médico: el campo se oculta y se completa con su nombre. Otros roles: el campo pasa a llamarse "Interviniente"
+      if (sesion.rol === 'Médico') $('#medico').closest('.field').classList.add('hidden');
+      else { $('label[for="medico"]').textContent = 'Interviniente'; $('#medico').placeholder = 'Médico o personal que intervino'; }
     }
     $('#offline').classList.remove('hidden');
     try { registros = JSON.parse(localStorage.getItem(claveLocal())||'[]'); } catch { registros = []; }
@@ -1617,7 +1688,10 @@
   // [NUEVO · roles coord] Con sesión activa: Coordinador y Supervisor van al panel de coordinación con su propia sesión.
   // Con ?cargar=1 en el link se quedan en modo campo para cargar un registro (desde el panel hay un enlace para eso).
   async function entrarSegunRol(){
-    if (sesionCoord() && !new URLSearchParams(location.search).get('cargar')){ location.replace(location.pathname + '?modo=coordinador'); return; }
+    if (!new URLSearchParams(location.search).get('cargar')){
+      if (sesionAdmin()){ location.replace(location.pathname + '?modo=administrador'); return; }   // [NUEVO · admin]
+      if (sesionCoord()){ location.replace(location.pathname + '?modo=coordinador'); return; }
+    }
     await iniciarCampo();
   }
   $('#sc-salir').addEventListener('click', () => { if (confirm('¿Cerrar sesión?')){ guardarSesion(null); location.replace(location.pathname + '?modo=usuario'); } });
@@ -1732,11 +1806,12 @@
   function filaUsuario(u){
     const pend = u.estado === 'pendiente';
     const est = { pendiente: '<span class="pill pend">Pendiente</span>', baja: '<span class="pill no">De baja</span>', rechazado: '<span class="pill no">Rechazado</span>' }[u.estado] || '';
+    const elim = esAdminActual() ? '<button type="button" class="link-btn peligro" data-que="eliminar">Eliminar</button>' : '';   // [NUEVO · admin]
     const acciones = pend
       ? `<select class="u-rol"><option value="">Elegí un rol…</option>${opcionesRol('')}</select><button type="button" class="primary" data-que="aprobar">Aprobar</button><button type="button" class="link-btn" data-que="rechazar">Rechazar</button>`
       : u.estado === 'activo'
-        ? `<select class="u-rol" data-que="rol">${opcionesRol(u.rol)}</select><button type="button" class="link-btn" data-que="resetPin">Restablecer PIN</button><button type="button" class="link-btn" data-que="editar">Editar</button><button type="button" class="link-btn" data-que="baja">Dar de baja</button>`
-        : `<button type="button" class="link-btn" data-que="reactivar">Reactivar</button>`;
+        ? `<select class="u-rol" data-que="rol">${opcionesRol(u.rol)}</select><button type="button" class="link-btn" data-que="resetPin">Restablecer PIN</button><button type="button" class="link-btn" data-que="editar">Editar</button><button type="button" class="link-btn" data-que="baja">Dar de baja</button>${elim}`
+        : `<button type="button" class="link-btn" data-que="reactivar">Reactivar</button>${elim}`;   // [NUEVO · usuarios] eliminar, solo administrador
     return `<div class="urow ${pend ? 'pend' : ''}" data-id="${esc(u.id)}">
       <div class="avatar" data-foto="${esc(u.id)}">${esc(iniciales(u))}</div>
       <div class="datos"><b>${esc(u.nombre)} ${esc(u.apellido)} <span class="pill rol">${esc(u.id)}</span>${u.rol && !pend ? ` <span class="pill rol">${esc(u.rol)}</span>` : ''} ${est}${u.pideReset ? ' <span class="pill reset">Pide restablecer PIN</span>' : ''}${u.cambioPin ? ' <span class="pill reset">Cambio de PIN habilitado</span>' : ''}</b>
@@ -1764,7 +1839,9 @@
   async function accionUsuario(id, que, extra){
     try {
       const res = await postCoord({ accion: 'usuario', que, id, ...(extra || {}) });
-      const i = usuarios.findIndex(u => u.id === id); if (i >= 0) usuarios[i] = res.usuario;
+      const i = usuarios.findIndex(u => u.id === id);
+      if (res.eliminado){ if (i >= 0) usuarios.splice(i, 1); }          // [NUEVO · usuarios] eliminado: sale de la lista
+      else if (i >= 0) usuarios[i] = res.usuario;
       renderUsuarios(); sondearNuevos(); return true;
     } catch (e){ toast('No se pudo: ' + e.message, 'err'); return false; }
   }
@@ -1776,6 +1853,12 @@
     else if (que === 'rechazar'){ if (confirm(`¿Rechazar la solicitud de ${quien}?`)) await accionUsuario(id, 'rechazar'); }
     else if (que === 'baja'){ if (confirm(`¿Dar de baja a ${quien}? No va a poder cargar más. Sus registros quedan.`)) await accionUsuario(id, 'baja'); }
     else if (que === 'reactivar'){ await accionUsuario(id, 'reactivar'); }
+    else if (que === 'eliminar'){   // [NUEVO · usuarios] borra el usuario de la planilla; sus registros quedan con el nombre guardado
+      const aviso = u.estado === 'activo' ? `${quien} está ACTIVO. ` : '';
+      if (confirm(`${aviso}¿Eliminar definitivamente a ${quien} (${id})? Se borra de la planilla y no se puede deshacer. Los registros que cargó quedan.`)) {
+        if (await accionUsuario(id, 'eliminar')) toast(`${quien} eliminado`, 'ok');
+      }
+    }
     else if (que === 'editar'){ const n = prompt('Nombre', u.nombre); if (n === null) return; const a = prompt('Apellido', u.apellido); if (a === null) return; await accionUsuario(id, 'editar', { nombre: n, apellido: a }); }
     else if (que === 'resetPin'){
       const op = prompt(`Restablecer PIN de ${quien}.\n\nEscribí un PIN nuevo de 4 a 6 dígitos para asignárselo,\no dejá vacío y aceptá para que lo elija la persona la próxima vez que entre.`, '');
@@ -1791,6 +1874,98 @@
     if (await accionUsuario(s.closest('.urow').dataset.id, 'rol', { rol: s.value })) toast('Rol actualizado', 'ok');
   });
 
+  // ---- [NUEVO · mails] direcciones que reciben información (tablero, coordinador y administrador) ----
+  let mails = [];
+  async function cargarMails(){
+    try { const res = await pedirCentral({ mails: 1 }); mails = res.mails || []; renderMails(); }
+    catch (e){ $('#mails-lista').textContent = 'No se pudieron cargar los mails: ' + e.message; }
+  }
+  function renderMails(){
+    $('#mails-lista').innerHTML = mails.length ? mails.map(m => `
+      <div class="mailrow" data-mail="${esc(m.mail)}"><b>${esc(m.mail)}</b>
+        <label><input type="checkbox" class="m-reg" ${m.cadaRegistro ? 'checked' : ''}> Cada registro</label>
+        <label><input type="checkbox" class="m-aviso" ${m.avisoMensual ? 'checked' : ''}> Aviso mensual</label>
+        <button type="button" class="link-btn peligro m-quitar">Quitar</button></div>`).join('')
+      : '<span class="hint">Todavía no hay direcciones.</span>';
+  }
+  async function guardarMail(mail, cadaRegistro, avisoMensual, que){
+    try { const res = await postCoord({ accion: 'mails', que: que || 'guardar', mail, cadaRegistro, avisoMensual }); mails = res.mails || []; renderMails(); return true; }
+    catch (e){ toast('No se pudo guardar: ' + e.message, 'err'); return false; }
+  }
+  $('#mail-add').addEventListener('click', async () => {
+    const mail = $('#mail-nuevo').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)){ toast('Escribí una dirección válida', 'err'); return; }
+    if (await guardarMail(mail, true, true)){ $('#mail-nuevo').value = ''; toast('Dirección agregada', 'ok'); }
+  });
+  $('#mails-lista').addEventListener('change', e => {
+    const row = e.target.closest('.mailrow'); if (!row) return;
+    guardarMail(row.dataset.mail, row.querySelector('.m-reg').checked, row.querySelector('.m-aviso').checked);
+  });
+  $('#mails-lista').addEventListener('click', async e => {
+    const b = e.target.closest('.m-quitar'); if (!b) return;
+    const mail = b.closest('.mailrow').dataset.mail;
+    if (confirm(`¿Quitar ${mail}?`) && await guardarMail(mail, false, false, 'quitar')) toast('Dirección quitada', 'ok');
+  });
+
+  // ---- [NUEVO · importar] subir un paquete ZIP y volver a cargar sus registros (solo administrador) ----
+  $('#imp-zip').addEventListener('change', () => { $('#imp-ok').disabled = !$('#imp-zip').files.length; $('#imp-info').textContent = ''; });
+  $('#imp-ok').addEventListener('click', importarPaquete);
+  async function importarPaquete(){
+    const f = $('#imp-zip').files[0]; if (!f) return;
+    if (!window.JSZip || !window.XLSX){ toast('No se cargaron las librerías. Revisá la conexión y recargá.', 'err'); return; }
+    const btn = $('#imp-ok'); btn.disabled = true; btn.textContent = 'Leyendo…';
+    try {
+      const zip = await JSZip.loadAsync(f);
+      // Paquetes nuevos traen datos.json (ficha exacta); los anteriores se reconstruyen desde el Excel
+      const dj = zip.file('datos.json');
+      const fichas = dj ? JSON.parse(await dj.async('string')) : await fichasDesdeExcel(zip);
+      const fotosPor = {};                                        // id → [{n, entry}] según la carpeta fotos/<fecha_evento_id>/foto-N.jpg
+      for (const [ruta, entry] of Object.entries(zip.files)){
+        const m = ruta.match(/^fotos\/([^\/]+)\/foto-(\d+)\.jpe?g$/i); if (!m || entry.dir) continue;
+        const id = m[1].slice(m[1].lastIndexOf('_') + 1);
+        (fotosPor[id] = fotosPor[id] || []).push({ n: +m[2], entry });
+      }
+      let importados = 0, salteados = 0, fotos = 0;
+      for (let i = 0; i < fichas.length; i += 10){
+        const lote = [];
+        for (const ficha of fichas.slice(i, i + 10)){
+          const datas = [];
+          for (const x of (fotosPor[ficha.id] || []).sort((a, b) => a.n - b.n)) datas.push('data:image/jpeg;base64,' + await x.entry.async('base64'));
+          const limpia = { ...ficha, nFotos: datas.length }; delete limpia.fotoIds; delete limpia.carpetaId; delete limpia.enviado; delete limpia.vistoMsgHasta;
+          lote.push({ registro: limpia, fila: filaExcel(limpia), fotos: datas });
+        }
+        btn.textContent = `Importando ${Math.min(i + 10, fichas.length)} de ${fichas.length}…`;
+        const res = await postCoord({ accion: 'importar', registros: lote });
+        importados += res.importados || 0; salteados += res.salteados || 0; fotos += res.fotosSubidas || 0;
+      }
+      $('#imp-info').textContent = `Listo: ${importados} importados, ${salteados} salteados (ya existían o sin datos), ${fotos} fotos subidas.`;
+      toast('Importación terminada', 'ok'); $('#imp-zip').value = '';
+      await cargarCentral();
+    } catch (e){ console.error(e); toast('No se pudo importar: ' + e.message, 'err'); }
+    finally { btn.disabled = !$('#imp-zip').files.length; btn.textContent = 'Importar'; }
+  }
+  // Paquetes sin datos.json: la ficha se arma desde las hojas Registros y Conversaciones del Excel
+  async function fichasDesdeExcel(zip){
+    const x = zip.file('registros.xlsx'); if (!x) throw new Error('El ZIP no tiene registros.xlsx ni datos.json');
+    const wb = XLSX.read(await x.async('arraybuffer'), { type: 'array' });
+    const filas = XLSX.utils.sheet_to_json(wb.Sheets['Registros'] || wb.Sheets[wb.SheetNames[0]], { defval: '' });
+    const conv = wb.Sheets['Conversaciones'] ? XLSX.utils.sheet_to_json(wb.Sheets['Conversaciones'], { defval: '' }) : [];
+    const aISO = s => { const m = String(s).match(/(\d{2})\/(\d{2})\/(\d{4})/); return m ? `${m[3]}-${m[2]}-${m[1]}` : ''; };
+    const aMs = s => { const m = String(s).match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/); return m ? new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]).getTime() : 0; };
+    const fijos = ['Coordinador', 'Personal de campo', 'Sistema'];
+    const deDe = d => d === 'Coordinador' ? 'coord' : d === 'Sistema' ? 'sistema' : 'campo';
+    const msgs = {};
+    conv.forEach(c => { const id = String(c['ID']); (msgs[id] = msgs[id] || []).push({ de: deDe(c['De']), texto: String(c['Mensaje'] || ''), fecha: aMs(c['Cuándo']) || Date.now(), ...(fijos.includes(c['De']) ? {} : { autor: String(c['De']) }) }); });
+    return filas.filter(r => r['ID'] && r['Fecha']).map(r => {
+      const id = String(r['ID']), fecha = aISO(r['Fecha']);
+      const cargado = String(r['Cargado por'] || ''), generico = !cargado || /genérico/i.test(cargado);
+      const createdAt = aMs(r['Registrado el']) || new Date(`${fecha}T${String(r['Hora'] || '00:00')}`).getTime() || Date.now();
+      return { id, fecha, movil: String(r['Móvil'] || ''), evento: String(r['Evento'] || ''), paciente: String(r['Paciente'] || ''), edad: String(r['Edad'] || ''),
+        medico: String(r['Médico / interviniente'] || ''), motivo: String(r['Motivo de consulta'] || ''), traslada: /^s/i.test(String(r['Traslada'] || '')) ? 'si' : 'no',
+        obs: String(r['Observaciones'] || ''), nFotos: 0, createdAt, ...(generico ? {} : { usuarioNombre: cargado, rol: String(r['Rol'] || '') }), mensajes: msgs[id] || [] };
+    });
+  }
+
   // ---- conexión con la base ----
   (async () => {
     try { db = await (window.claude?.use ? window.claude.use('db') : Promise.resolve(null)); } catch { db = null; }
@@ -1800,9 +1975,10 @@
       if (FLOW_URL){ try { novedadPendiente = localStorage.getItem('version_vista') !== VERSION; } catch { novedadPendiente = true; } }
       if (MODO_COORD){
         // [NUEVO · envío] Modo coordinador: sin formulario; Registros y Tablero salen de la planilla central
-        document.title = tituloBase = 'Coordinación · Emergencias';
-        $('.brand .tag').textContent = 'COORDINADOR';            // [NUEVO] etiqueta según el link
-        if (sesionCoord()){                                      // [NUEVO · roles coord] entró con su usuario: sin clave, con su nombre y rol
+        document.title = tituloBase = MODO_ADMIN ? 'Administración · Emergencias' : 'Coordinación · Emergencias';
+        $('.brand .tag').textContent = MODO_ADMIN ? 'ADMINISTRADOR' : 'COORDINADOR';   // [NUEVO] etiqueta según el link
+        if (MODO_ADMIN) $('.tabs button[data-tab="config"]').classList.remove('hidden');   // [NUEVO · admin] pestaña Configuración
+        if (MODO_ADMIN ? sesionAdmin() : sesionCoord()){         // [NUEVO · roles coord] entró con su usuario: sin clave, con su nombre y rol
           $('.brand .tag').textContent = String(sesion.rol).toUpperCase();
           $('#sesion-coord').classList.remove('hidden'); $('#sc-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`; $('#sc-rol').textContent = sesion.rol;
         }
