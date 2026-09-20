@@ -343,6 +343,22 @@
 
   /* ===== Celular ===== */
   header{padding-top:calc(18px + env(safe-area-inset-top))}
+  /* [CORREGIDO · celular] cabecera compacta: sin subtítulo, etiqueta chica, pestañas en dos filas si no entran */
+  @media (max-width:640px){
+    .brand{gap:10px}
+    .brand b{font-size:16px}
+    .brand span{display:none}
+    .brand .tag{font-size:11px;padding:3px 8px;white-space:nowrap;letter-spacing:.2px}
+    .mark{padding:4px 7px}
+    .mark img{height:28px !important}
+    .bell{width:34px;height:34px}
+    .tabs{flex-wrap:wrap;gap:4px}
+    .tabs button{flex:1 1 30%;padding:8px 6px;font-size:14px;white-space:nowrap}
+    .rec.compact .top{flex-wrap:wrap;gap:4px}
+    .rec.compact .top b{font-size:15px;line-height:1.5}
+    .rec dl{grid-template-columns:minmax(78px,auto) 1fr;gap:3px 10px;font-size:13.5px}
+    .sesion-coord,#sesion-coord{font-size:12.5px}
+  }
   @media (max-width:640px){
     main{padding:14px 12px calc(96px + env(safe-area-inset-bottom))}
     h1{font-size:23px}
@@ -787,13 +803,13 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-20 h';
+  const VERSION = '2026-09-20 i';
   const NOVEDADES = [
     'Móvil y Evento se eligen de una lista que filtra al escribir. Si falta uno, "Solicitar agregar" se lo pide a coordinación y la respuesta llega a la campana.',
     'Coordinación tiene la pestaña Catálogo para aceptar solicitudes y administrar las listas de móviles y eventos.',
     'Los usuarios que no son médicos tienen el campo "Interviniente" para anotar quién atendió.',
     'Cada registro recibe un número de 9 dígitos al llegar a la planilla; se ve en el detalle.',
-    'Logo de Grupo IHSA en la cabecera, y este aviso ahora se puede desplazar en el celular.',
+    'Logo de Grupo IHSA en la cabecera, cabecera y lista adaptadas al celular: las tarjetas se abren de a una, como un acordeón.',
   ];
   let novedadPendiente = false;
 
@@ -1475,7 +1491,12 @@
     const cab = e.target.closest('.rec.compact .top, .rec.compact .sub');          // [NUEVO · coordinador] desplegar / plegar
     if (cab){
       const art = cab.closest('.rec'); art.classList.toggle('open');
-      if (art.classList.contains('open')){ abiertos.add(art.dataset.id); bajarHilos(art); } else abiertos.delete(art.dataset.id);
+      if (art.classList.contains('open')){
+        // [NUEVO · acordeón] una sola tarjeta abierta a la vez: al abrir esta se cierran las demás
+        document.querySelectorAll('#list .rec.compact.open').forEach(o => { if (o !== art){ o.classList.remove('open'); abiertos.delete(o.dataset.id); } });
+        abiertos.add(art.dataset.id); bajarHilos(art);
+        if (esCelular()) setTimeout(() => art.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      } else abiertos.delete(art.dataset.id);
     }
   });
   $('#lb').addEventListener('click', () => $('#lb').classList.remove('open'));
