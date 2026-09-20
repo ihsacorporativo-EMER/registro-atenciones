@@ -60,11 +60,11 @@
   .brand{display:flex;align-items:center;gap:12px;max-width:640px;margin:0 auto}
   /* [NUEVO · logo] placa blanca con el logo de Grupo IHSA (antes: cuadrado naranja con una E) */
   .mark{
-    height:46px;padding:5px 9px;border-radius:12px;background:#fff;
-    display:grid;place-items:center;flex:none;
+    padding:5px 8px;border-radius:12px;background:#fff;
+    display:block;flex:none;line-height:0;
     box-shadow:inset 0 -3px 0 rgba(0,0,0,.08);
   }
-  .mark img{height:100%;width:auto;display:block;max-width:none}
+  .mark img{height:34px !important;width:auto !important;max-width:none;display:block}   /* [CORREGIDO · logo] alto fijo: el porcentaje no se aplicaba y salía a tamaño real */
   .brand b{display:block;font-size:17px;font-weight:800;letter-spacing:.2px}
   .brand span{display:block;font-size:13px;opacity:.8}
   .brand .tag{
@@ -786,7 +786,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-20 f';
+  const VERSION = '2026-09-20 g';
   const NOVEDADES = [
     'Nuevo link de usuarios: cada persona entra con su ID y PIN, y sus registros quedan firmados con su nombre y rol.',
     'Coordinación tiene el panel "Usuarios": aprueba solicitudes, asigna roles y restablece PIN.',
