@@ -235,6 +235,33 @@
   .estado-dot{width:9px;height:9px;border-radius:50%;background:#34d27b;box-shadow:0 0 0 2px rgba(255,255,255,.25);flex:none}
   .estado-dot.off{background:#ff4d4f}
   .avatar.grande{width:64px;height:64px;font-size:20px}
+  /* [NUEVO · menú] lista desplegable debajo del nombre, por encima de la interfaz (fixed: la cabecera recorta lo que sobresale) */
+  .menu-yo{position:fixed;z-index:35;width:min(280px,calc(100vw - 24px));background:var(--card);color:var(--ink);border-radius:16px;padding:8px;box-shadow:0 18px 40px -12px rgba(11,61,145,.45),0 2px 6px rgba(0,0,0,.12);animation:pop .22s cubic-bezier(.2,.8,.2,1);transform-origin:top right}
+  .menu-yo.hidden{display:none}
+  .menu-yo .cab{display:flex;gap:10px;align-items:center;padding:8px 10px 10px;border-bottom:1px solid var(--line);margin-bottom:6px}
+  .menu-yo .cab b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .menu-yo .cab small{color:var(--muted)}
+  .menu-yo .mi{display:flex;align-items:center;gap:11px;width:100%;border:0;background:none;color:var(--ink);padding:11px 12px;border-radius:11px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;text-align:left;text-decoration:none}
+  .menu-yo .mi:hover,.menu-yo .mi:focus-visible{background:color-mix(in srgb,var(--brand) 9%,var(--card));outline:0}
+  .menu-yo .mi svg{width:19px;height:19px;flex:none;color:var(--brand)}
+  .menu-yo .mi .cnt{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center}
+  .menu-yo .mi .cnt:empty{display:none}
+  .menu-yo .mi.salir{margin-top:6px;justify-content:center;background:color-mix(in srgb,var(--danger) 10%,var(--card));color:var(--danger);border:1px solid color-mix(in srgb,var(--danger) 30%,var(--card))}
+  .menu-yo .mi.salir:hover{background:var(--danger);color:#fff}
+  .menu-yo .mi.salir svg{color:currentColor}
+  .menu-yo .sep{height:1px;background:var(--line);margin:6px 4px}
+  /* [NUEVO · info adicional] tarjetas de contacto y observaciones */
+  .contacto{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--field)}
+  .contacto .ini{width:38px;height:38px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;flex:none}
+  .contacto b{display:block;font-size:14px}
+  .contacto small{color:var(--muted);display:block}
+  .contacto a{color:var(--brand);font-weight:700;text-decoration:none;display:inline-block;margin:4px 12px 0 0;font-size:13px}
+  .contacto a svg{width:14px;height:14px;vertical-align:-2px;margin-right:3px}
+  .obs-box{white-space:pre-wrap;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--field);font-size:14px}
+  .ed-contacto{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;position:relative}
+  .ed-contacto input{width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:var(--field);color:var(--ink);font-size:14px}
+  .ed-contacto .quitar{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;border:0;background:var(--danger);color:#fff;font-weight:800;cursor:pointer;line-height:1}
+  @media (max-width:420px){.ed-contacto{grid-template-columns:1fr}}
   .perfil-cab{display:flex;gap:12px;align-items:center;margin-bottom:12px}
   .perfil-cab small{color:var(--muted)}
   .badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:none;place-items:center;line-height:1}
@@ -480,7 +507,7 @@
     <!-- [NUEVO · perfil] rol arriba; debajo, punto de conexión + nombre + flecha, que abre "Mi perfil" -->
     <div class="yo">
       <div class="tag">USO INTERNO</div><!-- [NUEVO] se reemplaza por PERSONAL DE CAMPO, el rol, COORDINADOR o ADMINISTRADOR -->
-      <button type="button" class="perfil-btn hidden" id="perfil-btn" aria-label="Mi perfil"><span class="estado-dot" id="estado-dot"></span><span id="perfil-nombre"></span><span class="chev">▾</span></button>
+      <button type="button" class="perfil-btn hidden" id="perfil-btn" aria-label="Menú" aria-haspopup="menu" aria-expanded="false"><span class="estado-dot" id="estado-dot"></span><span id="perfil-nombre"></span><span class="chev">▾</span></button><!-- [NUEVO · menú] abre la lista desplegable -->
     </div>
   </div>
   <div class="tabs" role="tablist">
@@ -647,11 +674,7 @@
       <p class="hint" id="photo-hint">Hasta 8 fotos por registro. Se comprimen automáticamente.</p>
     </section>
 
-    <!-- [NUEVO · catálogo] solicitudes propias de móviles y eventos, con la respuesta de coordinación -->
-    <section class="card hidden" id="mis-sol">
-      <h2><span class="n">3</span>Mis solicitudes</h2>
-      <div id="mis-sol-lista"></div>
-    </section>
+    <!-- [NUEVO · menú] "Mis solicitudes" ya no va acá: se abre desde el menú del nombre (modal #modal-sol) -->
 
     <div class="sticky">
       <button class="primary" id="save" type="button">Guardar registro</button>
@@ -810,12 +833,57 @@
       </div>
       <p class="hint" style="margin:8px 0 0">Sacar o subir una foto reemplaza la actual. Tocá la foto para verla grande.</p>
     </div>
-    <div class="modal-actions" style="flex-wrap:wrap">
-      <a id="pf-coord" class="link-btn hidden" href="?modo=coordinador">Ir a coordinación</a>
-      <a id="pf-cargar" class="link-btn hidden" href="?modo=usuario&amp;cargar=1">Cargar un registro</a>
-      <button type="button" class="link-btn peligro" id="pf-salir">Cerrar sesión</button>
+    <div class="modal-actions"><!-- [NUEVO · menú] "Ir a coordinación", "Cargar un registro" y "Cerrar sesión" pasaron al menú del nombre -->
       <button type="button" class="link-btn" id="pf-cancel">Cancelar</button>
       <button type="button" class="primary" id="pf-ok">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- [NUEVO · menú] lista desplegable del nombre: Perfil, Mis solicitudes, Información adicional, Cerrar sesión -->
+<div class="menu-yo hidden" id="menu-yo" role="menu">
+  <div class="cab"><div class="avatar" id="my-avatar"></div><div style="min-width:0"><b id="my-nombre"></b><small id="my-rol"></small></div></div>
+  <button type="button" class="mi" id="my-perfil" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Perfil</button>
+  <button type="button" class="mi" id="my-sol" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z"/></svg>Mis solicitudes<span class="cnt" id="my-sol-n"></span></button>
+  <button type="button" class="mi" id="my-info" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>Información adicional</button>
+  <a class="mi hidden" id="my-coord" role="menuitem" href="?modo=coordinador"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 18v3"/></svg>Ir a coordinación</a>
+  <a class="mi hidden" id="my-cargar" role="menuitem" href="?modo=usuario&amp;cargar=1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>Cargar un registro</a>
+  <div class="sep"></div>
+  <button type="button" class="mi salir" id="my-salir" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg><span id="my-salir-txt">Cerrar sesión</span></button>
+</div>
+
+<!-- [NUEVO · menú] Mis solicitudes: pedidos de móviles/eventos y la respuesta de coordinación -->
+<div class="modal" id="modal-sol" role="dialog" aria-modal="true">
+  <div class="box">
+    <h3>Mis solicitudes</h3>
+    <p class="hint" style="margin:0 0 10px">Lo que pediste a coordinación (móviles, eventos, otros) y su respuesta.</p>
+    <div id="mis-sol-lista"></div>
+    <p class="hint hidden" id="mis-sol-vacio" style="margin:0">Todavía no hiciste solicitudes. Desde el formulario, si un móvil o evento no está en la lista, tocá "Solicitar agregar".</p>
+    <div class="modal-actions"><button type="button" class="primary" id="sol-cerrar">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- [NUEVO · info adicional] contactos de coordinación y observaciones: los cargan los roles elevados, los ve todo el equipo -->
+<div class="modal" id="modal-info" role="dialog" aria-modal="true">
+  <div class="box">
+    <h3>Información adicional</h3>
+    <p class="hint" id="info-meta" style="margin:0 0 10px"></p>
+    <div id="info-ver">
+      <div id="info-contactos"></div>
+      <div id="info-obs" class="obs-box hidden"></div>
+      <p class="hint hidden" id="info-vacio" style="margin:0">Coordinación todavía no cargó información.</p>
+      <div class="modal-actions">
+        <button type="button" class="link-btn hidden" id="info-editar">Editar</button>
+        <button type="button" class="primary" id="info-cerrar">Cerrar</button>
+      </div>
+    </div>
+    <div id="info-editar-box" class="hidden">
+      <div class="field"><label>Contactos <span class="opt">(coordinadores, supervisores, guardia)</span></label><div id="info-ed-lista"></div><button type="button" class="link-btn" id="info-agregar">+ Agregar contacto</button></div>
+      <div class="field"><label for="info-ed-obs">Observaciones</label><textarea id="info-ed-obs" maxlength="4000" placeholder="Horarios, indicaciones, a quién llamar en cada caso…"></textarea></div>
+      <div class="modal-actions">
+        <button type="button" class="link-btn" id="info-cancelar">Cancelar</button>
+        <button type="button" class="primary" id="info-guardar">Guardar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -863,7 +931,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-20 n';
+  const VERSION = '2026-09-20 p';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   const NOVEDADES = [
@@ -873,6 +941,10 @@
     { para: 'todos', texto: 'Cada registro recibe un número de 9 dígitos al llegar a la planilla; se ve en el detalle.' },
     { para: 'todos', texto: 'Logo de Grupo IHSA en la cabecera. En celular, las pestañas son un menú plegable.' },
     { para: 'coord', texto: 'En celular, las tarjetas de registros se abren de a una.' },
+    { para: 'coord', texto: 'Las novedades de coordinación ya no se muestran a usuarios de campo, aunque abran el link de coordinación en su celular.' },
+    { para: 'todos', texto: 'Al tocar tu nombre se abre un menú: Perfil, Mis solicitudes, Información adicional y Cerrar sesión. "Mis solicitudes" ya no está en la pestaña Nuevo registro.' },
+    { para: 'todos', texto: 'Información adicional: mails, celulares y observaciones de coordinación, siempre a mano desde el menú.' },
+    { para: 'coord', texto: 'La Información adicional la cargan Coordinación, Supervisión y Administración con el botón Editar; el resto solo la ve.' },
     { para: 'todos', texto: 'Tu nombre aparece debajo del rol con un punto de conexión; al tocarlo editás tu perfil: nombre, apellido, foto, celular y mail.' },
     { para: 'todos', texto: 'Al guardar un registro, todos los campos son obligatorios salvo Observaciones: lo que falte se marca en rojo.' },
   ];
@@ -1191,7 +1263,11 @@
     ? (sesionAdmin() ? { token: sesion.token } : { claveAdmin: claveAdmin() })
     : (sesionCoord() ? { token: sesion.token } : { clave: claveCoord() });
   const hayCred = c => !!(c.token || c.clave || c.claveAdmin);
+  // [CORREGIDO · novedades por rol] credOk: el script ya aceptó la sesión o la clave de este dispositivo
+  let credOk = false;
+  function credAceptada(){ if (credOk) return; credOk = true; refrescarNovedades(); }
   function credRechazada(){                                 // el script no aceptó la credencial
+    credOk = false;
     if ((MODO_ADMIN && sesionAdmin()) || (!MODO_ADMIN && sesionCoord())){ guardarSesion(null); toast('Tu sesión ya no es válida. Volvé a entrar.', 'err'); setTimeout(() => location.replace(location.pathname + '?modo=usuario'), 1500); }
     else { try { localStorage.removeItem(MODO_ADMIN ? 'admin_clave' : 'coord_clave'); } catch {} }   // la vuelve a pedir
   }
@@ -1204,6 +1280,7 @@
       if (/clave|sesión/i.test(res.error || '')) credRechazada();
       throw new Error(res.error || 'Error del script');
     }
+    credAceptada();                                          // [CORREGIDO · novedades por rol]
     return res;
   }
   async function cargarCentral(){
@@ -1494,7 +1571,23 @@
   }
   // [NUEVO · novedades] la campana muestra primero las novedades pendientes; después, lleva a la lista
   // [NUEVO · novedades por rol] coordinación (coordinador, supervisor, administrador) ve todo; el resto, solo lo de 'todos'
-  const novedadesVisibles = () => NOVEDADES.filter(n => n.para === 'todos' || MODO_COORD || (sesion && esRolCoord(sesion.rol)));
+  // [CORREGIDO · novedades por rol] antes alcanzaba con abrir el link de coordinación para ver lo de 'coord', aunque el
+  // celular tuviera un usuario de campo (ej. Chofer) y sin haber puesto la clave. Ahora manda el rol real:
+  //   · sesión activa de Coordinador/Supervisor/Administrador → ve todo
+  //   · sesión de cualquier otro rol en este dispositivo → solo lo de 'todos', sin importar el link
+  //   · sin sesión, en el link de coordinación → lo de 'coord' recién cuando el script aceptó la clave (credOk)
+  const puedeVerCoord = () => {
+    if (sesionCoord()) return true;
+    if (sesion && sesion.rol && !esRolCoord(sesion.rol)) return false;
+    return MODO_COORD && credOk;
+  };
+  const novedadesVisibles = () => NOVEDADES.filter(n => n.para === 'todos' || puedeVerCoord());
+  // ¿esta persona ya vio la versión actual? Se recalcula al arrancar y cuando el script acepta la credencial
+  function refrescarNovedades(){
+    if (!FLOW_URL) return;
+    try { novedadPendiente = localStorage.getItem('version_vista') !== VERSION && novedadesVisibles().length > 0; } catch { novedadPendiente = novedadesVisibles().length > 0; }
+    pintarNoVistos(nuevosPrev);
+  }
   function abrirNovedades(){
     $('#nv-version').textContent = 'Versión ' + VERSION;
     $('#nv-lista').innerHTML = novedadesVisibles().map(n => `<li>${esc(n.texto)}</li>`).join('');
@@ -1535,7 +1628,7 @@
     if (novedadPendiente) abrirNovedades();
     else if (MODO_COORD && usuariosPend) $('.tabs button[data-tab="users"]').click();
     else if (MODO_COORD && pedidosPend) $('.tabs button[data-tab="cat"]').click();                     // [NUEVO · catálogo]
-    else if (!MODO_COORD && solNoVistas()){ $('.tabs button[data-tab="form"]').click(); $('#mis-sol').scrollIntoView({ behavior: 'smooth' }); }
+    else if (!MODO_COORD && solNoVistas()) abrirSolicitudes();                                        // [NUEVO · menú] modal, ya no la sección del formulario
     else $('.tabs button[data-tab="list"]').click();
   });
   $('#list').addEventListener('click', async e => {
@@ -1754,6 +1847,7 @@
     const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify({ ...body, ...cred }) });
     const res = await r.json();
     if (!res.ok){ if (/clave|sesión/i.test(res.error || '')) credRechazada(); throw new Error(res.error || 'Error del script'); }
+    credAceptada();                                          // [CORREGIDO · novedades por rol]
     return res;
   };
   // Cartel arriba de todo: el script lo deja el día 1 (según MESES_ENTRE_ALERTAS) y desaparece al cerrarlo o posponerlo
@@ -1859,6 +1953,7 @@
     // [NUEVO · catálogo] listas del formulario (desde caché primero, después del script) y mis solicitudes
     pintarCatalogo(); cargarCatalogo(); setInterval(cargarCatalogo, 300000);
     renderMisSolicitudes(); cargarMisSolicitudes(); setInterval(cargarMisSolicitudes, 60000); document.addEventListener('visibilitychange', cargarMisSolicitudes);
+    cargarInfo();                                                      // [NUEVO · info adicional]
     listo();                                                           // [CORREGIDO · arranque] recién ahora se muestra la pantalla
   }
 
@@ -2127,9 +2222,14 @@
     if (await solicitar(tipo, valor, '')){ toast(`Solicitud enviada: ${tipo === 'movil' ? 'móvil' : 'evento'} "${valor}". Podés seguir cargando.`, 'ok'); b.classList.add('hidden'); }
     b.disabled = false;
   }));
+  // [NUEVO · menú] las solicitudes viven en un modal que abre el menú del nombre (o la campana); el ítem del menú
+  // muestra cuántas respuestas hay sin leer
+  const abrirSolicitudes = () => { renderMisSolicitudes(); $('#modal-sol').classList.add('open'); };
+  $('#sol-cerrar').addEventListener('click', () => $('#modal-sol').classList.remove('open'));
+  $('#modal-sol').addEventListener('click', e => { if (e.target === $('#modal-sol')) $('#modal-sol').classList.remove('open'); });
   function renderMisSolicitudes(){
-    const sec = $('#mis-sol'); if (!misSolicitudes.length){ sec.classList.add('hidden'); return; }
-    sec.classList.remove('hidden');
+    const n = solNoVistas(); $('#my-sol-n').textContent = n ? String(n) : '';
+    $('#mis-sol-vacio').classList.toggle('hidden', misSolicitudes.length > 0);
     $('#mis-sol-lista').innerHTML = misSolicitudes.map(s => {
       const nueva = s.estado !== 'pendiente' && !solVistas.has(s.id);
       const pill = s.estado === 'pendiente' ? '<span class="pill pend">Pendiente</span>' : s.estado === 'aceptada' ? '<span class="pill si">Aceptada</span>' : '<span class="pill no">Devuelta</span>';
@@ -2305,7 +2405,7 @@
   // Punto verde: la app está conectada al script con una sesión válida. Rojo: sin conexión o la sesión ya no vale.
   let conectado = true, fotoPerfilNueva = null, quitarFotoPerfil = false;
   function pintarEstado(){
-    const on = conectado && navigator.onLine !== false && !!(sesion && sesion.estado === 'activo');
+    const on = conectado && navigator.onLine !== false && (MODO_COORD || !!(sesion && sesion.estado === 'activo'));   // [NUEVO · menú] con clave: solo la conexión
     $('#estado-dot').classList.toggle('off', !on); $('#estado-dot').title = on ? 'Conectado' : 'Sin conexión';
   }
   const marcarConexion = ok => { conectado = ok; pintarEstado(); };
@@ -2313,7 +2413,8 @@
   window.addEventListener('offline', () => marcarConexion(false));
   function pintarPerfil(){
     const b = $('#perfil-btn');
-    if (!sesion || !sesion.token){ b.classList.add('hidden'); return; }
+    // [NUEVO · menú] sin sesión, el link de coordinación (con clave) también tiene menú: Información adicional y Salir
+    if (!sesion || !sesion.token){ if (!MODO_COORD){ b.classList.add('hidden'); return; } $('#perfil-nombre').textContent = 'Menú'; b.classList.remove('hidden'); pintarEstado(); return; }
     $('#perfil-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`;
     b.classList.remove('hidden'); pintarEstado();
   }
@@ -2324,8 +2425,6 @@
     $('#pf-cel').value = sesion.celular || ''; $('#pf-mail').value = sesion.mail || '';
     fotoPerfilNueva = null; quitarFotoPerfil = false;
     const av = $('#pf-avatar'); av.innerHTML = esc(iniciales({ nombre: sesion.nombre, apellido: sesion.apellido }));
-    $('#pf-coord').classList.toggle('hidden', !(esRolCoord(sesion.rol) && !MODO_COORD));
-    $('#pf-cargar').classList.toggle('hidden', !MODO_COORD);
     $('#modal-perfil').classList.add('open');
     if (sesion.fotoId){
       try { const u = new URL(FLOW_URL); u.searchParams.set('fotoUsuario', sesion.id); const r = await (await fetch(u)).json(); if (r.data && !fotoPerfilNueva && !quitarFotoPerfil) av.innerHTML = `<img src="${r.data}" alt="">`; } catch {}
@@ -2354,13 +2453,98 @@
     const img = e.target.closest('.avatar img'); if (!img) return;
     $('#lb img').src = img.src; $('#lb').dataset.nombre = 'foto-perfil.jpg'; $('#lb').classList.add('open');
   });
-  $('#perfil-btn').addEventListener('click', abrirPerfil);
+  // ---- [NUEVO · menú] lista desplegable del nombre ----
+  // Se ubica debajo del botón con position:fixed (la cabecera tiene overflow:hidden). Se cierra al tocar afuera,
+  // con Esc, al hacer scroll o al girar el celular. Sin sesión (link de coordinación con clave) muestra solo
+  // Información adicional y "Salir", que borra la clave guardada.
+  const menu = $('#menu-yo');
+  function abrirMenu(){
+    const b = $('#perfil-btn'), r = b.getBoundingClientRect();
+    const conSesion = !!(sesion && sesion.token);
+    if (conSesion){
+      $('#my-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`; $('#my-rol').textContent = `${sesion.rol || ''} · ${sesion.id}`;
+      const av = $('#my-avatar'); av.innerHTML = esc(iniciales(sesion));
+      if (sesion.fotoId){ try { const u = new URL(FLOW_URL); u.searchParams.set('fotoUsuario', sesion.id); fetch(u).then(x => x.json()).then(x => { if (x.data) av.innerHTML = `<img src="${x.data}" alt="">`; }).catch(() => {}); } catch {} }
+    } else {
+      $('#my-nombre').textContent = MODO_ADMIN ? 'Administración' : 'Coordinación'; $('#my-rol').textContent = 'Acceso con clave'; $('#my-avatar').innerHTML = MODO_ADMIN ? 'AD' : 'CO';
+    }
+    $('#my-perfil').classList.toggle('hidden', !conSesion);
+    $('#my-sol').classList.toggle('hidden', MODO_COORD);
+    $('#my-coord').classList.toggle('hidden', !(conSesion && esRolCoord(sesion.rol) && !MODO_COORD));
+    $('#my-cargar').classList.toggle('hidden', !MODO_COORD);
+    $('#my-salir-txt').textContent = conSesion ? 'Cerrar sesión' : 'Salir';
+    menu.style.top = (r.bottom + 8) + 'px'; menu.style.right = Math.max(12, window.innerWidth - r.right) + 'px';
+    menu.classList.remove('hidden'); b.setAttribute('aria-expanded', 'true');
+  }
+  const cerrarMenu = () => { menu.classList.add('hidden'); $('#perfil-btn').setAttribute('aria-expanded', 'false'); };
+  $('#perfil-btn').addEventListener('click', e => { e.stopPropagation(); menu.classList.contains('hidden') ? abrirMenu() : cerrarMenu(); });
+  document.addEventListener('click', e => { if (!menu.classList.contains('hidden') && !menu.contains(e.target)) cerrarMenu(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarMenu(); });
+  window.addEventListener('scroll', cerrarMenu, { passive: true });
+  window.addEventListener('resize', cerrarMenu);
+  $('#my-perfil').addEventListener('click', () => { cerrarMenu(); abrirPerfil(); });
+  $('#my-sol').addEventListener('click', () => { cerrarMenu(); abrirSolicitudes(); });
+  $('#my-info').addEventListener('click', () => { cerrarMenu(); abrirInfo(); });
+  $('#my-salir').addEventListener('click', () => {
+    cerrarMenu();
+    if (sesion && sesion.token){
+      if (confirm('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.')){ guardarSesion(null); location.replace(location.pathname + '?modo=usuario'); }
+    } else if (confirm('¿Salir? Se borra la clave guardada en este dispositivo.')){ try { localStorage.removeItem(MODO_ADMIN ? 'admin_clave' : 'coord_clave'); } catch {} location.reload(); }
+  });
+
+  // ---- [NUEVO · info adicional] contactos y observaciones de coordinación ----
+  // Todos la leen (GET ?info=1, sin clave; queda en caché local). La editan Coordinador/Supervisor/Administrador
+  // con sesión, o el link de coordinación con la clave aceptada (POST accion 'info').
+  let infoAdicional = null; try { infoAdicional = JSON.parse(localStorage.getItem('info_adicional') || 'null'); } catch {}
+  const puedeEditarInfo = () => !!sesionCoord() || (MODO_COORD && credOk);
+  async function cargarInfo(){
+    if (!FLOW_URL) return;
+    try { const u = new URL(FLOW_URL); u.searchParams.set('info', '1'); const res = await (await fetch(u)).json(); if (res.ok){ infoAdicional = res.info; try { localStorage.setItem('info_adicional', JSON.stringify(infoAdicional)); } catch {} } } catch {}
+  }
+  const iconoTel = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.6a2 2 0 0 1-.5 2.1L8.1 9.7a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.8.3 1.7.5 2.6.7a2 2 0 0 1 1.7 2z"/></svg>';
+  const iconoMail = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>';
+  function pintarInfo(){
+    const i = infoAdicional || { contactos: [], observaciones: '' };
+    const cs = i.contactos || [];
+    $('#info-contactos').innerHTML = cs.map(c => `<div class="contacto"><div class="ini">${esc(iniciales({ nombre: c.nombre, apellido: '' }) || '•')}</div><div style="min-width:0"><b>${esc(c.nombre || '—')}</b>${c.cargo ? `<small>${esc(c.cargo)}</small>` : ''}${c.celular ? `<a href="tel:${esc(c.celular.replace(/[^+\d]/g, ''))}">${iconoTel}${esc(c.celular)}</a>` : ''}${c.mail ? `<a href="mailto:${esc(c.mail)}">${iconoMail}${esc(c.mail)}</a>` : ''}</div></div>`).join('');
+    $('#info-obs').textContent = i.observaciones || ''; $('#info-obs').classList.toggle('hidden', !i.observaciones);
+    $('#info-vacio').classList.toggle('hidden', !!(cs.length || i.observaciones));
+    $('#info-meta').textContent = i.actualizado ? `Actualizado el ${fmtFechaHora(i.actualizado)}${i.por ? ' por ' + i.por : ''}` : 'Contactos y observaciones de coordinación.';
+    $('#info-editar').classList.toggle('hidden', !puedeEditarInfo());
+    $('#info-ver').classList.remove('hidden'); $('#info-editar-box').classList.add('hidden');
+  }
+  async function abrirInfo(){
+    pintarInfo(); $('#modal-info').classList.add('open');
+    await cargarInfo(); if ($('#info-editar-box').classList.contains('hidden')) pintarInfo();   // se refresca si no está en edición
+  }
+  const filaContacto = c => `<div class="ed-contacto"><input placeholder="Nombre" value="${esc(c.nombre || '')}" data-k="nombre"><input placeholder="Cargo (ej.: Coordinador)" value="${esc(c.cargo || '')}" data-k="cargo"><input placeholder="Celular" type="tel" value="${esc(c.celular || '')}" data-k="celular"><input placeholder="Mail" type="email" value="${esc(c.mail || '')}" data-k="mail"><button type="button" class="quitar" aria-label="Quitar">×</button></div>`;
+  $('#info-editar').addEventListener('click', () => {
+    const i = infoAdicional || { contactos: [], observaciones: '' };
+    $('#info-ed-lista').innerHTML = (i.contactos && i.contactos.length ? i.contactos : [{}]).map(filaContacto).join('');
+    $('#info-ed-obs').value = i.observaciones || '';
+    $('#info-ver').classList.add('hidden'); $('#info-editar-box').classList.remove('hidden');
+  });
+  $('#info-agregar').addEventListener('click', () => { $('#info-ed-lista').insertAdjacentHTML('beforeend', filaContacto({})); const ins = $('#info-ed-lista').querySelectorAll('input'); if (ins.length >= 4) ins[ins.length - 4].focus(); });
+  $('#info-ed-lista').addEventListener('click', e => { const q = e.target.closest('.quitar'); if (q) q.closest('.ed-contacto').remove(); });
+  $('#info-cancelar').addEventListener('click', pintarInfo);
+  $('#info-cerrar').addEventListener('click', () => $('#modal-info').classList.remove('open'));
+  $('#modal-info').addEventListener('click', e => { if (e.target === $('#modal-info')) $('#modal-info').classList.remove('open'); });
+  $('#info-guardar').addEventListener('click', async () => {
+    const contactos = Array.from($('#info-ed-lista').querySelectorAll('.ed-contacto')).map(row => { const c = {}; row.querySelectorAll('input').forEach(i => c[i.dataset.k] = i.value.trim()); return c; }).filter(c => c.nombre || c.celular || c.mail);
+    const malo = contactos.find(c => c.mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.mail)); if (malo){ toast('Revisá el mail de ' + (malo.nombre || 'un contacto'), 'err'); return; }
+    const btn = $('#info-guardar'); btn.disabled = true; btn.textContent = 'Guardando…';
+    try {
+      const res = await postCoord({ accion: 'info', contactos, observaciones: $('#info-ed-obs').value.trim() });
+      infoAdicional = res.info; try { localStorage.setItem('info_adicional', JSON.stringify(infoAdicional)); } catch {}
+      pintarInfo(); toast('Información guardada', 'ok');
+    } catch (e){ toast(e.message === 'Sin clave' ? 'Necesitás la clave de coordinador' : e.message, 'err'); }
+    finally { btn.disabled = false; btn.textContent = 'Guardar'; }
+  });
   $('#pf-ok').addEventListener('click', guardarPerfil);
   $('#pf-cancel').addEventListener('click', () => $('#modal-perfil').classList.remove('open'));
   $('#modal-perfil').addEventListener('click', e => { if (e.target === $('#modal-perfil')) $('#modal-perfil').classList.remove('open'); });
   $('#pf-cam').addEventListener('change', e => fotoPerfilElegida(e.target));
   $('#pf-gal').addEventListener('change', e => fotoPerfilElegida(e.target));
-  $('#pf-salir').addEventListener('click', () => { if (confirm('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.')){ guardarSesion(null); location.replace(location.pathname + '?modo=usuario'); } });
 
   // ---- conexión con la base ----
   // [CORREGIDO · arranque] listo(): muestra la pantalla una vez decidido el modo. Con red de seguridad a los 6 s por si algo falla.
@@ -2372,7 +2556,7 @@
     if (!db){
       // [NUEVO · novedades] ¿esta persona ya vio la versión actual? Si no, la campana lo avisa
       // [NUEVO · novedades por rol] si para este rol no hay ninguna novedad en esta versión, no se avisa
-      if (FLOW_URL){ try { novedadPendiente = localStorage.getItem('version_vista') !== VERSION && novedadesVisibles().length > 0; } catch { novedadPendiente = novedadesVisibles().length > 0; } }
+      refrescarNovedades();                                    // [CORREGIDO · novedades por rol]
       if (MODO_COORD){
         // [NUEVO · envío] Modo coordinador: sin formulario; Registros y Tablero salen de la planilla central
         document.title = tituloBase = MODO_ADMIN ? 'Administración · Emergencias' : 'Coordinación · Emergencias';
@@ -2385,6 +2569,7 @@
           $('#sc-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`; $('#sc-rol').textContent = sesion.rol;
           pintarPerfil();                                        // [NUEVO · perfil] nombre y perfil en la cabecera (la barra de sesión queda oculta)
         }
+        pintarPerfil(); cargarInfo();                            // [NUEVO · menú / info adicional] menú del nombre también con clave
         $('#bell').classList.remove('hidden');                   // [NUEVO · campana]
         $('#migra').classList.remove('hidden');                  // [NUEVO · migración] paquete y archivo en el tablero
         { const d = new Date(); d.setDate(d.getDate() - 90); $('#arch-hasta').value = d.toISOString().slice(0, 10); }   // sugerencia: 90 días atrás
