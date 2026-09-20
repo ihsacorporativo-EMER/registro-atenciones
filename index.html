@@ -267,6 +267,21 @@
   #migra .box p,#config .box p{margin:0 0 8px}
   #migra label.chk,#config label.chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--muted);margin:0 0 8px}
   #migra .primary,#config .primary{min-height:42px;padding:9px 16px;font-size:15px;border-radius:10px}
+  /* [NUEVO · catálogo] solicitudes y listas; [CORREGIDO · estilo] botones y selector de archivo en Configuración */
+  .solrow{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:8px;font-size:14px;box-shadow:var(--shadow)}
+  .solrow.pend{border-color:var(--accent)}
+  .solrow.nueva{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--card))}
+  .solrow small{color:var(--muted)}
+  .solrow .acciones{display:flex;gap:14px;align-items:center}
+  .primary.chico{width:auto;min-height:36px;padding:6px 14px;font-size:14px;border-radius:10px}
+  .catrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .catrow.baja b{color:var(--muted);text-decoration:line-through}
+  .catrow .acc{display:flex;gap:12px;flex:none}
+  .catlista{max-height:340px;overflow-y:auto}
+  .solicitar{display:block;margin-top:6px;font-size:13px}
+  #imp-zip{display:block;width:100%;font-size:14px;color:var(--muted);border:1.5px dashed var(--line);border-radius:10px;padding:10px;background:var(--field)}
+  #config .filters .primary,#migra .filters .primary,#cat-listas .filters .primary{min-width:max-content}
+  #config .box,#cat-listas .box{min-width:0}
   /* [NUEVO · mails] filas de direcciones */
   .mailrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--ink)}
   .mailrow b{flex:1;min-width:160px;word-break:break-all}
@@ -412,6 +427,7 @@
     <button role="tab" aria-selected="false" data-tab="list">Registros <span id="count"></span><span class="tabdot" id="tabdot"></span></button>
     <button role="tab" aria-selected="false" data-tab="board">Tablero</button>
     <button role="tab" aria-selected="false" data-tab="users" class="hidden">Usuarios <span id="ucount"></span></button><!-- [NUEVO · usuarios] coordinador y administrador -->
+    <button role="tab" aria-selected="false" data-tab="cat" class="hidden">Catálogo <span id="catcount"></span></button><!-- [NUEVO · catálogo] coordinador y administrador -->
     <button role="tab" aria-selected="false" data-tab="config" class="hidden">Configuración</button><!-- [NUEVO · admin] solo administrador -->
   </div>
 </header>
@@ -499,13 +515,18 @@
         </div>
         <div class="field">
           <label for="movil">Nro. de móvil</label>
-          <input id="movil" type="tel" inputmode="numeric" placeholder="Ej.: 154" required>
+          <!-- [NUEVO · catálogo] lista que filtra al escribir; si no está, botón para solicitarlo -->
+          <input id="movil" type="tel" inputmode="numeric" placeholder="Ej.: 154" required list="dl-moviles" autocomplete="off">
+          <datalist id="dl-moviles"></datalist>
+          <button type="button" class="link-btn solicitar hidden" id="sol-movil" data-tipo="movil">No está en la lista · Solicitar agregar</button>
         </div>
       </div>
 
       <div class="field">
         <label for="evento">Nombre del evento</label>
-        <input id="evento" type="text" placeholder="Ej.: Recital Movistar Arena" required autocomplete="off">
+        <input id="evento" type="text" placeholder="Ej.: Recital Movistar Arena" required autocomplete="off" list="dl-eventos">
+        <datalist id="dl-eventos"></datalist>
+        <button type="button" class="link-btn solicitar hidden" id="sol-evento" data-tipo="evento">No está en la lista · Solicitar agregar</button>
       </div>
 
       <div class="row">
@@ -561,6 +582,12 @@
       <p class="hint" id="photo-hint">Hasta 8 fotos por registro. Se comprimen automáticamente.</p>
     </section>
 
+    <!-- [NUEVO · catálogo] solicitudes propias de móviles y eventos, con la respuesta de coordinación -->
+    <section class="card hidden" id="mis-sol">
+      <h2><span class="n">3</span>Mis solicitudes</h2>
+      <div id="mis-sol-lista"></div>
+    </section>
+
     <div class="sticky">
       <button class="primary" id="save" type="button">Guardar registro</button>
       <button class="primary hidden" id="copy" type="button" style="background:var(--brand)">Copiar resumen</button>
@@ -583,6 +610,14 @@
     <p class="lead">Solicitudes pendientes de aprobar y usuarios activos. Tocá la pestaña para actualizar.</p>
     <input class="search" id="uq" type="search" placeholder="Buscar por nombre, ID o rol">
     <div id="ulist"></div>
+  </div>
+
+  <!-- ===== [NUEVO · catálogo] CATÁLOGO (coordinador y administrador) ===== -->
+  <div id="view-cat" class="hidden">
+    <h1>Catálogo</h1>
+    <p class="lead">Solicitudes del personal para agregar móviles o eventos, pedidos de importación, y las listas que ofrece el formulario. Tocá la pestaña para actualizar.</p>
+    <div id="cat-sol"></div>
+    <div class="mini" id="cat-listas"></div>
   </div>
 
   <!-- ===== [NUEVO · admin] CONFIGURACIÓN (solo administrador) ===== -->
@@ -634,9 +669,11 @@
         <h3>Descargar paquete completo</h3>
         <p class="hint">Un ZIP con el Excel (registros, resúmenes y conversaciones) y las fotos en una carpeta por registro. Usa el rango de fechas de arriba. Conviene hacerlo desde una computadora.</p>
         <button class="primary" id="paquete" type="button">Descargar paquete</button>
+        <!-- [NUEVO · catálogo] el coordinador le pide a administración que importe un paquete -->
+        <p class="hint" style="margin:10px 0 0"><button type="button" class="link-btn" id="pedir-imp">Pedir a administración que importe un paquete</button></p>
       </div>
-      <!-- [NUEVO · mails] coordinador y administrador -->
-      <div class="box">
+      <!-- [NUEVO · mails] coordinador y administrador (en administrador se muestra dentro de Configuración) -->
+      <div class="box" id="mails-box">
         <h3>Mails que reciben información</h3>
         <p class="hint">Cada dirección puede recibir una copia de cada registro con sus fotos, el aviso mensual de migración, o los dos.</p>
         <div id="mails-lista" class="hint">Cargando…</div>
@@ -728,7 +765,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-20 c';
+  const VERSION = '2026-09-20 d';
   const NOVEDADES = [
     'Nuevo link de usuarios: cada persona entra con su ID y PIN, y sus registros quedan firmados con su nombre y rol.',
     'Coordinación tiene el panel "Usuarios": aprueba solicitudes, asigna roles y restablece PIN.',
@@ -738,6 +775,8 @@
     'Cada registro recibe un número de 9 dígitos al llegar a la planilla, correlativo, que se ve en el detalle.',
     'Nuevo modo administrador con la pestaña Configuración: archivar, borrar fotos, eliminar usuarios e importar paquetes ZIP.',
     'En el Tablero, coordinación administra los mails que reciben copia de cada registro o el aviso mensual.',
+    'Móvil y Evento ahora se eligen de una lista que filtra al escribir. Si falta uno, "Solicitar agregar" se lo pide a coordinación y la respuesta llega a la campana.',
+    'Coordinación tiene la pestaña Catálogo: acepta o devuelve solicitudes y administra las listas de móviles y eventos.',
     'Cada registro y cada mensaje muestran quién lo cargó.',
   ];
   let novedadPendiente = false;
@@ -832,13 +871,14 @@
   document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
     document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x===b));
     const tab = b.dataset.tab;
-    ['form','list','board','users','config','login'].forEach(n => $('#view-'+n).classList.toggle('hidden', tab!==n));   // [NUEVO · usuarios / admin] + vistas users, config y login
-    document.querySelector('main').classList.toggle('wide', tab==='board');
+    ['form','list','board','users','cat','config','login'].forEach(n => $('#view-'+n).classList.toggle('hidden', tab!==n));   // [NUEVO · usuarios / admin / catálogo]
+    document.querySelector('main').classList.toggle('wide', tab==='board' || tab==='config' || tab==='cat');   // [CORREGIDO · estilo] paneles anchos
     const v = $('#view-'+tab); v.style.animation='none'; void v.offsetWidth; v.style.animation='rise .4s cubic-bezier(.2,.8,.2,1)';
     if (tab==='list') renderList(); if (tab==='board') renderBoard();
     if (MODO_COORD && !db && (tab==='list' || tab==='board')) cargarCentral();   // [NUEVO · envío] coordinador: refresca desde la planilla
     if (tab==='users') cargarUsuarios();                        // [NUEVO · usuarios]
-    if (tab==='board' && MODO_COORD && !db) cargarMails();      // [NUEVO · mails]
+    if ((tab==='board' || tab==='config') && MODO_COORD && !db) cargarMails();   // [NUEVO · mails]
+    if (tab==='cat') cargarSolicitudes();                       // [NUEVO · catálogo]
     if (tab==='list' && !db && FLOW_URL) marcarVisto();       // [NUEVO · campana] al abrir Registros no queda nada "sin ver" (las etiquetas Nuevo quedan hasta el próximo render)
   }));
 
@@ -924,6 +964,7 @@
     document.querySelectorAll('.seg button').forEach(b => { b.setAttribute('aria-pressed','false'); b.style.borderColor=''; });
     document.querySelectorAll('.field.invalid').forEach(f => f.classList.remove('invalid'));
     editandoId = null; $('#editando').classList.add('hidden'); $('#save').textContent = 'Guardar registro';   // [NUEVO · edición]
+    document.querySelectorAll('.solicitar').forEach(b => b.classList.add('hidden'));   // [NUEVO · catálogo]
   }
 
   // ---- guardar ----
@@ -1060,7 +1101,7 @@
       registros = res.registros || []; renderList(); renderBoard();
       marcarVisto();                                         // [NUEVO · campana] ya lo vio: contador a cero
       mostrarAlerta(res.alerta);                             // [NUEVO · migración] cartel si el script dejó un aviso
-      actualizarSolicitudes(res.solicitudes); pintarNoVistos(0);   // [NUEVO · usuarios] la campana refleja las solicitudes
+      actualizarSolicitudes(res.solicitudes, res.pedidos); pintarNoVistos(0);   // [NUEVO · usuarios / catálogo] la campana refleja las solicitudes
     } catch (e){
       toast(e.message === 'Sin clave' ? 'Necesitás la clave de coordinador' : 'No se pudieron cargar los registros: ' + e.message, 'err');
     }
@@ -1319,11 +1360,17 @@
       });
     } catch {}
   }
-  let totalPrev = 0, solicitudesPend = 0;
-  // [NUEVO · usuarios] solicitudes de usuarios (altas por aprobar y pedidos de PIN) para el coordinador
-  const actualizarSolicitudes = s => { solicitudesPend = MODO_COORD ? (s || 0) : 0; $('#ucount').textContent = solicitudesPend ? `(${solicitudesPend})` : ''; };
+  let totalPrev = 0, solicitudesPend = 0, usuariosPend = 0, pedidosPend = 0;
+  // [NUEVO · usuarios] solicitudes de usuarios (altas por aprobar y pedidos de PIN) y [NUEVO · catálogo] pedidos de
+  // móviles, eventos e importaciones, para coordinación. Cada uno con su contador en la pestaña que corresponde.
+  const actualizarSolicitudes = (s, pedidos) => {
+    usuariosPend = MODO_COORD ? (s || 0) : 0; pedidosPend = MODO_COORD ? (pedidos || 0) : 0; solicitudesPend = usuariosPend + pedidosPend;
+    $('#ucount').textContent = usuariosPend ? `(${usuariosPend})` : ''; $('#catcount').textContent = pedidosPend ? `(${pedidosPend})` : '';
+  };
   function pintarNoVistos(n){
-    const total = n + (novedadPendiente ? 1 : 0) + solicitudesPend;   // [NUEVO · novedades] versión nueva y [NUEVO · usuarios] solicitudes cuentan en la campana, no en la pestaña Registros
+    // [NUEVO · novedades] versión nueva, [NUEVO · usuarios / catálogo] solicitudes (coordinación) y respuestas a mis
+    // solicitudes (campo) cuentan en la campana, no en la pestaña Registros
+    const total = n + (novedadPendiente ? 1 : 0) + solicitudesPend + (MODO_COORD ? 0 : solNoVistas());
     // [CORREGIDO · campana] con cero, el texto queda vacío y el círculo desaparece (ver .badge:empty)
     $('#bell-n').textContent = total > 0 ? (total > 99 ? '99+' : String(total)) : ''; $('#bell-n').classList.toggle('on', total > 0);
     $('#count').textContent = n ? `(${n})` : ''; $('#tabdot').classList.toggle('on', n > 0);
@@ -1347,7 +1394,7 @@
     try {
       const res = await pedirCentral({ desde: vistoHasta, solo: 'conteo' });
       const n = res.nuevos || 0, subio = n > nuevosPrev;
-      actualizarSolicitudes(res.solicitudes);                  // [NUEVO · usuarios]
+      actualizarSolicitudes(res.solicitudes, res.pedidos);     // [NUEVO · usuarios / catálogo]
       pintarNoVistos(n); mostrarAlerta(res.alerta);
       // [NUEVO · rapidez] si entró algo y la lista está a la vista, se recarga sola con las etiquetas "Nuevo",
       // salvo que haya una respuesta a medio escribir (no se pisa lo que el coordinador está tecleando)
@@ -1369,7 +1416,9 @@
   // novedades primero; después, solicitudes de usuarios (coordinador); si no, a la lista
   $('#bell').addEventListener('click', () => {
     if (novedadPendiente) abrirNovedades();
-    else if (solicitudesPend && MODO_COORD) $('.tabs button[data-tab="users"]').click();
+    else if (MODO_COORD && usuariosPend) $('.tabs button[data-tab="users"]').click();
+    else if (MODO_COORD && pedidosPend) $('.tabs button[data-tab="cat"]').click();                     // [NUEVO · catálogo]
+    else if (!MODO_COORD && solNoVistas()){ $('.tabs button[data-tab="form"]').click(); $('#mis-sol').scrollIntoView({ behavior: 'smooth' }); }
     else $('.tabs button[data-tab="list"]').click();
   });
   $('#list').addEventListener('click', async e => {
@@ -1683,6 +1732,9 @@
     sondearMensajes();                                                 // [NUEVO · mensajes] al abrir, cada 15 s y al volver a la app
     setInterval(sondearMensajes, 15000);
     document.addEventListener('visibilitychange', sondearMensajes);
+    // [NUEVO · catálogo] listas del formulario (desde caché primero, después del script) y mis solicitudes
+    pintarCatalogo(); cargarCatalogo(); setInterval(cargarCatalogo, 300000);
+    renderMisSolicitudes(); cargarMisSolicitudes(); setInterval(cargarMisSolicitudes, 60000); document.addEventListener('visibilitychange', cargarMisSolicitudes);
   }
 
   // [NUEVO · roles coord] Con sesión activa: Coordinador y Supervisor van al panel de coordinación con su propia sesión.
@@ -1874,6 +1926,135 @@
     if (await accionUsuario(s.closest('.urow').dataset.id, 'rol', { rol: s.value })) toast('Rol actualizado', 'ok');
   });
 
+  // ---- [NUEVO · catálogo] listas de móviles y eventos en el formulario, y solicitudes para agregar (campo) ----
+  let catalogo = { moviles: [], eventos: [] };
+  try { catalogo = JSON.parse(localStorage.getItem('catalogo') || 'null') || catalogo; } catch {}
+  let dispositivoId = '';                                       // identifica el celular del link genérico para que le vuelvan las respuestas
+  try { dispositivoId = localStorage.getItem('dispositivo_id') || ''; if (!dispositivoId){ dispositivoId = 'd' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); localStorage.setItem('dispositivo_id', dispositivoId); } } catch {}
+  function pintarCatalogo(){
+    $('#dl-moviles').innerHTML = catalogo.moviles.map(v => `<option value="${esc(v)}">`).join('');
+    $('#dl-eventos').innerHTML = catalogo.eventos.map(v => `<option value="${esc(v)}">`).join('');
+    verificarCatalogo('movil'); verificarCatalogo('evento');
+  }
+  async function cargarCatalogo(){
+    if (!FLOW_URL) return;
+    try {
+      const u = new URL(FLOW_URL); u.searchParams.set('catalogo', '1');
+      const res = await (await fetch(u)).json();
+      if (res.ok){ catalogo = { moviles: res.moviles || [], eventos: res.eventos || [] }; try { localStorage.setItem('catalogo', JSON.stringify(catalogo)); } catch {} pintarCatalogo(); }
+    } catch {}
+  }
+  // Si lo escrito no está en la lista, aparece "Solicitar agregar" debajo del campo. Guardar igual está permitido.
+  function verificarCatalogo(tipo){
+    const v = $('#' + tipo).value.trim();
+    const lista = tipo === 'movil' ? catalogo.moviles : catalogo.eventos;
+    const falta = !!v && !lista.some(x => x.toLowerCase() === v.toLowerCase());
+    $('#sol-' + tipo).classList.toggle('hidden', !(falta && FLOW_URL && !db));
+  }
+  $('#movil').addEventListener('input', () => verificarCatalogo('movil'));
+  $('#evento').addEventListener('input', () => verificarCatalogo('evento'));
+  let misSolicitudes = [], solVistas = new Set();
+  try { misSolicitudes = JSON.parse(localStorage.getItem('mis_solicitudes') || '[]'); solVistas = new Set(JSON.parse(localStorage.getItem('sol_vistas') || '[]')); } catch {}
+  const solNoVistas = () => misSolicitudes.filter(s => s.estado !== 'pendiente' && !solVistas.has(s.id)).length;
+  const persistirSolicitudes = () => { try { localStorage.setItem('mis_solicitudes', JSON.stringify(misSolicitudes.slice(0, 50))); localStorage.setItem('sol_vistas', JSON.stringify([...solVistas].slice(-200))); } catch {} };
+  const nombreTipo = { movil: 'Móvil', evento: 'Evento', importar: 'Importación', otro: 'Pedido' };
+  async function solicitar(tipo, valor, detalle){
+    try {
+      const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify({ accion: 'solicitar', tipo, valor, detalle, dispositivo: dispositivoId, token: sesion?.token }) });
+      const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script');
+      if (res.yaExiste){ toast('Ya está en la lista: actualizamos las opciones', 'ok'); await cargarCatalogo(); return true; }
+      misSolicitudes.unshift(res.solicitud); persistirSolicitudes(); renderMisSolicitudes();
+      return true;
+    } catch (e){ toast('No se pudo enviar la solicitud: ' + e.message, 'err'); return false; }
+  }
+  document.querySelectorAll('.solicitar').forEach(b => b.addEventListener('click', async () => {
+    const tipo = b.dataset.tipo, valor = $('#' + tipo).value.trim(); if (!valor) return;
+    b.disabled = true;
+    if (await solicitar(tipo, valor, '')){ toast(`Solicitud enviada: ${tipo === 'movil' ? 'móvil' : 'evento'} "${valor}". Podés seguir cargando.`, 'ok'); b.classList.add('hidden'); }
+    b.disabled = false;
+  }));
+  function renderMisSolicitudes(){
+    const sec = $('#mis-sol'); if (!misSolicitudes.length){ sec.classList.add('hidden'); return; }
+    sec.classList.remove('hidden');
+    $('#mis-sol-lista').innerHTML = misSolicitudes.map(s => {
+      const nueva = s.estado !== 'pendiente' && !solVistas.has(s.id);
+      const pill = s.estado === 'pendiente' ? '<span class="pill pend">Pendiente</span>' : s.estado === 'aceptada' ? '<span class="pill si">Aceptada</span>' : '<span class="pill no">Devuelta</span>';
+      return `<div class="solrow ${nueva ? 'nueva' : ''}" data-id="${esc(s.id)}"><div><b>${nombreTipo[s.tipo] || 'Pedido'}: ${esc(s.valor || s.detalle)}</b> ${pill}${nueva ? ' <span class="pill nuevo">Nuevo</span>' : ''}<br><small>${fmtFechaHora(s.creado)}${s.respuesta ? ` · Respuesta: ${esc(s.respuesta)}` : ''}</small></div>${nueva ? '<button type="button" class="link-btn sol-ok">Entendido</button>' : ''}</div>`;
+    }).join('');
+  }
+  $('#mis-sol-lista').addEventListener('click', e => {
+    const b = e.target.closest('.sol-ok'); if (!b) return;
+    solVistas.add(b.closest('.solrow').dataset.id); persistirSolicitudes(); renderMisSolicitudes(); pintarNoVistos(nuevosPrev);
+  });
+  // Cada 60 s: ¿coordinación respondió alguna? Si aceptó un móvil o evento, se refresca la lista del formulario.
+  async function cargarMisSolicitudes(){
+    if (!FLOW_URL || MODO_COORD || db || document.hidden) return;
+    try {
+      const u = new URL(FLOW_URL); u.searchParams.set('misSolicitudes', '1'); u.searchParams.set('dispositivo', dispositivoId); if (sesion?.token) u.searchParams.set('token', sesion.token);
+      const res = await (await fetch(u)).json(); if (!res.ok) return;
+      const antes = solNoVistas();
+      misSolicitudes = res.solicitudes || []; persistirSolicitudes(); renderMisSolicitudes();
+      if (solNoVistas() > antes){ toast('Coordinación respondió una solicitud tuya', 'ok'); await cargarCatalogo(); }
+      pintarNoVistos(nuevosPrev);
+    } catch {}
+  }
+
+  // ---- [NUEVO · catálogo] pestaña Catálogo (coordinador y administrador): solicitudes y listas ----
+  let solicitudesTodas = [], catalogoAdmin = { moviles: [], eventos: [] };
+  async function cargarSolicitudes(){
+    if (!MODO_COORD || !FLOW_URL) return;
+    try { const res = await pedirCentral({ solicitudes: 1 }); solicitudesTodas = res.solicitudes || []; catalogoAdmin = res.catalogo || catalogoAdmin; renderCatalogo(); }
+    catch (e){ toast('No se pudo cargar el catálogo: ' + e.message, 'err'); }
+  }
+  function renderCatalogo(){
+    const pend = solicitudesTodas.filter(s => s.estado === 'pendiente'), resueltas = solicitudesTodas.filter(s => s.estado !== 'pendiente').slice(0, 30);
+    const fila = s => `<div class="solrow ${s.estado === 'pendiente' ? 'pend' : ''}" data-id="${esc(s.id)}"><div><b>${nombreTipo[s.tipo] || 'Pedido'}: ${esc(s.valor || '')}</b>${s.detalle ? ` <small>${esc(s.detalle)}</small>` : ''}<br><small>${esc(s.quien)} · ${fmtFechaHora(s.creado)}${s.estado !== 'pendiente' ? ` · <b>${s.estado}</b>${s.respuesta ? ': ' + esc(s.respuesta) : ''}` : ''}</small></div>
+      ${s.estado === 'pendiente' ? `<div class="acciones"><button type="button" class="primary chico" data-que="aceptar">Aceptar</button><button type="button" class="link-btn" data-que="devolver">Devolver</button></div>` : ''}</div>`;
+    const lista = (tipo, arr) => `<div class="box"><h3>${tipo === 'movil' ? 'Móviles' : 'Eventos'} (${arr.filter(x => x.estado === 'activo').length} activos)</h3>
+      <div class="filters" style="grid-template-columns:1fr auto;margin:0 0 8px"><div><input class="search" style="margin:0" type="text" placeholder="Agregar ${tipo === 'movil' ? 'móvil' : 'evento'}" data-tipo="${tipo}" ${tipo === 'movil' ? 'inputmode="numeric"' : ''}></div><button type="button" class="primary cat-add" data-tipo="${tipo}" style="background:var(--brand)">Agregar</button></div>
+      <div class="catlista">${arr.length ? arr.map(x => `<div class="catrow ${x.estado}" data-tipo="${tipo}" data-valor="${esc(x.valor)}"><b>${esc(x.valor)}</b><span class="acc">${x.estado === 'activo' ? '<button type="button" class="link-btn" data-que="baja">Dar de baja</button>' : '<button type="button" class="link-btn" data-que="reactivar">Reactivar</button>'}${esAdminActual() ? '<button type="button" class="link-btn peligro" data-que="quitar">Quitar</button>' : ''}</span></div>`).join('') : '<span class="hint">Sin valores todavía. Agregá los primeros o esperá las solicitudes del personal.</span>'}</div></div>`;
+    $('#cat-sol').innerHTML = (pend.length ? `<div class="usec">Solicitudes pendientes (${pend.length})</div>` + pend.map(fila).join('') : '<p class="hint" style="margin:0 0 12px">No hay solicitudes pendientes.</p>')
+      + (resueltas.length ? `<div class="usec">Resueltas recientes</div>` + resueltas.map(fila).join('') : '');
+    $('#cat-listas').innerHTML = lista('movil', catalogoAdmin.moviles) + lista('evento', catalogoAdmin.eventos);
+  }
+  $('#cat-sol').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-que]'); if (!b) return;
+    const id = b.closest('.solrow').dataset.id, s = solicitudesTodas.find(x => x.id === id) || {};
+    let respuesta = '';
+    if (b.dataset.que === 'devolver'){ respuesta = prompt(`Devolver a ${s.quien}. ¿Qué le respondés?`, ''); if (respuesta === null) return; if (!respuesta.trim()){ toast('Escribí una respuesta', 'err'); return; } }
+    else if (s.tipo === 'importar' || s.tipo === 'otro'){ respuesta = prompt('Aceptar. Mensaje para quien lo pidió (opcional):', s.tipo === 'importar' ? 'Importado.' : 'Hecho.'); if (respuesta === null) return; }
+    try {
+      const res = await postCoord({ accion: 'solicitud', que: b.dataset.que, id, respuesta: respuesta.trim() });
+      const i = solicitudesTodas.findIndex(x => x.id === id); if (i >= 0) solicitudesTodas[i] = res.solicitud;
+      toast(b.dataset.que === 'aceptar' ? 'Aceptada' : 'Devuelta', 'ok'); await cargarSolicitudes(); sondearNuevos();
+    } catch (err){ toast('No se pudo: ' + err.message, 'err'); }
+  });
+  $('#cat-listas').addEventListener('click', async e => {
+    const add = e.target.closest('.cat-add');
+    if (add){
+      const inp = $('#cat-listas input[data-tipo="' + add.dataset.tipo + '"]'), valor = inp.value.trim();
+      if (!valor){ toast('Escribí el valor', 'err'); return; }
+      try { const res = await postCoord({ accion: 'catalogo', que: 'agregar', tipo: add.dataset.tipo, valor }); catalogoAdmin = res.catalogo; renderCatalogo(); toast('Agregado', 'ok'); }
+      catch (err){ toast('No se pudo: ' + err.message, 'err'); }
+      return;
+    }
+    const b = e.target.closest('button[data-que]'); if (!b) return;
+    const row = b.closest('.catrow'), que = b.dataset.que;
+    if (que === 'quitar' && !confirm(`¿Quitar "${row.dataset.valor}" de la lista? Los registros que lo usan no cambian.`)) return;
+    try { const res = await postCoord({ accion: 'catalogo', que, tipo: row.dataset.tipo, valor: row.dataset.valor }); catalogoAdmin = res.catalogo; renderCatalogo(); }
+    catch (err){ toast('No se pudo: ' + err.message, 'err'); }
+  });
+  // [NUEVO · catálogo] el coordinador le pide a administración que importe un paquete (la respuesta se ve en Catálogo)
+  $('#pedir-imp').addEventListener('click', async () => {
+    const det = prompt('¿Qué paquete hay que importar? (ej.: el de agosto, guardado en OneDrive/Registros)', ''); if (det === null) return;
+    if (!det.trim()){ toast('Escribí qué paquete', 'err'); return; }
+    try {
+      const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify({ accion: 'solicitar', tipo: 'importar', valor: '', detalle: det.trim(), dispositivo: dispositivoId, token: sesion?.token }) });
+      const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script');
+      toast('Pedido enviado a administración. Lo vas a ver en la pestaña Catálogo.', 'ok');
+    } catch (err){ toast('No se pudo: ' + err.message, 'err'); }
+  });
+
   // ---- [NUEVO · mails] direcciones que reciben información (tablero, coordinador y administrador) ----
   let mails = [];
   async function cargarMails(){
@@ -1978,6 +2159,8 @@
         document.title = tituloBase = MODO_ADMIN ? 'Administración · Emergencias' : 'Coordinación · Emergencias';
         $('.brand .tag').textContent = MODO_ADMIN ? 'ADMINISTRADOR' : 'COORDINADOR';   // [NUEVO] etiqueta según el link
         if (MODO_ADMIN) $('.tabs button[data-tab="config"]').classList.remove('hidden');   // [NUEVO · admin] pestaña Configuración
+        $('.tabs button[data-tab="cat"]').classList.remove('hidden');                       // [NUEVO · catálogo] pestaña Catálogo
+        if (MODO_ADMIN){ $('#config').appendChild($('#mails-box')); $('#pedir-imp').classList.add('hidden'); }   // [NUEVO · admin] mails en Configuración; el admin no se pide a sí mismo
         if (MODO_ADMIN ? sesionAdmin() : sesionCoord()){         // [NUEVO · roles coord] entró con su usuario: sin clave, con su nombre y rol
           $('.brand .tag').textContent = String(sesion.rol).toUpperCase();
           $('#sesion-coord').classList.remove('hidden'); $('#sc-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`; $('#sc-rol').textContent = sesion.rol;
