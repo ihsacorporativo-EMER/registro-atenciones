@@ -224,10 +224,10 @@
   .bar em{font-style:normal;color:var(--muted);min-width:70px}
 
   /* [NUEVO · campana] botón con contador en la cabecera (modo coordinador) y punto en la pestaña Registros (modo campo) */
-  .bell{margin-left:auto;position:relative;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
+  /* [CORREGIDO · campana] va a la derecha del todo, después del rol y el nombre (order: el HTML la tiene antes) */
+  .bell{order:2;margin-left:12px;position:relative;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
   .bell svg{width:20px;height:20px}
-  .yo{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px;min-width:0}
-  .bell:not(.hidden) + .yo{margin-left:0}
+  .yo{order:1;margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px;min-width:0}
   /* [NUEVO · perfil] botón con punto de estado y nombre, debajo del rol */
   .perfil-btn{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:999px;padding:3px 10px 3px 8px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer;max-width:190px}
   .perfil-btn #perfil-nombre{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -397,7 +397,7 @@
     .perfil-btn{font-size:11px;max-width:150px;padding:2px 8px 2px 7px}
     .mark{padding:4px 7px}
     .mark img{height:28px !important}
-    .bell{width:34px;height:34px}
+    .bell{width:34px;height:34px;margin-left:8px}
     /* [NUEVO · acordeón] pestañas plegadas: se ve solo la actual con una flecha; al tocarla se despliegan las demás */
     .tabs{flex-direction:column;gap:0;padding:0;overflow:hidden}
     .tabs button{display:none;width:100%;text-align:left;padding:12px 14px;border-radius:0;font-size:15px;border-top:1px solid rgba(255,255,255,.12)}
@@ -931,7 +931,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-20 p';
+  const VERSION = '2026-09-20 r';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   const NOVEDADES = [
@@ -944,7 +944,9 @@
     { para: 'coord', texto: 'Las novedades de coordinación ya no se muestran a usuarios de campo, aunque abran el link de coordinación en su celular.' },
     { para: 'todos', texto: 'Al tocar tu nombre se abre un menú: Perfil, Mis solicitudes, Información adicional y Cerrar sesión. "Mis solicitudes" ya no está en la pestaña Nuevo registro.' },
     { para: 'todos', texto: 'Información adicional: mails, celulares y observaciones de coordinación, siempre a mano desde el menú.' },
+    { para: 'todos', texto: 'La campana pasó al lado derecho de la cabecera, después del nombre.' },
     { para: 'coord', texto: 'La Información adicional la cargan Coordinación, Supervisión y Administración con el botón Editar; el resto solo la ve.' },
+    { para: 'coord', texto: 'En el panel de coordinación con clave, la cabecera y el menú ya no muestran al usuario de campo que tenga sesión en ese celular.' },
     { para: 'todos', texto: 'Tu nombre aparece debajo del rol con un punto de conexión; al tocarlo editás tu perfil: nombre, apellido, foto, celular y mail.' },
     { para: 'todos', texto: 'Al guardar un registro, todos los campos son obligatorios salvo Observaciones: lo que falte se marca en rojo.' },
   ];
@@ -2411,15 +2413,19 @@
   const marcarConexion = ok => { conectado = ok; pintarEstado(); };
   window.addEventListener('online', () => marcarConexion(true));
   window.addEventListener('offline', () => marcarConexion(false));
+  // [CORREGIDO · menú] qué sesión representa la cabecera y el menú: en el panel de coordinación, SOLO una sesión elevada
+  // (Coordinador/Supervisor/Administrador). Si el celular tiene sesión de un usuario de campo y se entró con la clave,
+  // el panel no lo muestra como si fuera el coordinador: dice "Menú · Acceso con clave".
+  const sesionMenu = () => MODO_COORD ? (MODO_ADMIN ? sesionAdmin() : sesionCoord()) : ((sesion && sesion.token) ? sesion : null);
   function pintarPerfil(){
-    const b = $('#perfil-btn');
+    const b = $('#perfil-btn'), sm = sesionMenu();
     // [NUEVO · menú] sin sesión, el link de coordinación (con clave) también tiene menú: Información adicional y Salir
-    if (!sesion || !sesion.token){ if (!MODO_COORD){ b.classList.add('hidden'); return; } $('#perfil-nombre').textContent = 'Menú'; b.classList.remove('hidden'); pintarEstado(); return; }
-    $('#perfil-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`;
+    if (!sm){ if (!MODO_COORD){ b.classList.add('hidden'); return; } $('#perfil-nombre').textContent = 'Menú'; b.classList.remove('hidden'); pintarEstado(); return; }
+    $('#perfil-nombre').textContent = `${sm.nombre} ${sm.apellido}`;
     b.classList.remove('hidden'); pintarEstado();
   }
   async function abrirPerfil(){
-    if (!sesion) return;
+    if (!sesionMenu()) return;                                 // [CORREGIDO · menú] en coordinación con clave no hay perfil
     $('#pf-id').textContent = `${sesion.nombre} ${sesion.apellido} · ${sesion.id}`; $('#pf-rol').textContent = sesion.rol || '';
     $('#pf-nombre').value = sesion.nombre || ''; $('#pf-apellido').value = sesion.apellido || '';
     $('#pf-cel').value = sesion.celular || ''; $('#pf-mail').value = sesion.mail || '';
@@ -2460,17 +2466,17 @@
   const menu = $('#menu-yo');
   function abrirMenu(){
     const b = $('#perfil-btn'), r = b.getBoundingClientRect();
-    const conSesion = !!(sesion && sesion.token);
+    const sm = sesionMenu(), conSesion = !!sm;                 // [CORREGIDO · menú] en coordinación, solo una sesión elevada
     if (conSesion){
-      $('#my-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`; $('#my-rol').textContent = `${sesion.rol || ''} · ${sesion.id}`;
-      const av = $('#my-avatar'); av.innerHTML = esc(iniciales(sesion));
-      if (sesion.fotoId){ try { const u = new URL(FLOW_URL); u.searchParams.set('fotoUsuario', sesion.id); fetch(u).then(x => x.json()).then(x => { if (x.data) av.innerHTML = `<img src="${x.data}" alt="">`; }).catch(() => {}); } catch {} }
+      $('#my-nombre').textContent = `${sm.nombre} ${sm.apellido}`; $('#my-rol').textContent = `${sm.rol || ''} · ${sm.id}`;
+      const av = $('#my-avatar'); av.innerHTML = esc(iniciales(sm));
+      if (sm.fotoId){ try { const u = new URL(FLOW_URL); u.searchParams.set('fotoUsuario', sm.id); fetch(u).then(x => x.json()).then(x => { if (x.data) av.innerHTML = `<img src="${x.data}" alt="">`; }).catch(() => {}); } catch {} }
     } else {
       $('#my-nombre').textContent = MODO_ADMIN ? 'Administración' : 'Coordinación'; $('#my-rol').textContent = 'Acceso con clave'; $('#my-avatar').innerHTML = MODO_ADMIN ? 'AD' : 'CO';
     }
     $('#my-perfil').classList.toggle('hidden', !conSesion);
     $('#my-sol').classList.toggle('hidden', MODO_COORD);
-    $('#my-coord').classList.toggle('hidden', !(conSesion && esRolCoord(sesion.rol) && !MODO_COORD));
+    $('#my-coord').classList.toggle('hidden', !(conSesion && esRolCoord(sm.rol) && !MODO_COORD));
     $('#my-cargar').classList.toggle('hidden', !MODO_COORD);
     $('#my-salir-txt').textContent = conSesion ? 'Cerrar sesión' : 'Salir';
     menu.style.top = (r.bottom + 8) + 'px'; menu.style.right = Math.max(12, window.innerWidth - r.right) + 'px';
@@ -2487,7 +2493,7 @@
   $('#my-info').addEventListener('click', () => { cerrarMenu(); abrirInfo(); });
   $('#my-salir').addEventListener('click', () => {
     cerrarMenu();
-    if (sesion && sesion.token){
+    if (sesionMenu()){                                        // [CORREGIDO · menú] con clave no se toca la sesión del usuario de campo
       if (confirm('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.')){ guardarSesion(null); location.replace(location.pathname + '?modo=usuario'); }
     } else if (confirm('¿Salir? Se borra la clave guardada en este dispositivo.')){ try { localStorage.removeItem(MODO_ADMIN ? 'admin_clave' : 'coord_clave'); } catch {} location.reload(); }
   });
