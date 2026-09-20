@@ -374,6 +374,7 @@
   .pill.reset{background:color-mix(in srgb,var(--accent) 15%,var(--card));color:var(--accent-deep)}
   .link-btn.peligro{color:var(--danger)}
   /* [NUEVO · confirmar] cartel de confirmación propio, reemplaza al confirm() del navegador. Por encima de los otros modales. */
+  #nv-lista .nv-v{list-style:none;margin:10px 0 4px -18px;font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}   /* [CORREGIDO · novedades] */
   .modal.confirmar{z-index:38}
   .modal.confirmar .box{width:min(420px,100%);padding:22px 22px 18px}
   .modal.confirmar .ico{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;margin-bottom:12px;background:color-mix(in srgb,var(--brand) 12%,var(--card));color:var(--brand)}
@@ -952,25 +953,29 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-20 s';
+  const VERSION = '2026-09-20 t';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
+  // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
+  // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
+  // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
-    { para: 'todos', texto: 'Móvil y Evento se eligen de una lista que filtra al escribir. Si falta uno, "Solicitar agregar" se lo pide a coordinación y la respuesta llega a la campana.' },
-    { para: 'coord', texto: 'Pestaña Catálogo: aceptar o devolver solicitudes y administrar las listas de móviles y eventos.' },
-    { para: 'todos', texto: 'Los usuarios que no son médicos tienen el campo "Interviniente" para anotar quién atendió.' },
-    { para: 'todos', texto: 'Cada registro recibe un número de 9 dígitos al llegar a la planilla; se ve en el detalle.' },
-    { para: 'todos', texto: 'Logo de Grupo IHSA en la cabecera. En celular, las pestañas son un menú plegable.' },
-    { para: 'coord', texto: 'En celular, las tarjetas de registros se abren de a una.' },
-    { para: 'coord', texto: 'Las novedades de coordinación ya no se muestran a usuarios de campo, aunque abran el link de coordinación en su celular.' },
-    { para: 'todos', texto: 'Al tocar tu nombre se abre un menú: Perfil, Mis solicitudes, Información adicional y Cerrar sesión. "Mis solicitudes" ya no está en la pestaña Nuevo registro.' },
-    { para: 'todos', texto: 'Información adicional: mails, celulares y observaciones de coordinación, siempre a mano desde el menú.' },
-    { para: 'todos', texto: 'La campana pasó al lado derecho de la cabecera, después del nombre.' },
-    { para: 'todos', texto: 'Las preguntas de confirmación (cerrar sesión, quitar, eliminar) ahora son un cartel con el estilo de la app, en vez del aviso del navegador.' },
-    { para: 'coord', texto: 'La Información adicional la cargan Coordinación, Supervisión y Administración con el botón Editar; el resto solo la ve.' },
-    { para: 'coord', texto: 'En el panel de coordinación con clave, la cabecera y el menú ya no muestran al usuario de campo que tenga sesión en ese celular.' },
-    { para: 'todos', texto: 'Tu nombre aparece debajo del rol con un punto de conexión; al tocarlo editás tu perfil: nombre, apellido, foto, celular y mail.' },
-    { para: 'todos', texto: 'Al guardar un registro, todos los campos son obligatorios salvo Observaciones: lo que falte se marca en rojo.' },
+    { v: '2026-09-20 n', para: 'todos', texto: 'Móvil y Evento se eligen de una lista que filtra al escribir. Si falta uno, "Solicitar agregar" se lo pide a coordinación y la respuesta llega a la campana.' },
+    { v: '2026-09-20 n', para: 'coord', texto: 'Pestaña Catálogo: aceptar o devolver solicitudes y administrar las listas de móviles y eventos.' },
+    { v: '2026-09-20 n', para: 'todos', texto: 'Los usuarios que no son médicos tienen el campo "Interviniente" para anotar quién atendió.' },
+    { v: '2026-09-20 n', para: 'todos', texto: 'Cada registro recibe un número de 9 dígitos al llegar a la planilla; se ve en el detalle.' },
+    { v: '2026-09-20 n', para: 'todos', texto: 'Logo de Grupo IHSA en la cabecera. En celular, las pestañas son un menú plegable.' },
+    { v: '2026-09-20 n', para: 'coord', texto: 'En celular, las tarjetas de registros se abren de a una.' },
+    { v: '2026-09-20 n', para: 'todos', texto: 'Tu nombre aparece debajo del rol con un punto de conexión; al tocarlo editás tu perfil: nombre, apellido, foto, celular y mail.' },
+    { v: '2026-09-20 n', para: 'todos', texto: 'Al guardar un registro, todos los campos son obligatorios salvo Observaciones: lo que falte se marca en rojo.' },
+    { v: '2026-09-20 o', para: 'coord', texto: 'Las novedades de coordinación ya no se muestran a usuarios de campo, aunque abran el link de coordinación en su celular.' },
+    { v: '2026-09-20 p', para: 'todos', texto: 'Al tocar tu nombre se abre un menú: Perfil, Mis solicitudes, Información adicional y Cerrar sesión. "Mis solicitudes" ya no está en la pestaña Nuevo registro.' },
+    { v: '2026-09-20 p', para: 'todos', texto: 'Información adicional: mails, celulares y observaciones de coordinación, siempre a mano desde el menú.' },
+    { v: '2026-09-20 p', para: 'coord', texto: 'La Información adicional la cargan Coordinación, Supervisión y Administración con el botón Editar; el resto solo la ve.' },
+    { v: '2026-09-20 q', para: 'coord', texto: 'En el panel de coordinación con clave, la cabecera y el menú ya no muestran al usuario de campo que tenga sesión en ese celular.' },
+    { v: '2026-09-20 r', para: 'todos', texto: 'La campana pasó al lado derecho de la cabecera, después del nombre.' },
+    { v: '2026-09-20 s', para: 'todos', texto: 'Las preguntas de confirmación (cerrar sesión, quitar, eliminar) ahora son un cartel con el estilo de la app, en vez del aviso del navegador.' },
+    { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
   ];
   let novedadPendiente = false;
 
@@ -1605,7 +1610,9 @@
     if (sesion && sesion.rol && !esRolCoord(sesion.rol)) return false;
     return MODO_COORD && credOk;
   };
-  const novedadesVisibles = () => NOVEDADES.filter(n => n.para === 'todos' || puedeVerCoord());
+  // [CORREGIDO · novedades] solo lo posterior a la última versión vista en este dispositivo (sin marca: todo)
+  const versionVista = () => { try { return localStorage.getItem('version_vista') || ''; } catch { return ''; } };
+  const novedadesVisibles = () => { const vista = versionVista(); return NOVEDADES.filter(n => (n.para === 'todos' || puedeVerCoord()) && (!vista || (n.v || VERSION) > vista)); };
   // ¿esta persona ya vio la versión actual? Se recalcula al arrancar y cuando el script acepta la credencial
   function refrescarNovedades(){
     if (!FLOW_URL) return;
@@ -1614,7 +1621,11 @@
   }
   function abrirNovedades(){
     $('#nv-version').textContent = 'Versión ' + VERSION;
-    $('#nv-lista').innerHTML = novedadesVisibles().map(n => `<li>${esc(n.texto)}</li>`).join('');
+    // [CORREGIDO · novedades] si la persona se salteó versiones, las ve agrupadas por versión, una sola vez
+    const vis = novedadesVisibles(), vers = [...new Set(vis.map(n => n.v || VERSION))].sort().reverse();
+    $('#nv-lista').innerHTML = vers.length > 1
+      ? vers.map(v => `<li class="nv-v">Versión ${esc(v)}</li>` + vis.filter(n => (n.v || VERSION) === v).map(n => `<li>${esc(n.texto)}</li>`).join('')).join('')
+      : vis.map(n => `<li>${esc(n.texto)}</li>`).join('');
     $('#modal-novedades').classList.add('open');
   }
   $('#nv-ok').addEventListener('click', () => {
