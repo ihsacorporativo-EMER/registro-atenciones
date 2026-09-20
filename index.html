@@ -68,6 +68,8 @@
   .brand b{display:block;font-size:17px;font-weight:800;letter-spacing:.2px}
   .brand .subtitulo{display:block;font-size:13px;opacity:.8}
   .solo-chico{display:none}
+  /* [CORREGIDO · arranque] hasta que la app decide el modo y la sesión, no se muestra la pantalla genérica */
+  body.cargando .yo,body.cargando .bell,body.cargando .tabs,body.cargando main,body.cargando .pie{visibility:hidden}
   .brand .tag{
     margin-left:auto;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);
     border-radius:999px;padding:4px 11px;font-size:12px;font-weight:700;letter-spacing:.4px;
@@ -221,7 +223,17 @@
   /* [NUEVO · campana] botón con contador en la cabecera (modo coordinador) y punto en la pestaña Registros (modo campo) */
   .bell{margin-left:auto;position:relative;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
   .bell svg{width:20px;height:20px}
-  .bell:not(.hidden) + .tag{margin-left:0}
+  .yo{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px;min-width:0}
+  .bell:not(.hidden) + .yo{margin-left:0}
+  /* [NUEVO · perfil] botón con punto de estado y nombre, debajo del rol */
+  .perfil-btn{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:999px;padding:3px 10px 3px 8px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer;max-width:190px}
+  .perfil-btn #perfil-nombre{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .perfil-btn .chev{font-size:11px;opacity:.8}
+  .estado-dot{width:9px;height:9px;border-radius:50%;background:#34d27b;box-shadow:0 0 0 2px rgba(255,255,255,.25);flex:none}
+  .estado-dot.off{background:#ff4d4f}
+  .avatar.grande{width:64px;height:64px;font-size:20px}
+  .perfil-cab{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+  .perfil-cab small{color:var(--muted)}
   .badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:none;place-items:center;line-height:1}
   .badge.on{display:grid}
   @keyframes ring{0%,100%{transform:rotate(0)}20%{transform:rotate(15deg)}40%{transform:rotate(-12deg)}60%{transform:rotate(8deg)}80%{transform:rotate(-4deg)}}
@@ -352,6 +364,7 @@
     .solo-grande{display:none}
     .solo-chico{display:inline}
     .brand .tag{font-size:11px;padding:3px 8px;white-space:nowrap;letter-spacing:.2px}
+    .perfil-btn{font-size:11px;max-width:150px;padding:2px 8px 2px 7px}
     .mark{padding:4px 7px}
     .mark img{height:28px !important}
     .bell{width:34px;height:34px}
@@ -445,7 +458,7 @@
   @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
 </style>
 </head>
-<body class="en-form">
+<body class="en-form cargando">
 
 <header>
   <div class="brand">
@@ -461,7 +474,11 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
       <span class="badge" id="bell-n"></span>
     </button>
-    <div class="tag">USO INTERNO</div><!-- [NUEVO] se reemplaza por PERSONAL DE CAMPO o COORDINADOR según el link -->
+    <!-- [NUEVO · perfil] rol arriba; debajo, punto de conexión + nombre + flecha, que abre "Mi perfil" -->
+    <div class="yo">
+      <div class="tag">USO INTERNO</div><!-- [NUEVO] se reemplaza por PERSONAL DE CAMPO, el rol, COORDINADOR o ADMINISTRADOR -->
+      <button type="button" class="perfil-btn hidden" id="perfil-btn" aria-label="Mi perfil"><span class="estado-dot" id="estado-dot"></span><span id="perfil-nombre"></span><span class="chev">▾</span></button>
+    </div>
   </div>
   <div class="tabs" role="tablist">
     <button role="tab" aria-selected="true" data-tab="form">Nuevo registro</button>
@@ -769,6 +786,38 @@
   </div>
 </div>
 
+<!-- [NUEVO · perfil] edición del propio perfil: nombre, apellido, celular, mail y foto -->
+<div class="modal" id="modal-perfil" role="dialog" aria-modal="true">
+  <div class="box">
+    <h3>Mi perfil</h3>
+    <div class="perfil-cab"><div class="avatar grande" id="pf-avatar"></div><div><b id="pf-id"></b><br><small id="pf-rol"></small></div></div>
+    <div class="row">
+      <div class="field"><label for="pf-nombre">Nombre</label><input id="pf-nombre" type="text" autocomplete="given-name"></div>
+      <div class="field"><label for="pf-apellido">Apellido</label><input id="pf-apellido" type="text" autocomplete="family-name"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="pf-cel">Celular</label><input id="pf-cel" type="tel" placeholder="Ej.: 11 5555 5555" autocomplete="tel"></div>
+      <div class="field"><label for="pf-mail">Mail</label><input id="pf-mail" type="email" placeholder="nombre@correo.com" autocomplete="email"></div>
+    </div>
+    <div class="field">
+      <label>Foto</label>
+      <div class="photo-actions">
+        <label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2h6l2 2h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg><b>Sacar foto</b><small>Abre la cámara</small><input type="file" accept="image/*" capture="user" id="pf-cam"></label>
+        <label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/></svg><b>Subir foto</b><small>Desde la galería</small><input type="file" accept="image/*" id="pf-gal"></label>
+      </div>
+      <p class="hint" id="pf-foto-info" style="margin:8px 0 0"></p>
+      <button type="button" class="link-btn peligro hidden" id="pf-quitar">Quitar foto</button>
+    </div>
+    <div class="modal-actions" style="flex-wrap:wrap">
+      <a id="pf-coord" class="link-btn hidden" href="?modo=coordinador">Ir a coordinación</a>
+      <a id="pf-cargar" class="link-btn hidden" href="?modo=usuario&amp;cargar=1">Cargar un registro</a>
+      <button type="button" class="link-btn peligro" id="pf-salir">Cerrar sesión</button>
+      <button type="button" class="link-btn" id="pf-cancel">Cancelar</button>
+      <button type="button" class="primary" id="pf-ok">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- [NUEVO · novedades] qué cambió en la última versión; lo abre la campana hasta que se toca "Entendido" -->
 <div class="modal" id="modal-novedades" role="dialog" aria-modal="true">
   <div class="box">
@@ -812,13 +861,17 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-20 j';
+  const VERSION = '2026-09-20 m';
+  // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
+  // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   const NOVEDADES = [
-    'Móvil y Evento se eligen de una lista que filtra al escribir. Si falta uno, "Solicitar agregar" se lo pide a coordinación y la respuesta llega a la campana.',
-    'Coordinación tiene la pestaña Catálogo para aceptar solicitudes y administrar las listas de móviles y eventos.',
-    'Los usuarios que no son médicos tienen el campo "Interviniente" para anotar quién atendió.',
-    'Cada registro recibe un número de 9 dígitos al llegar a la planilla; se ve en el detalle.',
-    'Logo de Grupo IHSA en la cabecera. En celular, las pestañas son un menú plegable y las tarjetas se abren de a una.',
+    { para: 'todos', texto: 'Móvil y Evento se eligen de una lista que filtra al escribir. Si falta uno, "Solicitar agregar" se lo pide a coordinación y la respuesta llega a la campana.' },
+    { para: 'coord', texto: 'Pestaña Catálogo: aceptar o devolver solicitudes y administrar las listas de móviles y eventos.' },
+    { para: 'todos', texto: 'Los usuarios que no son médicos tienen el campo "Interviniente" para anotar quién atendió.' },
+    { para: 'todos', texto: 'Cada registro recibe un número de 9 dígitos al llegar a la planilla; se ve en el detalle.' },
+    { para: 'todos', texto: 'Logo de Grupo IHSA en la cabecera. En celular, las pestañas son un menú plegable.' },
+    { para: 'coord', texto: 'En celular, las tarjetas de registros se abren de a una.' },
+    { para: 'todos', texto: 'Tu nombre aparece debajo del rol con un punto de conexión; al tocarlo editás tu perfil: nombre, apellido, foto, celular y mail.' },
   ];
   let novedadPendiente = false;
 
@@ -1368,6 +1421,7 @@
     try {
       const u = new URL(FLOW_URL); u.searchParams.set('devoluciones', ids.join(','));
       const res = await (await fetch(u)).json(); if (!res.ok) return;
+      marcarConexion(true);                                        // [NUEVO · perfil]
       let cambios = 0, antes = registros.reduce((n, r) => n + noVistosDe(r), 0);
       for (const r of registros){
         const d = res.devoluciones?.[r.id]; if (!d || !Array.isArray(d.mensajes)) continue;
@@ -1383,7 +1437,7 @@
       const ahora = registros.reduce((n, r) => n + noVistosDe(r), 0);
       if (ahora > antes) toast('Tenés un mensaje nuevo de coordinación', 'ok');
       pintarNoVistos(ahora);
-    } catch {}
+    } catch { marcarConexion(false); }                             // [NUEVO · perfil] sin respuesta del script: punto rojo
   }
 
   // [NUEVO · campana] Contador de "sin ver": campana, pestaña Registros "(n) •" y título de la pestaña del navegador.
@@ -1427,9 +1481,11 @@
     totalPrev = total; nuevosPrev = n;
   }
   // [NUEVO · novedades] la campana muestra primero las novedades pendientes; después, lleva a la lista
+  // [NUEVO · novedades por rol] coordinación (coordinador, supervisor, administrador) ve todo; el resto, solo lo de 'todos'
+  const novedadesVisibles = () => NOVEDADES.filter(n => n.para === 'todos' || MODO_COORD || (sesion && esRolCoord(sesion.rol)));
   function abrirNovedades(){
     $('#nv-version').textContent = 'Versión ' + VERSION;
-    $('#nv-lista').innerHTML = NOVEDADES.map(t => `<li>${esc(t)}</li>`).join('');
+    $('#nv-lista').innerHTML = novedadesVisibles().map(n => `<li>${esc(n.texto)}</li>`).join('');
     $('#modal-novedades').classList.add('open');
   }
   $('#nv-ok').addEventListener('click', () => {
@@ -1447,7 +1503,8 @@
       // [NUEVO · rapidez] si entró algo y la lista está a la vista, se recarga sola con las etiquetas "Nuevo",
       // salvo que haya una respuesta a medio escribir (no se pisa lo que el coordinador está tecleando)
       if (subio && !$('#view-list').classList.contains('hidden') && !document.querySelector('.resp-box:not(.hidden)')) await cargarCentral();
-    } catch {}
+      marcarConexion(true);                                      // [NUEVO · perfil]
+    } catch { marcarConexion(false); }
   }
   // Al abrir Registros: ya se vio todo lo que había. Coordinador guarda una marca global; campo, una por registro.
   function marcarVisto(){
@@ -1770,7 +1827,7 @@
       $('#view-form .foot').textContent = 'Cada registro se envía a los coordinadores al guardarlo.';
     }
     if (MODO_USUARIO && sesion){                                 // [NUEVO · usuarios] sesión a la vista; el interviniente ya no se pide
-      $('#sesion-bar').classList.remove('hidden');
+      pintarPerfil();                                            // [NUEVO · perfil] el nombre va en la cabecera; la barra de sesión de abajo queda oculta
       $('#ses-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`; $('#ses-rol').textContent = sesion.rol || '';
       $('#ses-coord').classList.toggle('hidden', !esRolCoord(sesion.rol));   // [NUEVO · roles coord] vuelta al panel
       // [NUEVO · interviniente] Médico: el campo se oculta y se completa con su nombre. Otros roles: el campo pasa a llamarse "Interviniente"
@@ -1790,6 +1847,7 @@
     // [NUEVO · catálogo] listas del formulario (desde caché primero, después del script) y mis solicitudes
     pintarCatalogo(); cargarCatalogo(); setInterval(cargarCatalogo, 300000);
     renderMisSolicitudes(); cargarMisSolicitudes(); setInterval(cargarMisSolicitudes, 60000); document.addEventListener('visibilitychange', cargarMisSolicitudes);
+    listo();                                                           // [CORREGIDO · arranque] recién ahora se muestra la pantalla
   }
 
   // [NUEVO · roles coord] Con sesión activa: Coordinador y Supervisor van al panel de coordinación con su propia sesión.
@@ -1816,6 +1874,7 @@
     ['entrar','crear','espera','pinnuevo'].forEach(s => $('#login-'+s).classList.toggle('hidden', s !== seccion));
     document.querySelectorAll('.seg3 button').forEach(b => b.setAttribute('aria-pressed', b.dataset.l === seccion));
     $('.seg3').classList.toggle('hidden', !(seccion === 'entrar' || seccion === 'crear'));
+    $('.brand .tag').textContent = 'INGRESO'; listo();               // [CORREGIDO · arranque]
   }
   // ¿La sesión guardada sigue valiendo? 'activo' | 'pendiente' | 'invalida' | 'offline' (sin señal: no se puede saber)
   async function verificarSesion(){
@@ -1922,7 +1981,7 @@
     return `<div class="urow ${pend ? 'pend' : ''}" data-id="${esc(u.id)}">
       <div class="avatar" data-foto="${esc(u.id)}">${esc(iniciales(u))}</div>
       <div class="datos"><b>${esc(u.nombre)} ${esc(u.apellido)} <span class="pill rol">${esc(u.id)}</span>${u.rol && !pend ? ` <span class="pill rol">${esc(u.rol)}</span>` : ''} ${est}${u.pideReset ? ' <span class="pill reset">Pide restablecer PIN</span>' : ''}${u.cambioPin ? ' <span class="pill reset">Cambio de PIN habilitado</span>' : ''}</b>
-        <small>${pend ? 'Solicitó el ' + fmtFechaHora(u.creado) : (u.aprobado ? 'Aprobado el ' + fmtFechaHora(u.aprobado) : '')}</small></div>
+        <small>${pend ? 'Solicitó el ' + fmtFechaHora(u.creado) : (u.aprobado ? 'Aprobado el ' + fmtFechaHora(u.aprobado) : '')}${u.celular ? ` · Cel. ${esc(u.celular)}` : ''}${u.mail ? ` · ${esc(u.mail)}` : ''}</small></div>
       <div class="acciones">${acciones}</div></div>`;
   }
   function renderUsuarios(){
@@ -2230,13 +2289,76 @@
     });
   }
 
+  // ---- [NUEVO · perfil] nombre bajo el rol, punto de conexión y edición del propio perfil ----
+  // Punto verde: la app está conectada al script con una sesión válida. Rojo: sin conexión o la sesión ya no vale.
+  let conectado = true, fotoPerfilNueva = null, quitarFotoPerfil = false;
+  function pintarEstado(){
+    const on = conectado && navigator.onLine !== false && !!(sesion && sesion.estado === 'activo');
+    $('#estado-dot').classList.toggle('off', !on); $('#estado-dot').title = on ? 'Conectado' : 'Sin conexión';
+  }
+  const marcarConexion = ok => { conectado = ok; pintarEstado(); };
+  window.addEventListener('online', () => marcarConexion(true));
+  window.addEventListener('offline', () => marcarConexion(false));
+  function pintarPerfil(){
+    const b = $('#perfil-btn');
+    if (!sesion || !sesion.token){ b.classList.add('hidden'); return; }
+    $('#perfil-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`;
+    b.classList.remove('hidden'); pintarEstado();
+  }
+  async function abrirPerfil(){
+    if (!sesion) return;
+    $('#pf-id').textContent = `${sesion.nombre} ${sesion.apellido} · ${sesion.id}`; $('#pf-rol').textContent = sesion.rol || '';
+    $('#pf-nombre').value = sesion.nombre || ''; $('#pf-apellido').value = sesion.apellido || '';
+    $('#pf-cel').value = sesion.celular || ''; $('#pf-mail').value = sesion.mail || '';
+    fotoPerfilNueva = null; quitarFotoPerfil = false;
+    $('#pf-foto-info').textContent = sesion.fotoId ? 'Tenés una foto cargada. Podés cambiarla o quitarla.' : 'Sin foto todavía.';
+    $('#pf-quitar').classList.toggle('hidden', !sesion.fotoId);
+    const av = $('#pf-avatar'); av.innerHTML = esc(iniciales({ nombre: sesion.nombre, apellido: sesion.apellido }));
+    $('#pf-coord').classList.toggle('hidden', !(esRolCoord(sesion.rol) && !MODO_COORD));
+    $('#pf-cargar').classList.toggle('hidden', !MODO_COORD);
+    $('#modal-perfil').classList.add('open');
+    if (sesion.fotoId){
+      try { const u = new URL(FLOW_URL); u.searchParams.set('fotoUsuario', sesion.id); const r = await (await fetch(u)).json(); if (r.data && !fotoPerfilNueva && !quitarFotoPerfil) av.innerHTML = `<img src="${r.data}" alt="">`; } catch {}
+    }
+  }
+  async function guardarPerfil(){
+    const nombre = $('#pf-nombre').value.trim(), apellido = $('#pf-apellido').value.trim(), celular = $('#pf-cel').value.trim(), mail = $('#pf-mail').value.trim();
+    if (nombre.length < 2 || apellido.length < 2){ toast('Completá nombre y apellido', 'err'); return; }
+    if (mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)){ toast('El mail no es válido', 'err'); return; }
+    const btn = $('#pf-ok'); btn.disabled = true; btn.textContent = 'Guardando…';
+    try {
+      const res = await postUsuario({ accion: 'perfil', token: sesion.token, nombre, apellido, celular, mail, foto: fotoPerfilNueva || '', quitarFoto: quitarFotoPerfil });
+      guardarSesion({ ...sesion, ...res.usuario, token: sesion.token });
+      pintarPerfil(); $('#ses-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`; $('#sc-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`;
+      $('#modal-perfil').classList.remove('open'); toast('Perfil guardado', 'ok');
+    } catch (e){ toast(e.message, 'err'); }
+    finally { btn.disabled = false; btn.textContent = 'Guardar'; }
+  }
+  async function fotoPerfilElegida(input){
+    const f = input.files && input.files[0]; input.value = ''; if (!f) return;
+    try { fotoPerfilNueva = await compress(f); quitarFotoPerfil = false; $('#pf-avatar').innerHTML = `<img src="${fotoPerfilNueva}" alt="">`; $('#pf-foto-info').textContent = 'Foto nueva lista. Se guarda al tocar Guardar.'; $('#pf-quitar').classList.remove('hidden'); }
+    catch (e){ toast(e.message, 'err'); }
+  }
+  $('#perfil-btn').addEventListener('click', abrirPerfil);
+  $('#pf-ok').addEventListener('click', guardarPerfil);
+  $('#pf-cancel').addEventListener('click', () => $('#modal-perfil').classList.remove('open'));
+  $('#modal-perfil').addEventListener('click', e => { if (e.target === $('#modal-perfil')) $('#modal-perfil').classList.remove('open'); });
+  $('#pf-cam').addEventListener('change', e => fotoPerfilElegida(e.target));
+  $('#pf-gal').addEventListener('change', e => fotoPerfilElegida(e.target));
+  $('#pf-quitar').addEventListener('click', () => { quitarFotoPerfil = true; fotoPerfilNueva = null; $('#pf-avatar').innerHTML = esc(iniciales({ nombre: $('#pf-nombre').value, apellido: $('#pf-apellido').value })); $('#pf-foto-info').textContent = 'La foto se quita al tocar Guardar.'; $('#pf-quitar').classList.add('hidden'); });
+  $('#pf-salir').addEventListener('click', () => { if (confirm('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.')){ guardarSesion(null); location.replace(location.pathname + '?modo=usuario'); } });
+
   // ---- conexión con la base ----
+  // [CORREGIDO · arranque] listo(): muestra la pantalla una vez decidido el modo. Con red de seguridad a los 6 s por si algo falla.
+  const listo = () => document.body.classList.remove('cargando');
+  setTimeout(listo, 6000);
   (async () => {
     try { db = await (window.claude?.use ? window.claude.use('db') : Promise.resolve(null)); } catch { db = null; }
     try { downloads = await (window.claude?.use ? window.claude.use('downloads') : Promise.resolve(null)); } catch { downloads = null; }
     if (!db){
       // [NUEVO · novedades] ¿esta persona ya vio la versión actual? Si no, la campana lo avisa
-      if (FLOW_URL){ try { novedadPendiente = localStorage.getItem('version_vista') !== VERSION; } catch { novedadPendiente = true; } }
+      // [NUEVO · novedades por rol] si para este rol no hay ninguna novedad en esta versión, no se avisa
+      if (FLOW_URL){ try { novedadPendiente = localStorage.getItem('version_vista') !== VERSION && novedadesVisibles().length > 0; } catch { novedadPendiente = novedadesVisibles().length > 0; } }
       if (MODO_COORD){
         // [NUEVO · envío] Modo coordinador: sin formulario; Registros y Tablero salen de la planilla central
         document.title = tituloBase = MODO_ADMIN ? 'Administración · Emergencias' : 'Coordinación · Emergencias';
@@ -2246,7 +2368,8 @@
         if (MODO_ADMIN){ $('#config').appendChild($('#mails-box')); $('#pedir-imp').classList.add('hidden'); }   // [NUEVO · admin] mails en Configuración; el admin no se pide a sí mismo
         if (MODO_ADMIN ? sesionAdmin() : sesionCoord()){         // [NUEVO · roles coord] entró con su usuario: sin clave, con su nombre y rol
           $('.brand .tag').textContent = String(sesion.rol).toUpperCase();
-          $('#sesion-coord').classList.remove('hidden'); $('#sc-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`; $('#sc-rol').textContent = sesion.rol;
+          $('#sc-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`; $('#sc-rol').textContent = sesion.rol;
+          pintarPerfil();                                        // [NUEVO · perfil] nombre y perfil en la cabecera (la barra de sesión queda oculta)
         }
         $('#bell').classList.remove('hidden');                   // [NUEVO · campana]
         $('#migra').classList.remove('hidden');                  // [NUEVO · migración] paquete y archivo en el tablero
@@ -2255,6 +2378,7 @@
         $('.tabs button[data-tab="users"]').classList.remove('hidden');   // [NUEVO · usuarios] panel de usuarios
         $('#view-list .lead').textContent = 'Registros enviados por el equipo de campo. Tocá una tarjeta para ver el detalle; tocá la pestaña para actualizar.';
         $('.tabs button[data-tab="list"]').click();              // dispara cargarCentral (pide la clave la primera vez)
+        listo();                                                 // [CORREGIDO · arranque]
         setInterval(sondearNuevos, 15000);                       // [NUEVO · campana] cada 15 s (antes 30): registros y respuestas llegan antes
         document.addEventListener('visibilitychange', sondearNuevos);
         return;
@@ -2263,9 +2387,21 @@
       // Con sesión activa (o sin señal pero con sesión activa guardada) sigue como campo, firmando con el usuario.
       if (MODO_USUARIO){
         document.title = tituloBase = 'Registro de atención · Emergencias';
-        if (!FLOW_URL){ toast('Falta configurar FLOW_URL en el HTML', 'err'); return; }
+        if (!FLOW_URL){ listo(); toast('Falta configurar FLOW_URL en el HTML', 'err'); return; }
+        // [CORREGIDO · arranque] Con sesión activa guardada, la app arranca al instante con esos datos y verifica la sesión
+        // atrás: solo si ya no vale (baja, PIN restablecido) vuelve al ingreso. Antes esperaba la respuesta del script
+        // mostrando mientras tanto la pantalla genérica ("USO INTERNO", campo Médico).
+        if (sesion && sesion.token && sesion.estado === 'activo'){
+          await entrarSegunRol();
+          verificarSesion().then(est => {
+            if (est === 'invalida') mostrarLogin('entrar');
+            else if (est === 'activo' && !MODO_COORD){ $('.brand .tag').textContent = String(sesion.rol || 'USUARIO').toUpperCase(); $('#ses-rol').textContent = sesion.rol || ''; pintarPerfil(); }
+            marcarConexion(est !== 'offline');   // [NUEVO · perfil] punto de conexión
+          });
+          return;
+        }
         const est = await verificarSesion();
-        if (est === 'activo' || (est === 'offline' && sesion && sesion.estado === 'activo')) await entrarSegunRol();
+        if (est === 'activo') await entrarSegunRol();
         else if (est === 'pendiente') esperarAprobacion();
         else mostrarLogin('entrar');
         return;
@@ -2279,6 +2415,7 @@
     );
     // [CORREGIDO] unsub se guardaba pero nunca se usaba: ahora corta la suscripción a la base al cerrar la página
     window.addEventListener('pagehide', () => { if (typeof unsub === 'function') unsub(); });
+    listo();
   })();
 })();
 </script>
