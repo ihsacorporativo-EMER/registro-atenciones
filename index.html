@@ -373,6 +373,15 @@
   .pill.rol{background:color-mix(in srgb,var(--brand) 12%,var(--card));color:var(--brand)}
   .pill.reset{background:color-mix(in srgb,var(--accent) 15%,var(--card));color:var(--accent-deep)}
   .link-btn.peligro{color:var(--danger)}
+  /* [NUEVO · confirmar] cartel de confirmación propio, reemplaza al confirm() del navegador. Por encima de los otros modales. */
+  .modal.confirmar{z-index:38}
+  .modal.confirmar .box{width:min(420px,100%);padding:22px 22px 18px}
+  .modal.confirmar .ico{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;margin-bottom:12px;background:color-mix(in srgb,var(--brand) 12%,var(--card));color:var(--brand)}
+  .modal.confirmar .ico svg{width:22px;height:22px}
+  .modal.confirmar.peligro .ico{background:color-mix(in srgb,var(--danger) 12%,var(--card));color:var(--danger)}
+  .modal.confirmar p{margin:0;font-size:15px;line-height:1.45;white-space:pre-line}
+  .modal.confirmar .modal-actions{margin-top:18px}
+  .modal.confirmar.peligro .primary{background:var(--danger)}
   #cr-thumb .thumb{max-width:110px}
 
   /* Lightbox */
@@ -888,6 +897,18 @@
   </div>
 </div>
 
+<!-- [NUEVO · confirmar] cartel de confirmación propio (función confirmar) -->
+<div class="modal confirmar" id="modal-confirm" role="alertdialog" aria-modal="true" aria-describedby="cf-texto">
+  <div class="box">
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg></div>
+    <p id="cf-texto"></p>
+    <div class="modal-actions">
+      <button type="button" class="link-btn" id="cf-no">Cancelar</button>
+      <button type="button" class="primary" id="cf-si">Aceptar</button>
+    </div>
+  </div>
+</div>
+
 <!-- [NUEVO · novedades] qué cambió en la última versión; lo abre la campana hasta que se toca "Entendido" -->
 <div class="modal" id="modal-novedades" role="dialog" aria-modal="true">
   <div class="box">
@@ -931,7 +952,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-20 r';
+  const VERSION = '2026-09-20 s';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   const NOVEDADES = [
@@ -945,6 +966,7 @@
     { para: 'todos', texto: 'Al tocar tu nombre se abre un menú: Perfil, Mis solicitudes, Información adicional y Cerrar sesión. "Mis solicitudes" ya no está en la pestaña Nuevo registro.' },
     { para: 'todos', texto: 'Información adicional: mails, celulares y observaciones de coordinación, siempre a mano desde el menú.' },
     { para: 'todos', texto: 'La campana pasó al lado derecho de la cabecera, después del nombre.' },
+    { para: 'todos', texto: 'Las preguntas de confirmación (cerrar sesión, quitar, eliminar) ahora son un cartel con el estilo de la app, en vez del aviso del navegador.' },
     { para: 'coord', texto: 'La Información adicional la cargan Coordinación, Supervisión y Administración con el botón Editar; el resto solo la ve.' },
     { para: 'coord', texto: 'En el panel de coordinación con clave, la cabecera y el menú ya no muestran al usuario de campo que tenga sesión en ese celular.' },
     { para: 'todos', texto: 'Tu nombre aparece debajo del rol con un punto de conexión; al tocarlo editás tu perfil: nombre, apellido, foto, celular y mail.' },
@@ -1908,7 +1930,7 @@
     const n = registros.filter(r => r.fecha && r.fecha <= hasta).length;
     if (!n){ toast('No hay registros con fecha hasta ese día', 'err'); return; }
     const borrar = $('#arch-fotos').checked;
-    const ok = confirm(`Se van a mover ${n} registro${n > 1 ? 's' : ''} con fecha hasta el ${fmtFecha(hasta)} a la hoja de archivo.${borrar ? '\nSus fotos se borran de Drive (papelera, 30 días).' : ''}\n\n¿Ya descargaste el paquete? ¿Continuar?`);
+    const ok = await confirmar(`Se van a mover ${n} registro${n > 1 ? 's' : ''} con fecha hasta el ${fmtFecha(hasta)} a la hoja de archivo.${borrar ? '\nSus fotos se borran de Drive (papelera, 30 días).' : ''}\n\n¿Ya descargaste el paquete? ¿Continuar?`, { ok: 'Archivar', peligro: true });
     if (!ok) return;
     const btn = $('#archivar'); btn.disabled = true; btn.textContent = 'Archivando…';
     try {
@@ -1968,7 +1990,7 @@
     }
     await iniciarCampo();
   }
-  $('#sc-salir').addEventListener('click', () => { if (confirm('¿Cerrar sesión?')){ guardarSesion(null); location.replace(location.pathname + '?modo=usuario'); } });
+  $('#sc-salir').addEventListener('click', async () => { if (await confirmar('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.', { ok: 'Cerrar sesión', peligro: true })){ guardarSesion(null); location.replace(location.pathname + '?modo=usuario'); } });
 
   // ---- [NUEVO · usuarios] ingreso, registro, espera de aprobación y PIN (modo usuario) ----
   const guardarSesion = s => { sesion = s; try { if (s) localStorage.setItem('sesion_usuario', JSON.stringify(s)); else localStorage.removeItem('sesion_usuario'); } catch {} };
@@ -2067,7 +2089,7 @@
   $('#cr-gal').addEventListener('change', e => fotoDePerfil(e.target));
   $('#cr-thumb').addEventListener('click', e => { if (e.target.closest('#cr-quitar')){ fotoUsuario = null; $('#cr-thumb').innerHTML = ''; } });
   $('#esp-salir').addEventListener('click', () => { clearInterval(sondeoAprobacion); guardarSesion(null); mostrarLogin('entrar'); });
-  $('#ses-salir').addEventListener('click', () => { if (confirm('¿Cerrar sesión en este celular? Tus registros quedan guardados acá.')){ guardarSesion(null); location.reload(); } });
+  $('#ses-salir').addEventListener('click', async () => { if (await confirmar('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.', { ok: 'Cerrar sesión', peligro: true })){ guardarSesion(null); location.reload(); } });
 
   // ---- [NUEVO · usuarios] panel del coordinador ----
   let usuarios = [], rolesDisp = []; const avatarCache = {};
@@ -2125,12 +2147,12 @@
     const b = e.target.closest('button[data-que]'); if (!b) return;
     const row = b.closest('.urow'), id = row.dataset.id, u = usuarios.find(x => x.id === id) || {}, que = b.dataset.que, quien = `${u.nombre} ${u.apellido}`;
     if (que === 'aprobar'){ const rol = row.querySelector('.u-rol').value; if (!rol){ toast('Elegí un rol antes de aprobar', 'err'); return; } if (await accionUsuario(id, 'aprobar', { rol })) toast(`${quien} aprobado como ${rol}`, 'ok'); }
-    else if (que === 'rechazar'){ if (confirm(`¿Rechazar la solicitud de ${quien}?`)) await accionUsuario(id, 'rechazar'); }
-    else if (que === 'baja'){ if (confirm(`¿Dar de baja a ${quien}? No va a poder cargar más. Sus registros quedan.`)) await accionUsuario(id, 'baja'); }
+    else if (que === 'rechazar'){ if (await confirmar(`¿Rechazar la solicitud de ${quien}?`, { ok: 'Rechazar', peligro: true })) await accionUsuario(id, 'rechazar'); }
+    else if (que === 'baja'){ if (await confirmar(`¿Dar de baja a ${quien}? No va a poder cargar más. Sus registros quedan.`, { ok: 'Dar de baja', peligro: true })) await accionUsuario(id, 'baja'); }
     else if (que === 'reactivar'){ await accionUsuario(id, 'reactivar'); }
     else if (que === 'eliminar'){   // [NUEVO · usuarios] borra el usuario de la planilla; sus registros quedan con el nombre guardado
       const aviso = u.estado === 'activo' ? `${quien} está ACTIVO. ` : '';
-      if (confirm(`${aviso}¿Eliminar definitivamente a ${quien} (${id})? Se borra de la planilla y no se puede deshacer. Los registros que cargó quedan.`)) {
+      if (await confirmar(`${aviso}¿Eliminar definitivamente a ${quien} (${id})? Se borra de la planilla y no se puede deshacer. Los registros que cargó quedan.`, { ok: 'Eliminar', peligro: true })) {
         if (await accionUsuario(id, 'eliminar')) toast(`${quien} eliminado`, 'ok');
       }
     }
@@ -2296,7 +2318,7 @@
     }
     const b = e.target.closest('button[data-que]'); if (!b) return;
     const row = b.closest('.catrow'), que = b.dataset.que;
-    if (que === 'quitar' && !confirm(`¿Quitar "${row.dataset.valor}" de la lista? Los registros que lo usan no cambian.`)) return;
+    if (que === 'quitar' && !await confirmar(`¿Quitar "${row.dataset.valor}" de la lista? Los registros que lo usan no cambian.`, { ok: 'Quitar', peligro: true })) return;
     try { const res = await postCoord({ accion: 'catalogo', que, tipo: row.dataset.tipo, valor: row.dataset.valor }); catalogoAdmin = res.catalogo; renderCatalogo(); }
     catch (err){ toast('No se pudo: ' + err.message, 'err'); }
   });
@@ -2341,7 +2363,7 @@
   $('#mails-lista').addEventListener('click', async e => {
     const b = e.target.closest('.m-quitar'); if (!b) return;
     const mail = b.closest('.mailrow').dataset.mail;
-    if (confirm(`¿Quitar ${mail}?`) && await guardarMail(mail, false, false, 'quitar')) toast('Dirección quitada', 'ok');
+    if (await confirmar(`¿Quitar ${mail}?`, { ok: 'Quitar', peligro: true }) && await guardarMail(mail, false, false, 'quitar')) toast('Dirección quitada', 'ok');
   });
 
   // ---- [NUEVO · importar] subir un paquete ZIP y volver a cargar sus registros (solo administrador) ----
@@ -2459,6 +2481,23 @@
     const img = e.target.closest('.avatar img'); if (!img) return;
     $('#lb img').src = img.src; $('#lb').dataset.nombre = 'foto-perfil.jpg'; $('#lb').classList.add('open');
   });
+  // ---- [NUEVO · confirmar] confirmar(texto, { ok, peligro }) → Promise<boolean>. Reemplaza al confirm() del navegador,
+  // que salía con el dominio arriba y sin estilo. Enter/botón acepta; Esc, Cancelar o tocar afuera cancela.
+  function confirmar(texto, opts){
+    const o = Object.assign({ ok: 'Aceptar', cancelar: 'Cancelar', peligro: false }, opts || {});
+    const m = $('#modal-confirm');
+    $('#cf-texto').textContent = texto; $('#cf-si').textContent = o.ok; $('#cf-no').textContent = o.cancelar;
+    m.classList.toggle('peligro', !!o.peligro); m.classList.add('open');
+    return new Promise(res => {
+      const fin = v => { m.classList.remove('open'); $('#cf-si').onclick = $('#cf-no').onclick = m.onclick = null; document.removeEventListener('keydown', tecla); res(v); };
+      const tecla = e => { if (e.key === 'Escape') fin(false); else if (e.key === 'Enter'){ e.preventDefault(); fin(true); } };
+      $('#cf-si').onclick = () => fin(true); $('#cf-no').onclick = () => fin(false);
+      m.onclick = e => { if (e.target === m) fin(false); };
+      document.addEventListener('keydown', tecla);
+      setTimeout(() => $('#cf-si').focus(), 50);
+    });
+  }
+
   // ---- [NUEVO · menú] lista desplegable del nombre ----
   // Se ubica debajo del botón con position:fixed (la cabecera tiene overflow:hidden). Se cierra al tocar afuera,
   // con Esc, al hacer scroll o al girar el celular. Sin sesión (link de coordinación con clave) muestra solo
@@ -2491,11 +2530,11 @@
   $('#my-perfil').addEventListener('click', () => { cerrarMenu(); abrirPerfil(); });
   $('#my-sol').addEventListener('click', () => { cerrarMenu(); abrirSolicitudes(); });
   $('#my-info').addEventListener('click', () => { cerrarMenu(); abrirInfo(); });
-  $('#my-salir').addEventListener('click', () => {
+  $('#my-salir').addEventListener('click', async () => {
     cerrarMenu();
     if (sesionMenu()){                                        // [CORREGIDO · menú] con clave no se toca la sesión del usuario de campo
-      if (confirm('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.')){ guardarSesion(null); location.replace(location.pathname + '?modo=usuario'); }
-    } else if (confirm('¿Salir? Se borra la clave guardada en este dispositivo.')){ try { localStorage.removeItem(MODO_ADMIN ? 'admin_clave' : 'coord_clave'); } catch {} location.reload(); }
+      if (await confirmar('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.', { ok: 'Cerrar sesión', peligro: true })){ guardarSesion(null); location.replace(location.pathname + '?modo=usuario'); }
+    } else if (await confirmar('¿Salir? Se borra la clave guardada en este dispositivo.', { ok: 'Salir', peligro: true })){ try { localStorage.removeItem(MODO_ADMIN ? 'admin_clave' : 'coord_clave'); } catch {} location.reload(); }
   });
 
   // ---- [NUEVO · info adicional] contactos y observaciones de coordinación ----
