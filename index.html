@@ -322,7 +322,16 @@
   .catrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
   .catrow.baja b{color:var(--muted);text-decoration:line-through}
   .catrow .acc{display:flex;gap:12px;flex:none}
-  .catlista{max-height:340px;overflow-y:auto}
+  /* [CORREGIDO · catálogo compacto] listas con alto fijo: se ven unas filas y el resto se desliza adentro */
+  .catlista{max-height:168px;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
+  .catrow{padding:5px 0;font-size:13px}
+  #cat-sol .solrow{padding:7px 12px;margin-bottom:6px;font-size:13px;border-radius:10px;gap:8px}
+  #cat-sol .solrow small{font-size:12px}
+  #cat-sol .scrollbox{max-height:150px;overflow-y:auto;overscroll-behavior:contain;padding:2px 4px 0 2px;margin:0 -2px 8px}
+  #cat-sol .scrollbox.pend{max-height:260px}
+  #cat-sol .usec{margin:10px 0 6px}
+  #cat-sol .usec:first-child{margin-top:0}
+  #view-cat .mini{margin-top:8px}
   .solicitar{display:block;margin-top:6px;font-size:13px}
   /* [NUEVO · catálogo] desplegable propio bajo Móvil y Evento (el nativo no se puede estilizar) */
   .autoc{position:relative}
@@ -953,7 +962,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-20 t';
+  const VERSION = '2026-09-20 u';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -976,6 +985,7 @@
     { v: '2026-09-20 r', para: 'todos', texto: 'La campana pasó al lado derecho de la cabecera, después del nombre.' },
     { v: '2026-09-20 s', para: 'todos', texto: 'Las preguntas de confirmación (cerrar sesión, quitar, eliminar) ahora son un cartel con el estilo de la app, en vez del aviso del navegador.' },
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
+    { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
   ];
   let novedadPendiente = false;
 
@@ -2302,8 +2312,9 @@
     const lista = (tipo, arr) => `<div class="box"><h3>${tipo === 'movil' ? 'Móviles' : 'Eventos'} (${arr.filter(x => x.estado === 'activo').length} activos)</h3>
       <div class="filters" style="grid-template-columns:1fr auto;margin:0 0 8px"><div><input class="search" style="margin:0" type="text" placeholder="Agregar ${tipo === 'movil' ? 'móvil' : 'evento'}" data-tipo="${tipo}" ${tipo === 'movil' ? 'inputmode="numeric"' : ''}></div><button type="button" class="primary cat-add" data-tipo="${tipo}" style="background:var(--brand)">Agregar</button></div>
       <div class="catlista">${arr.length ? arr.map(x => `<div class="catrow ${x.estado}" data-tipo="${tipo}" data-valor="${esc(x.valor)}"><b>${esc(x.valor)}</b><span class="acc">${x.estado === 'activo' ? '<button type="button" class="link-btn" data-que="baja">Dar de baja</button>' : '<button type="button" class="link-btn" data-que="reactivar">Reactivar</button>'}${esAdminActual() ? '<button type="button" class="link-btn peligro" data-que="quitar">Quitar</button>' : ''}</span></div>`).join('') : '<span class="hint">Sin valores todavía. Agregá los primeros o esperá las solicitudes del personal.</span>'}</div></div>`;
-    $('#cat-sol').innerHTML = (pend.length ? `<div class="usec">Solicitudes pendientes (${pend.length})</div>` + pend.map(fila).join('') : '<p class="hint" style="margin:0 0 12px">No hay solicitudes pendientes.</p>')
-      + (resueltas.length ? `<div class="usec">Resueltas recientes</div>` + resueltas.map(fila).join('') : '');
+    // [CORREGIDO · catálogo compacto] cada bloque va en un cuadro con scroll propio (pendientes más alto que resueltas)
+    $('#cat-sol').innerHTML = (pend.length ? `<div class="usec">Solicitudes pendientes (${pend.length})</div><div class="scrollbox pend">` + pend.map(fila).join('') + '</div>' : '<p class="hint" style="margin:0 0 8px">No hay solicitudes pendientes.</p>')
+      + (resueltas.length ? `<div class="usec">Resueltas recientes (${resueltas.length})</div><div class="scrollbox">` + resueltas.map(fila).join('') + '</div>' : '');
     $('#cat-listas').innerHTML = lista('movil', catalogoAdmin.moviles) + lista('evento', catalogoAdmin.eventos);
   }
   $('#cat-sol').addEventListener('click', async e => {
