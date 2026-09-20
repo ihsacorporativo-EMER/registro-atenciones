@@ -413,6 +413,8 @@
 <main>
   <!-- [NUEVO · migración] cartel que deja el script el día 1 de cada mes (solo coordinador); se cierra o se pospone desde acá -->
   <div id="migracion" class="notice hidden"></div>
+  <!-- [NUEVO · roles coord] sesión de un Coordinador/Supervisor en el panel de coordinación -->
+  <p class="hint hidden" id="sesion-coord" style="margin:0 0 12px">Sesión: <b id="sc-nombre"></b> · <span id="sc-rol"></span> · <a class="link-btn" href="?modo=usuario&amp;cargar=1">Cargar un registro</a> · <button type="button" class="link-btn" id="sc-salir">Cerrar sesión</button></p>
 
   <!-- ===== [NUEVO · usuarios] INGRESO (link ?modo=usuario) ===== -->
   <div id="view-login" class="hidden">
@@ -470,7 +472,7 @@
     <h1>Registro de atención</h1>
     <p class="lead">Cargá los datos del evento desde el lugar y adjuntá las fotos.</p>
     <!-- [NUEVO · usuarios] quién está logueado, con cierre de sesión -->
-    <p class="hint hidden" id="sesion-bar" style="margin:-8px 0 14px">Sesión: <b id="ses-nombre"></b> · <span id="ses-rol"></span> · <button type="button" class="link-btn" id="ses-salir">Cerrar sesión</button></p>
+    <p class="hint hidden" id="sesion-bar" style="margin:-8px 0 14px">Sesión: <b id="ses-nombre"></b> · <span id="ses-rol"></span> · <a id="ses-coord" class="link-btn hidden" href="?modo=coordinador">Ir a coordinación</a> <button type="button" class="link-btn" id="ses-salir">Cerrar sesión</button></p>
 
     <div id="offline" class="notice hidden">
       Versión de prueba: los registros se guardan solo en este dispositivo para que veas cómo funciona el tablero y la descarga a Excel.
@@ -695,10 +697,11 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-19 e';
+  const VERSION = '2026-09-19 f';
   const NOVEDADES = [
     'Nuevo link de usuarios: cada persona entra con su ID y PIN, y sus registros quedan firmados con su nombre y rol.',
     'Coordinación tiene el panel "Usuarios": aprueba solicitudes, asigna roles y restablece PIN.',
+    'Los usuarios con rol Coordinador o Supervisor entran directo al panel de coordinación con su propia cuenta.',
     'Cada registro y cada mensaje muestran quién lo cargó.',
   ];
   let novedadPendiente = false;
@@ -714,6 +717,10 @@
   const MODO_USUARIO = new URLSearchParams(location.search).get('modo') === 'usuario';
   let sesion = null; try { sesion = JSON.parse(localStorage.getItem('sesion_usuario') || 'null'); } catch {}
   const claveLocal = () => (MODO_USUARIO && sesion) ? 'reg_u_' + sesion.id : 'reg_demo';
+  // [NUEVO · roles coord] Coordinador y Supervisor usan el panel de coordinación con su propia sesión (sin clave compartida)
+  const ROLES_COORD = ['Coordinador', 'Supervisor'];
+  const esRolCoord = r => ROLES_COORD.includes(r);
+  const sesionCoord = () => (sesion && sesion.token && sesion.estado === 'activo' && esRolCoord(sesion.rol)) ? sesion : null;
   const persistirLocal = () => { try { localStorage.setItem(claveLocal(), JSON.stringify(registros.slice(0,200))); } catch {} };
 
   // [CORREGIDO · fotos] Las fotos del celular iban a localStorage, que admite ~5 MB: 3 o 4 registros con
@@ -961,13 +968,20 @@
     }
     return c;
   }
+  // [NUEVO · roles coord] credencial para el script: la sesión de un Coordinador/Supervisor, o la clave maestra
+  const credCoord = () => sesionCoord() ? { token: sesion.token } : { clave: claveCoord() };
+  const hayCred = c => !!(c.token || c.clave);
+  function credRechazada(){                                 // el script no aceptó la credencial
+    if (sesionCoord()){ guardarSesion(null); toast('Tu sesión ya no es válida. Volvé a entrar.', 'err'); setTimeout(() => location.replace(location.pathname + '?modo=usuario'), 1500); }
+    else { try { localStorage.removeItem('coord_clave'); } catch {} }   // la vuelve a pedir
+  }
   async function pedirCentral(params){
-    const clave = claveCoord(); if (!clave) throw new Error('Sin clave');
-    const u = new URL(FLOW_URL); u.searchParams.set('clave', clave);
+    const cred = credCoord(); if (!hayCred(cred)) throw new Error('Sin clave');
+    const u = new URL(FLOW_URL); Object.entries(cred).forEach(([k, v]) => u.searchParams.set(k, v));
     Object.entries(params || {}).forEach(([k,v]) => u.searchParams.set(k, v));
     const res = await (await fetch(u)).json();
     if (!res.ok){
-      if (/clave/i.test(res.error || '')) { try { localStorage.removeItem('coord_clave'); } catch {} }   // la vuelve a pedir
+      if (/clave|sesión/i.test(res.error || '')) credRechazada();
       throw new Error(res.error || 'Error del script');
     }
     return res;
@@ -1173,7 +1187,7 @@
     const texto = art.querySelector('.resp-txt').value.trim();
     if (!texto){ toast('Escribí el mensaje primero', 'err'); return; }
     const body = { accion: 'mensaje', de: YO, id, texto, token: sesion?.token };   // [NUEVO · usuarios] firma el mensaje con nombre y rol
-    if (MODO_COORD){ const clave = claveCoord(); if (!clave) return; body.clave = clave; }
+    if (MODO_COORD){ const cred = credCoord(); if (!hayCred(cred)) return; Object.assign(body, cred); }   // [NUEVO · roles coord]
     btn.disabled = true; btn.textContent = 'Enviando…';
     try {
       const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify(body) });
@@ -1220,7 +1234,7 @@
   // Campo: mensajes de coordinación no leídos (se cuenta acá). Al abrir Registros, todo vuelve a cero.
   let vistoHasta = 0; try { vistoHasta = +(localStorage.getItem('coord_visto') || 0); } catch {}
   let nuevosPrev = 0;
-  const claveGuardada = () => { try { return localStorage.getItem('coord_clave') || ''; } catch { return ''; } };
+  const claveGuardada = () => { if (sesionCoord()) return 'sesion'; try { return localStorage.getItem('coord_clave') || ''; } catch { return ''; } };   // [NUEVO · roles coord]
   // [NUEVO · sonido] Doble bip corto, tipo handy: onda cuadrada, 1000 Hz y 800 Hz, 90 ms cada uno. El navegador
   // lo permite después del primer toque en la página. La vibración acompaña con el mismo ritmo.
   let audioCtx = null;
@@ -1495,9 +1509,10 @@
 
   // ---- [NUEVO · migración] aviso mensual, paquete completo y archivado (modo coordinador) ----
   const postCoord = async body => {
-    const clave = claveCoord(); if (!clave) throw new Error('Sin clave');
-    const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify({ ...body, clave }) });
-    const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script');
+    const cred = credCoord(); if (!hayCred(cred)) throw new Error('Sin clave');   // [NUEVO · roles coord] sesión o clave
+    const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify({ ...body, ...cred }) });
+    const res = await r.json();
+    if (!res.ok){ if (/clave|sesión/i.test(res.error || '')) credRechazada(); throw new Error(res.error || 'Error del script'); }
     return res;
   };
   // Cartel arriba de todo: el script lo deja el día 1 (según MESES_ENTRE_ALERTAS) y desaparece al cerrarlo o posponerlo
@@ -1584,6 +1599,7 @@
     if (MODO_USUARIO && sesion){                                 // [NUEVO · usuarios] sesión a la vista; el interviniente ya no se pide
       $('#sesion-bar').classList.remove('hidden');
       $('#ses-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`; $('#ses-rol').textContent = sesion.rol || '';
+      $('#ses-coord').classList.toggle('hidden', !esRolCoord(sesion.rol));   // [NUEVO · roles coord] vuelta al panel
       $('#medico').closest('.field').classList.add('hidden');
     }
     $('#offline').classList.remove('hidden');
@@ -1597,6 +1613,14 @@
     setInterval(sondearMensajes, 15000);
     document.addEventListener('visibilitychange', sondearMensajes);
   }
+
+  // [NUEVO · roles coord] Con sesión activa: Coordinador y Supervisor van al panel de coordinación con su propia sesión.
+  // Con ?cargar=1 en el link se quedan en modo campo para cargar un registro (desde el panel hay un enlace para eso).
+  async function entrarSegunRol(){
+    if (sesionCoord() && !new URLSearchParams(location.search).get('cargar')){ location.replace(location.pathname + '?modo=coordinador'); return; }
+    await iniciarCampo();
+  }
+  $('#sc-salir').addEventListener('click', () => { if (confirm('¿Cerrar sesión?')){ guardarSesion(null); location.replace(location.pathname + '?modo=usuario'); } });
 
   // ---- [NUEVO · usuarios] ingreso, registro, espera de aprobación y PIN (modo usuario) ----
   const guardarSesion = s => { sesion = s; try { if (s) localStorage.setItem('sesion_usuario', JSON.stringify(s)); else localStorage.removeItem('sesion_usuario'); } catch {} };
@@ -1635,7 +1659,7 @@
       const res = await postUsuario({ accion: 'ingresar', id, pin });
       if (res.requierePinNuevo){ pinNuevoDe = res.id; mostrarLogin('pinnuevo'); return; }
       guardarSesion({ ...res.usuario, token: res.token }); $('#lg-pin').value = '';
-      if (res.usuario.estado === 'pendiente') esperarAprobacion(); else await iniciarCampo();
+      if (res.usuario.estado === 'pendiente') esperarAprobacion(); else await entrarSegunRol();
     } catch (e){ toast(e.message, 'err'); }
     finally { btn.disabled = false; btn.textContent = 'Entrar'; }
   }
@@ -1661,7 +1685,7 @@
       const res = await postUsuario({ accion: 'pinNuevo', id: pinNuevoDe, pin: p1 });
       guardarSesion({ ...res.usuario, token: res.token }); $('#pn-pin').value = $('#pn-pin2').value = '';
       toast('PIN guardado', 'ok');
-      if (res.usuario.estado === 'activo') await iniciarCampo(); else esperarAprobacion();
+      if (res.usuario.estado === 'activo') await entrarSegunRol(); else esperarAprobacion();
     } catch (e){ toast(e.message, 'err'); }
   }
   // Pantalla de espera: consulta cada 10 s si el coordinador ya aprobó; al aprobar, entra sola
@@ -1671,7 +1695,7 @@
     sondeoAprobacion = setInterval(async () => {
       if (document.hidden) return;
       const est = await verificarSesion();
-      if (est === 'activo'){ clearInterval(sondeoAprobacion); toast(`Aprobado como ${sesion.rol}`, 'ok'); await iniciarCampo(); }
+      if (est === 'activo'){ clearInterval(sondeoAprobacion); toast(`Aprobado como ${sesion.rol}`, 'ok'); await entrarSegunRol(); }
       else if (est === 'invalida'){ clearInterval(sondeoAprobacion); mostrarLogin('entrar'); }
     }, 10000);
   }
@@ -1778,6 +1802,10 @@
         // [NUEVO · envío] Modo coordinador: sin formulario; Registros y Tablero salen de la planilla central
         document.title = tituloBase = 'Coordinación · Emergencias';
         $('.brand .tag').textContent = 'COORDINADOR';            // [NUEVO] etiqueta según el link
+        if (sesionCoord()){                                      // [NUEVO · roles coord] entró con su usuario: sin clave, con su nombre y rol
+          $('.brand .tag').textContent = String(sesion.rol).toUpperCase();
+          $('#sesion-coord').classList.remove('hidden'); $('#sc-nombre').textContent = `${sesion.nombre} ${sesion.apellido}`; $('#sc-rol').textContent = sesion.rol;
+        }
         $('#bell').classList.remove('hidden');                   // [NUEVO · campana]
         $('#migra').classList.remove('hidden');                  // [NUEVO · migración] paquete y archivo en el tablero
         { const d = new Date(); d.setDate(d.getDate() - 90); $('#arch-hasta').value = d.toISOString().slice(0, 10); }   // sugerencia: 90 días atrás
@@ -1795,7 +1823,7 @@
         document.title = tituloBase = 'Registro de atención · Emergencias';
         if (!FLOW_URL){ toast('Falta configurar FLOW_URL en el HTML', 'err'); return; }
         const est = await verificarSesion();
-        if (est === 'activo' || (est === 'offline' && sesion && sesion.estado === 'activo')) await iniciarCampo();
+        if (est === 'activo' || (est === 'offline' && sesion && sesion.estado === 'activo')) await entrarSegunRol();
         else if (est === 'pendiente') esperarAprobacion();
         else mostrarLogin('entrar');
         return;
