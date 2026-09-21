@@ -337,6 +337,11 @@
   #cat-sol .usec:first-child{margin-top:0}
   #view-cat .mini{margin-top:8px}
   .solicitar{display:block;margin-top:6px;font-size:13px}
+  /* [NUEVO · solicitud enviada] tilde verde de confirmación debajo del campo, reemplaza al link "Solicitar agregar" */
+  .solenv{display:inline-flex;align-items:center;gap:7px;margin-top:6px;font-size:13px;font-weight:700;color:var(--ok);animation:pop .3s cubic-bezier(.2,.8,.2,1)}
+  .solenv .tick{width:18px;height:18px;border-radius:50%;background:var(--ok);color:#fff;display:grid;place-items:center;flex:none}
+  .solenv .tick svg{width:11px;height:11px}
+  .solenv small{font-weight:600;color:var(--muted)}
   /* [NUEVO · catálogo] desplegable propio bajo Móvil y Evento (el nativo no se puede estilizar) */
   .autoc{position:relative}
   .sugerencias{position:absolute;left:0;right:0;top:calc(100% - 2px);z-index:6;background:var(--card);border:1.5px solid var(--brand);border-top:0;border-radius:0 0 11px 11px;box-shadow:var(--shadow);max-height:230px;overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -660,7 +665,7 @@
             <input id="movil" type="tel" inputmode="numeric" placeholder="Ej.: 154" required autocomplete="off">
             <div class="sugerencias hidden" id="sug-movil"></div>
           </div>
-          <button type="button" class="link-btn solicitar hidden" id="sol-movil" data-tipo="movil">No está en la lista · Solicitar agregar</button>
+          <button type="button" class="link-btn solicitar hidden" id="sol-movil" data-tipo="movil">No está en la lista · Solicitar agregar</button><span class="solenv hidden" id="solenv-movil" role="status"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span>Solicitud enviada <small>· en espera de coordinación</small></span></span>
         </div>
       </div>
 
@@ -670,7 +675,7 @@
           <input id="evento" type="text" placeholder="Ej.: Recital Movistar Arena" required autocomplete="off">
           <div class="sugerencias hidden" id="sug-evento"></div>
         </div>
-        <button type="button" class="link-btn solicitar hidden" id="sol-evento" data-tipo="evento">No está en la lista · Solicitar agregar</button>
+        <button type="button" class="link-btn solicitar hidden" id="sol-evento" data-tipo="evento">No está en la lista · Solicitar agregar</button><span class="solenv hidden" id="solenv-evento" role="status"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span>Solicitud enviada <small>· en espera de coordinación</small></span></span>
       </div>
 
       <div class="row">
@@ -995,7 +1000,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 c';
+  const VERSION = '2026-09-21 d';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1019,6 +1024,7 @@
     { v: '2026-09-20 s', para: 'todos', texto: 'Las preguntas de confirmación (cerrar sesión, quitar, eliminar) ahora son un cartel con el estilo de la app, en vez del aviso del navegador.' },
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
+    { v: '2026-09-21 d', para: 'todos', texto: 'Al tocar "Solicitar agregar" aparece un tilde verde de confirmación debajo del campo: "Solicitud enviada, en espera de coordinación". Queda mientras ese móvil o evento siga escrito.' },
     { v: '2026-09-21 b', para: 'todos', texto: 'El logo de Grupo IHSA aparece como ícono en la pestaña del navegador y al agregar la app a la pantalla de inicio.' },
     { v: '2026-09-21 a', para: 'todos', texto: 'Ajustes para iPhone: los campos de fecha y las listas desplegables se ven como el resto, la pantalla ya no hace zoom al tocar un campo, y los colores de etiquetas y botones se ven en Safari viejo.' },
   ];
@@ -2274,11 +2280,16 @@
     } catch {}
   }
   // Si lo escrito no está en la lista, aparece "Solicitar agregar" debajo del campo. Guardar igual está permitido.
+  // [NUEVO · solicitud enviada] si ese valor ya fue solicitado (recién, o sigue pendiente en coordinación), en vez del link
+  // se muestra el tilde verde. Se recalcula al escribir: si cambia el valor, vuelve el link.
+  const yaSolicitado = (tipo, v) => misSolicitudes.some(s => s.tipo === tipo && s.estado === 'pendiente' && String(s.valor || '').toLowerCase() === v.toLowerCase());
   function verificarCatalogo(tipo){
     const v = $('#' + tipo).value.trim();
     const lista = tipo === 'movil' ? catalogo.moviles : catalogo.eventos;
     const falta = !!v && !lista.some(x => x.toLowerCase() === v.toLowerCase());
-    $('#sol-' + tipo).classList.toggle('hidden', !(falta && FLOW_URL && !db));
+    const enviado = falta && yaSolicitado(tipo, v);
+    $('#sol-' + tipo).classList.toggle('hidden', !(falta && FLOW_URL && !db) || enviado);
+    $('#solenv-' + tipo).classList.toggle('hidden', !enviado);
   }
   $('#movil').addEventListener('input', () => verificarCatalogo('movil'));
   $('#evento').addEventListener('input', () => verificarCatalogo('evento'));
@@ -2299,7 +2310,7 @@
   document.querySelectorAll('.solicitar').forEach(b => b.addEventListener('click', async () => {
     const tipo = b.dataset.tipo, valor = $('#' + tipo).value.trim(); if (!valor) return;
     b.disabled = true;
-    if (await solicitar(tipo, valor, '')){ toast(`Solicitud enviada: ${tipo === 'movil' ? 'móvil' : 'evento'} "${valor}". Podés seguir cargando.`, 'ok'); b.classList.add('hidden'); }
+    if (await solicitar(tipo, valor, '')){ toast(`Solicitud enviada: ${tipo === 'movil' ? 'móvil' : 'evento'} "${valor}". Podés seguir cargando.`, 'ok'); verificarCatalogo(tipo); }   // [NUEVO · solicitud enviada] muestra el tilde
     b.disabled = false;
   }));
   // [NUEVO · menú] las solicitudes viven en un modal que abre el menú del nombre (o la campana); el ítem del menú
@@ -2327,7 +2338,7 @@
       const u = new URL(FLOW_URL); u.searchParams.set('misSolicitudes', '1'); u.searchParams.set('dispositivo', dispositivoId); if (sesion?.token) u.searchParams.set('token', sesion.token);
       const res = await (await fetch(u)).json(); if (!res.ok) return;
       const antes = solNoVistas();
-      misSolicitudes = res.solicitudes || []; persistirSolicitudes(); renderMisSolicitudes();
+      misSolicitudes = res.solicitudes || []; persistirSolicitudes(); renderMisSolicitudes(); pintarCatalogo();   // [NUEVO · solicitud enviada] el tilde sigue la solicitud (si se resolvió, vuelve el link o desaparece)
       if (solNoVistas() > antes){ toast('Coordinación respondió una solicitud tuya', 'ok'); await cargarCatalogo(); }
       pintarNoVistos(nuevosPrev);
     } catch {}
