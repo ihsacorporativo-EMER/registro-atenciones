@@ -31,18 +31,19 @@
     --field:#ffffff;
     --ok:#1f8a4c;
     --danger:#c62828;
+    --brand-txt:#0b3d91;    /* [NUEVO · app celular] azul para texto e íconos activos (en oscuro, uno claro) */
     --shadow:0 1px 2px rgba(11,61,145,.05), 0 10px 30px -14px rgba(11,61,145,.22);
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
       --bg:#0f1420; --card:#171d2b; --ink:#eef1f7; --muted:#a3acbf; --line:#2a3245; --field:#1e2536;
-      --brand:#1d55b8; --brand-deep:#0b2f70;
+      --brand:#1d55b8; --brand-deep:#0b2f70; --brand-txt:#8fb4ff;
       --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
     }
   }
   :root[data-theme="dark"]{
     --bg:#0f1420; --card:#171d2b; --ink:#eef1f7; --muted:#a3acbf; --line:#2a3245; --field:#1e2536;
-    --brand:#1d55b8; --brand-deep:#0b2f70;
+    --brand:#1d55b8; --brand-deep:#0b2f70; --brand-txt:#8fb4ff;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
   }
 
@@ -73,7 +74,7 @@
   .brand .subtitulo{display:block;font-size:13px;opacity:.8}
   .solo-chico{display:none}
   /* [CORREGIDO · arranque] hasta que la app decide el modo y la sesión, no se muestra la pantalla genérica */
-  body.cargando .yo,body.cargando .bell,body.cargando .tabs,body.cargando main,body.cargando .pie{visibility:hidden}
+  body.cargando .yo,body.cargando .bell,body.cargando .tabs,body.cargando main,body.cargando .pie,body.cargando .bnav{visibility:hidden}
   .brand .tag{
     margin-left:auto;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);
     border-radius:999px;padding:4px 11px;font-size:12px;font-weight:700;letter-spacing:.4px;
@@ -416,23 +417,32 @@
   header{padding-top:calc(18px + env(safe-area-inset-top))}
   /* [CORREGIDO · celular] cabecera compacta: sin subtítulo, etiqueta chica, pestañas en dos filas si no entran */
   @media (max-width:640px){
-    /* [CORREGIDO · cabecera celular] misma cabecera que en pantalla grande, reducida: logo chico + "Servicios Corporativos"
-       con "Registro de atenciones" debajo, y la campana a la derecha en esa misma línea. El rol y el nombre pasan a una
-       segunda línea, alineados a la derecha, así nunca compiten con el título por el ancho. */
-    .brand{gap:8px;flex-wrap:wrap;row-gap:6px}
+    /* [NUEVO · app celular] cabecera compacta de 64 px: logo chico, "Registro de atenciones" y debajo
+       "Servicios Corporativos · rol", campana a la derecha. El nombre y el perfil viven en la pantalla "Más". */
+    header{padding:calc(10px + env(safe-area-inset-top)) 14px 12px}
+    .brand{gap:10px;flex-wrap:nowrap}
     .brand .titulo{min-width:0;flex:1}
-    .brand b{font-size:14px;line-height:1.2;white-space:nowrap}
-    .brand .subtitulo{display:block;font-size:11px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .solo-grande{display:inline}
-    .solo-chico{display:none}
+    .brand b{font-size:15px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .brand .subtitulo{display:block;font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85}
+    .solo-grande{display:none}
+    .solo-chico{display:inline}
     .mark{padding:3px 6px;border-radius:9px}
     .mark img{height:24px !important}
-    .bell{order:1;width:34px;height:34px;margin-left:6px;align-self:center}
-    .yo{order:2;flex:0 0 100%;margin-left:0;flex-direction:row;justify-content:flex-end;align-items:center;gap:6px}
-    .brand .tag{margin-left:0;font-size:10px;padding:3px 8px;white-space:nowrap;letter-spacing:.2px}
-    .perfil-btn{font-size:11px;max-width:200px;padding:3px 9px 3px 8px}
-    header{padding-bottom:16px}
-    .tabs{margin-top:12px}
+    .bell{order:0;width:40px;height:40px;margin-left:auto;align-self:center;border:0;background:transparent}
+    .yo{display:none}
+    .tabs{display:none !important}
+    /* barra de navegación abajo */
+    .bnav{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;position:fixed;left:0;right:0;bottom:0;z-index:6;height:calc(64px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:var(--card);border-top:1px solid var(--line)}
+    .bnav.hidden{display:none !important}
+    .bnav button{border:0;background:none;color:var(--muted);font:inherit;font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;position:relative;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .bnav button.hidden{display:none}
+    .bnav button svg{width:22px;height:22px}
+    .bnav button[aria-selected="true"]{color:var(--brand-txt)}
+    .bnav .bdot{position:absolute;top:10px;left:calc(50% + 8px);width:8px;height:8px;border-radius:50%;background:var(--accent);display:none}
+    .bnav .bdot.on{display:block}
+    main{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+    body.en-form main{padding-bottom:calc(160px + env(safe-area-inset-bottom))}
+    .pie{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
     /* [NUEVO · acordeón] pestañas plegadas: se ve solo la actual con una flecha; al tocarla se despliegan las demás */
     .tabs{flex-direction:column;gap:0;padding:0;overflow:hidden}
     .tabs button{display:none;width:100%;text-align:left;padding:12px 14px;border-radius:0;font-size:15px;border-top:1px solid rgba(255,255,255,.12)}
@@ -449,12 +459,36 @@
     main{padding:14px 12px calc(96px + env(safe-area-inset-bottom))}
     h1{font-size:23px}
     section.card{border-radius:14px;padding:16px 14px 18px}
-    .sticky{position:fixed;left:0;right:0;bottom:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    .sticky{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));padding:10px 12px 10px;   /* [NUEVO · app celular] encima de la barra */
       background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
       border-top:1px solid var(--line);z-index:5}
     .sticky .primary{margin-top:0}
     .foot{display:none}
   }
+
+  /* ===== [NUEVO · app celular] barra de navegación abajo y pantalla "Más" (solo se ven en celular) ===== */
+  .bnav{display:none}
+  .tabs button[data-tab="mas"]{display:none !important}   /* pestaña técnica: la usa la barra de abajo para abrir "Más" */
+  #view-mas{display:flex;flex-direction:column;gap:10px}
+  #view-mas.hidden{display:none}
+  .mas-cuenta{display:flex;gap:12px;align-items:center;padding:14px 16px;border-radius:14px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+  .mas-cuenta .datos{flex:1;min-width:0}
+  .mas-cuenta b{display:block;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mas-cuenta small{color:var(--muted);font-weight:600;font-size:12px}
+  .mas-estado{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--ok);flex:none}
+  .mas-estado.off{color:var(--danger)}
+  #view-mas .usec{margin:10px 0 2px}
+  .mas-grupo{border-radius:14px;background:var(--card);border:1px solid var(--line);overflow:hidden;box-shadow:var(--shadow)}
+  .mas-item{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:0 16px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:15px;font-weight:600;text-align:left;text-decoration:none;cursor:pointer}
+  .mas-item:last-child{border-bottom:0}
+  .mas-item:active{background:color-mix(in srgb,var(--brand) 8%,var(--card))}
+  .mas-item .ic{width:20px;height:20px;color:var(--brand-txt);flex:none}
+  .mas-item .lbl{flex:1}
+  .mas-item .cnt{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center}
+  .mas-item .cnt:empty{display:none}
+  .mas-item .chev{width:16px;height:16px;color:var(--muted);flex:none}
+  .mas-salir{width:100%;min-height:48px;margin-top:4px;border-radius:12px;background:transparent;border:1px solid color-mix(in srgb,var(--danger) 45%,var(--card));color:var(--danger);font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+  .mas-pie{text-align:center;font-size:11px;color:var(--muted);margin:18px 0 0;line-height:1.5}
 
   /* ===== [CORREGIDO · iPhone] Safari iOS =====
      · Los campos de fecha, los select y los botones traen estilo nativo (bordes redondeados, sombra interior, texto centrado
@@ -498,7 +532,7 @@
   /* [NUEVO · pie] firma en todas las vistas; en celular deja lugar a la barra fija de Guardar */
   .pie{text-align:center;font-size:12.5px;color:var(--muted);padding:18px 16px calc(18px + env(safe-area-inset-bottom));opacity:.9}
   .pie b{font-weight:700}
-  @media (max-width:640px){body.en-form .pie{padding-bottom:calc(100px + env(safe-area-inset-bottom))}}
+  @media (max-width:640px){body.en-form .pie{padding-bottom:calc(170px + env(safe-area-inset-bottom))}}   /* [NUEVO · app celular] barra + Guardar */
   .tabs button{transition:color .2s,background .25s,transform .15s}
   .tabs button:active{transform:scale(.97)}
 
@@ -560,8 +594,9 @@
     <div class="titulo"><!-- [CORREGIDO · cabecera celular] -->
       <!-- [CORREGIDO · celular] en celular el título es "Grupo IHSA"; en pantallas grandes, "Emergencias" con subtítulo -->
       <!-- [CORREGIDO · cabecera] el logo ya dice Grupo IHSA: en pantalla grande "Servicios Corporativos / Registro de atenciones"; en celular solo "Registro de atenciones" -->
-      <b><span class="solo-grande">Servicios Corporativos</span><span class="solo-chico">Servicios Corporativos</span></b>
-      <span class="subtitulo">Registro de atenciones</span>
+      <!-- [NUEVO · app celular] en celular se invierten: título "Registro de atenciones", subtítulo "Servicios Corporativos · rol" -->
+      <b><span class="solo-grande">Servicios Corporativos</span><span class="solo-chico">Registro de atenciones</span></b>
+      <span class="subtitulo"><span class="solo-grande">Registro de atenciones</span><span class="solo-chico">Servicios Corporativos<span id="sub-rol"></span></span></span>
     </div>
     <!-- [NUEVO · campana] solo se muestra en modo coordinador -->
     <button class="bell hidden" id="bell" type="button" aria-label="Registros nuevos">
@@ -581,6 +616,7 @@
     <button role="tab" aria-selected="false" data-tab="users" class="hidden">Usuarios <span id="ucount"></span></button><!-- [NUEVO · usuarios] coordinador y administrador -->
     <button role="tab" aria-selected="false" data-tab="cat" class="hidden">Catálogo <span id="catcount"></span></button><!-- [NUEVO · catálogo] coordinador y administrador -->
     <button role="tab" aria-selected="false" data-tab="config" class="hidden">Configuración</button><!-- [NUEVO · admin] solo administrador -->
+    <button role="tab" aria-selected="false" data-tab="mas" class="hidden">Más</button><!-- [NUEVO · app celular] la abre la barra de abajo; nunca se ve arriba -->
   </div>
 </header>
 
@@ -797,6 +833,31 @@
   </div>
 
 <!-- ===== TABLERO ===== -->
+  <!-- ===== [NUEVO · app celular] MÁS: cuenta, administración (roles elevados) y salida. Solo se llega desde la barra de abajo ===== -->
+  <div id="view-mas" class="hidden">
+    <div class="mas-cuenta">
+      <div class="avatar" id="mas-avatar"></div>
+      <div class="datos"><b id="mas-nombre"></b><small id="mas-rol"></small></div>
+      <span class="mas-estado" id="mas-estado"><span class="estado-dot"></span><span id="mas-estado-txt">En línea</span></span>
+    </div>
+    <div class="usec hidden" id="mas-admin-t">Administración</div>
+    <div class="mas-grupo hidden" id="mas-admin">
+      <button class="mas-item" id="mas-users" type="button" data-go="users"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><path d="M16 5a3.5 3.5 0 0 1 0 7"/><path d="M22 20a6 6 0 0 0-4-5.6"/></svg><span class="lbl">Usuarios</span><span class="cnt" id="mas-ucount"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+      <button class="mas-item" id="mas-cat" type="button" data-go="cat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 10h16"/><path d="M9 5v14"/></svg><span class="lbl">Catálogo</span><span class="cnt" id="mas-catcount"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+      <button class="mas-item hidden" id="mas-config" type="button" data-go="config" ><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h2"/><path d="M10 17h10"/><circle cx="8" cy="17" r="2"/></svg><span class="lbl">Configuración</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="usec">Mi cuenta</div>
+    <div class="mas-grupo">
+      <button class="mas-item" id="mas-perfil" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="lbl">Perfil</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+      <button class="mas-item" id="mas-sol" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v13H8l-4 4z"/></svg><span class="lbl">Mis solicitudes</span><span class="cnt" id="mas-sol-n"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+      <button class="mas-item" id="mas-info" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7h.01"/></svg><span class="lbl">Información adicional</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+      <a class="mas-item hidden" id="mas-coord" href="?modo=coordinador" ><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 18v3"/></svg><span class="lbl">Ir a coordinación</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></a>
+      <a class="mas-item hidden" id="mas-cargar" href="?modo=usuario&amp;cargar=1" ><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></svg><span class="lbl">Cargar un registro</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></a>
+    </div>
+    <button type="button" class="mas-salir" id="mas-salir">Cerrar sesión</button>
+    <p class="mas-pie">Uso interno · Servicios Corporativos · Grupo IHSA<br>Desarrollado por Nicolás Chiolo</p>
+  </div>
+
   <div id="view-board" class="hidden" style="max-width:none">
     <h1>Tablero</h1>
     <p class="lead">Datos estructurados de todos los registros. Descargalos en Excel para armar tu dashboard.</p>
@@ -847,6 +908,15 @@
     <div id="pager-tabla-bottom"></div><!-- [NUEVO · paginado] -->
   </div>
 </main>
+<!-- [NUEVO · app celular] barra de navegación abajo (solo celular). Cada botón "aprieta" la pestaña de arriba del mismo nombre,
+     así toda la lógica de pestañas sigue en un solo lugar. Qué botones se ven depende del rol (igual que las pestañas). -->
+<nav class="bnav hidden" id="bnav" aria-label="Secciones">
+  <button type="button" data-go="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>Registros<span class="bdot" id="bnav-dot"></span></button>
+  <button type="button" data-go="form"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>Nuevo</button>
+  <button type="button" data-go="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>Tablero</button>
+  <button type="button" data-go="cat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 10h16"/><path d="M9 5v14"/></svg>Catálogo<span class="bdot" id="bnav-catdot"></span></button>
+  <button type="button" data-go="mas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>Más<span class="bdot" id="bnav-masdot"></span></button>
+</nav>
 <!-- [NUEVO · pie] -->
 <footer class="pie">Desarrollado por <b>Nicolás Chiolo</b> · Servicios Corporativos</footer>
 
@@ -1007,7 +1077,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 h';
+  const VERSION = '2026-09-21 i';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1031,6 +1101,8 @@
     { v: '2026-09-20 s', para: 'todos', texto: 'Las preguntas de confirmación (cerrar sesión, quitar, eliminar) ahora son un cartel con el estilo de la app, en vez del aviso del navegador.' },
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
+    { v: '2026-09-21 i', para: 'todos', texto: 'En celular la app tiene barra de navegación abajo (Registros, Nuevo, Más) y una cabecera más chica con tu rol. En "Más" están tu perfil, Mis solicitudes, Información adicional y Cerrar sesión.' },
+    { v: '2026-09-21 i', para: 'coord', texto: 'En celular, coordinación tiene abajo Registros, Tablero, Catálogo y Más; en "Más" quedan Usuarios, Configuración y Cargar un registro.' },
     { v: '2026-09-21 f', para: 'todos', texto: 'Cabecera nueva: el logo de Grupo IHSA con "Servicios Corporativos" y "Registro de atenciones", también en celular, con el logo más chico. El rol, tu nombre y la campana se acomodan debajo.' },
     { v: '2026-09-21 e', para: 'todos', texto: 'Seguridad: las conversaciones y ediciones de un registro solo las ve y responde el usuario o el celular que lo cargó. No cambia nada en el uso.' },
     { v: '2026-09-21 e', para: 'coord', texto: 'Seguridad del script: la planilla queda protegida contra fórmulas inyectadas, el archivado ya no borra hasta terminar de escribir, la habilitación de cambio de PIN vence a los 15 minutos y hay tope de altas de usuarios por celular.' },
@@ -1136,7 +1208,8 @@
     }
     document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x===b));
     const tab = b.dataset.tab;
-    ['form','list','board','users','cat','config','login'].forEach(n => $('#view-'+n).classList.toggle('hidden', tab!==n));   // [NUEVO · usuarios / admin / catálogo]
+    ['form','list','board','users','cat','config','login','mas'].forEach(n => $('#view-'+n).classList.toggle('hidden', tab!==n));   // [NUEVO · usuarios / admin / catálogo / app celular]
+    if (tab==='mas') pintarMas();                                // [NUEVO · app celular]
     document.querySelector('main').classList.toggle('wide', tab==='board' || tab==='config' || tab==='cat');   // [CORREGIDO · estilo] paneles anchos
     document.body.classList.toggle('en-form', tab==='form');   // [NUEVO · pie] en celular, el pie se corre para no quedar bajo la barra de Guardar
     const v = $('#view-'+tab); v.style.animation='none'; void v.offsetWidth; v.style.animation='rise .4s cubic-bezier(.2,.8,.2,1)';
@@ -2086,7 +2159,7 @@
   };
   function mostrarLogin(seccion){
     $('.tabs').classList.add('hidden');
-    ['form','list','board','users'].forEach(n => $('#view-'+n).classList.add('hidden'));
+    ['form','list','board','users','mas'].forEach(n => $('#view-'+n).classList.add('hidden'));
     $('#view-login').classList.remove('hidden');
     ['entrar','crear','espera','pinnuevo'].forEach(s => $('#login-'+s).classList.toggle('hidden', s !== seccion));
     document.querySelectorAll('.seg3 button').forEach(b => b.setAttribute('aria-pressed', b.dataset.l === seccion));
@@ -2530,6 +2603,7 @@
   function pintarEstado(){
     const on = conectado && navigator.onLine !== false && (MODO_COORD || !!(sesion && sesion.estado === 'activo'));   // [NUEVO · menú] con clave: solo la conexión
     $('#estado-dot').classList.toggle('off', !on); $('#estado-dot').title = on ? 'Conectado' : 'Sin conexión';
+    $('#mas-estado').classList.toggle('off', !on); $('#mas-estado .estado-dot').classList.toggle('off', !on); $('#mas-estado-txt').textContent = on ? 'En línea' : 'Sin conexión';   // [NUEVO · app celular]
   }
   const marcarConexion = ok => { conectado = ok; pintarEstado(); };
   window.addEventListener('online', () => marcarConexion(true));
@@ -2580,6 +2654,74 @@
     const img = e.target.closest('.avatar img'); if (!img) return;
     $('#lb img').src = img.src; $('#lb').dataset.nombre = 'foto-perfil.jpg'; $('#lb').classList.add('open');
   });
+  // ---- [NUEVO · app celular] barra de navegación abajo y pantalla "Más" ----
+  // La barra refleja las pestañas de arriba: un botón se ve si la pestaña del mismo nombre está visible; "Más" siempre.
+  // Cuando la pestaña activa es Usuarios o Configuración (que no tienen botón), queda marcado "Más".
+  function sincronizarBnav(){
+    const tabs = $('.tabs'); const bnav = $('#bnav');
+    bnav.classList.toggle('hidden', tabs.classList.contains('hidden'));
+    const activa = (document.querySelector('.tabs button[aria-selected="true"]') || {}).dataset?.tab || '';
+    const enMas = activa === 'mas' || activa === 'users' || activa === 'config';
+    bnav.querySelectorAll('button[data-go]').forEach(b => {
+      const go = b.dataset.go;
+      const t = document.querySelector('.tabs button[data-tab="' + go + '"]');
+      b.classList.toggle('hidden', go !== 'mas' && (!t || t.classList.contains('hidden')));
+      b.setAttribute('aria-selected', go === 'mas' ? enMas : activa === go);
+    });
+    $('#bnav-dot').classList.toggle('on', $('#tabdot').classList.contains('on'));
+    $('#bnav-catdot').classList.toggle('on', !!$('#catcount').textContent.trim());
+    $('#bnav-masdot').classList.toggle('on', !!$('#ucount').textContent.trim());
+  }
+  try {
+    const obs = new MutationObserver(sincronizarBnav);
+    obs.observe($('.tabs'), { attributes: true, subtree: true, childList: true, characterData: true, attributeFilter: ['class', 'aria-selected'] });
+    obs.observe($('#tabdot'), { attributes: true, attributeFilter: ['class'] });
+    obs.observe($('#ucount'), { childList: true, characterData: true, subtree: true });
+    obs.observe($('#catcount'), { childList: true, characterData: true, subtree: true });
+  } catch {}
+  $('#bnav').addEventListener('click', e => {
+    const b = e.target.closest('button[data-go]'); if (!b) return;
+    const t = document.querySelector('.tabs button[data-tab="' + b.dataset.go + '"]'); if (!t) return;
+    t.click(); window.scrollTo({ top: 0 });
+  });
+  // subtítulo de celular: "Servicios Corporativos · Chofer" sigue a la etiqueta del rol
+  function pintarSubRol(){
+    const t = $('.brand .tag').textContent.trim().toLowerCase();
+    $('#sub-rol').textContent = t ? ' · ' + t.charAt(0).toUpperCase() + t.slice(1) : '';
+  }
+  try { new MutationObserver(pintarSubRol).observe($('.brand .tag'), { childList: true, characterData: true, subtree: true }); } catch {}
+  pintarSubRol();
+  // pantalla "Más": misma información que el menú del nombre, en formato de lista
+  function pintarMas(){
+    const sm = sesionMenu(), conSesion = !!sm;
+    if (conSesion){
+      $('#mas-nombre').textContent = `${sm.nombre} ${sm.apellido}`; $('#mas-rol').textContent = `ID ${sm.id} · ${sm.rol || ''}`;
+      const av = $('#mas-avatar'); av.innerHTML = esc(iniciales(sm));
+      if (sm.fotoId){ try { const u = new URL(FLOW_URL); u.searchParams.set('fotoUsuario', sm.id); fetch(u).then(x => x.json()).then(x => { if (x.data) av.innerHTML = `<img src="${x.data}" alt="">`; }).catch(() => {}); } catch {} }
+    } else {
+      $('#mas-nombre').textContent = MODO_ADMIN ? 'Administración' : MODO_COORD ? 'Coordinación' : 'Personal de campo';
+      $('#mas-rol').textContent = MODO_COORD ? 'Acceso con clave' : 'Link genérico, sin usuario'; $('#mas-avatar').innerHTML = MODO_ADMIN ? 'AD' : MODO_COORD ? 'CO' : 'PC';
+    }
+    $('#mas-perfil').classList.toggle('hidden', !conSesion);
+    $('#mas-sol').classList.toggle('hidden', MODO_COORD);
+    $('#mas-coord').classList.toggle('hidden', !(conSesion && esRolCoord(sm.rol) && !MODO_COORD));
+    $('#mas-cargar').classList.toggle('hidden', !MODO_COORD);
+    $('#mas-admin-t').classList.toggle('hidden', !MODO_COORD); $('#mas-admin').classList.toggle('hidden', !MODO_COORD);
+    $('#mas-config').classList.toggle('hidden', !MODO_ADMIN);
+    $('#mas-ucount').textContent = $('#ucount').textContent.trim(); $('#mas-catcount').textContent = $('#catcount').textContent.trim();
+    $('#mas-sol-n').textContent = $('#my-sol-n').textContent;
+    $('#mas-salir').textContent = conSesion ? 'Cerrar sesión' : (MODO_COORD ? 'Salir' : 'Salir');
+    $('#mas-salir').classList.toggle('hidden', !conSesion && !MODO_COORD);   // el link genérico no tiene de qué salir
+    pintarEstado();
+  }
+  $('#view-mas').addEventListener('click', e => {
+    const go = e.target.closest('[data-go]'); if (go){ const t = document.querySelector('.tabs button[data-tab="' + go.dataset.go + '"]'); if (t){ t.click(); window.scrollTo({ top: 0 }); } return; }
+    if (e.target.closest('#mas-perfil')) abrirPerfil();
+    else if (e.target.closest('#mas-sol')) abrirSolicitudes();
+    else if (e.target.closest('#mas-info')) abrirInfo();
+    else if (e.target.closest('#mas-salir')) $('#my-salir').click();   // mismo cartel y misma lógica que el menú del nombre
+  });
+
   // ---- [NUEVO · confirmar] confirmar(texto, { ok, peligro }) → Promise<boolean>. Reemplaza al confirm() del navegador,
   // que salía con el dominio arriba y sin estilo. Enter/botón acepta; Esc, Cancelar o tocar afuera cancela.
   function confirmar(texto, opts){
@@ -2692,7 +2834,7 @@
 
   // ---- conexión con la base ----
   // [CORREGIDO · arranque] listo(): muestra la pantalla una vez decidido el modo. Con red de seguridad a los 6 s por si algo falla.
-  const listo = () => document.body.classList.remove('cargando');
+  const listo = () => { document.body.classList.remove('cargando'); sincronizarBnav(); };   // [NUEVO · app celular]
   // [CORREGIDO · ícono] el navegador guarda el ícono por dirección (link genérico, ?modo=usuario, ?modo=coordinador…) y en
   // pestañas viejas seguía mostrando el mundito. Volver a insertar el <link> al arrancar lo obliga a refrescarlo en cada link.
   try { document.querySelectorAll('link[rel="icon"]').forEach(l => { const n = l.cloneNode(); l.remove(); document.head.appendChild(n); }); } catch {}
