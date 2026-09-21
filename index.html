@@ -296,7 +296,10 @@
   .rec .fila .tras{display:inline-flex;align-items:center;padding:3px 8px;border-radius:10px;background:color-mix(in srgb,var(--ok) 15%,var(--card));color:var(--ok)}
   .rec .fila .tras svg{width:26px;height:17px;display:block}
   .rec .fila .tras.no{background:var(--line);color:var(--muted)}
-  .rec.compact .detalle{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  /* [CORREGIDO · detalle] el detalle desplegado tiene fondo propio (azul tenue) y la tarjeta abierta borde azul, para que
+     se note qué se abrió y dónde termina */
+  .rec.compact .detalle{display:none;margin:10px -14px -12px;padding:12px 14px 14px;border-top:1px solid color-mix(in srgb,var(--brand) 25%,var(--line));background:color-mix(in srgb,var(--brand) 7%,var(--card));border-radius:0 0 14px 14px}
+  .rec.compact.open{border-color:color-mix(in srgb,var(--brand) 45%,var(--line))}
   .rec.compact.open .detalle{display:block}
   .rec.compact .detalle dl{margin-top:0}
   .pill.nuevo{background:var(--accent);color:#fff}
@@ -318,8 +321,26 @@
   .resp-box{width:100%}
   .resp-box textarea{width:100%;min-height:64px;background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;resize:vertical}
   .resp-box textarea:focus{outline:none;border-color:var(--brand)}
-  .resp-actions{display:flex;justify-content:flex-end;gap:18px;margin-top:6px}
-  .resp-actions .cancelar{color:var(--muted)}
+  /* [NUEVO · responder] botón Responder con ícono, y cuadro con Cancelar (×) y Enviar (avión) */
+  .hilo .responder{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--card);color:var(--brand-txt);font:inherit;font-size:13px;font-weight:700;text-decoration:none;cursor:pointer}
+  .hilo .responder svg{width:16px;height:16px}
+  .resp-actions{display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:8px}
+  .resp-actions .cancelar{display:inline-flex;align-items:center;gap:4px;color:var(--muted);font:inherit;font-size:13px;font-weight:700;border:0;background:none;text-decoration:none;cursor:pointer;padding:6px 8px}
+  .resp-actions .cancelar svg{width:14px;height:14px}
+  .resp-actions .enviar-msg{display:inline-flex;align-items:center;gap:7px;border:0;border-radius:999px;padding:9px 16px;background:var(--brand);color:#fff;font:inherit;font-size:14px;font-weight:700;text-decoration:none;cursor:pointer}
+  .resp-actions .enviar-msg svg{width:16px;height:16px}
+  .resp-actions .enviar-msg:disabled{opacity:.6}
+  /* [NUEVO · reacciones] chips debajo de cada mensaje; la carita abre el selector */
+  .reacs{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;align-items:center}
+  .reac{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:2px 8px;font-size:13px;line-height:1.4;cursor:pointer;display:inline-flex;align-items:center;gap:4px;color:var(--ink)}
+  .reac b{font-size:11px;color:var(--muted)}
+  .reac.mia{border-color:var(--brand-txt);background:color-mix(in srgb,var(--brand) 12%,var(--card))}
+  .reac.add{color:var(--muted);padding:2px 7px}
+  .reac.add svg{width:15px;height:15px}
+  .picker{display:flex;gap:4px;margin-top:6px;padding:4px;border-radius:999px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);width:max-content}
+  .picker.hidden{display:none}
+  .picker .pick{border:0;background:none;font-size:20px;line-height:1;padding:4px 6px;border-radius:999px;cursor:pointer}
+  .picker .pick:hover{background:color-mix(in srgb,var(--brand) 10%,var(--card))}
   .badge:empty{display:none !important}   /* [CORREGIDO · campana] sin número no hay círculo: nunca se muestra un cero */
   /* [NUEVO · mensajes] el hilo tiene alto máximo y scroll propio; se abre en el último mensaje */
   .msgs{width:100%;max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;align-items:flex-start;padding-right:4px;-webkit-overflow-scrolling:touch}
@@ -519,7 +540,8 @@
     .field input,.field textarea,.search,.ed-contacto input,.resp-box textarea,.urow select,.modal input,.modal textarea{font-size:16px}
   }
   @supports not (background:color-mix(in srgb,red 10%,white)){
-    .pill.si,.rec .fila .tras{background:rgba(31,138,76,.15)} .rec .fila .tras.no{background:var(--line)} .pill.pend,.pill.reset{background:rgba(242,101,34,.15)} .pill.resp,.pill.rol{background:rgba(11,61,145,.12)}
+    .pill.si,.rec .fila .tras{background:rgba(31,138,76,.15)} .rec .fila .tras.no{background:var(--line)}
+    .rec.compact .detalle{background:rgba(11,61,145,.07)} .reac.mia{background:rgba(11,61,145,.12)} .pill.pend,.pill.reset{background:rgba(242,101,34,.15)} .pill.resp,.pill.rol{background:rgba(11,61,145,.12)}
     .msg{background:rgba(11,61,145,.08)} .msg.campo{background:rgba(242,101,34,.1)}
     .solrow.nueva{background:rgba(242,101,34,.08)} #editando{background:rgba(11,61,145,.08)}
     .menu-yo .mi:hover,.menu-yo .mi:focus-visible,.sugerencias div:hover,.sugerencias div.activa,.photo-actions label:hover{background:rgba(11,61,145,.1)}
@@ -1090,7 +1112,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 m';
+  const VERSION = '2026-09-21 n';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1114,6 +1136,7 @@
     { v: '2026-09-20 s', para: 'todos', texto: 'Las preguntas de confirmación (cerrar sesión, quitar, eliminar) ahora son un cartel con el estilo de la app, en vez del aviso del navegador.' },
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
+    { v: '2026-09-21 n', para: 'todos', texto: 'Al desplegar una tarjeta, el detalle se ve con otro fondo para distinguirlo. El cuadro para responder tiene botones con íconos, y a cada mensaje se le puede reaccionar con 👍 ✅ 👀 ❗ tocando la carita.' },
     { v: '2026-09-21 m', para: 'todos', texto: 'En las tarjetas, el traslado se indica con un ícono verde de vehículo con flecha (gris si no traslada), y ya no aparece la etiqueta "Con mensajes": el globo con el número ya lo dice.' },
     { v: '2026-09-21 l', para: 'todos', texto: 'Tus registros se ven compactos: tocá una tarjeta para desplegar el detalle, las fotos, Editar y la conversación; tocá de nuevo para plegarla. Una etiqueta avisa si hay respuesta nueva o si está pendiente de envío.' },
     { v: '2026-09-21 k', para: 'todos', texto: 'En celular, "Guardar registro" va al final del formulario (ya no queda flotando sobre la pantalla) y la cabecera dice "Servicios Corporativos" con tu rol debajo.' },
@@ -1556,6 +1579,18 @@
   // [NUEVO · mensajes] Hilo anidado bajo el registro, con scroll propio. Los mensajes ajenos posteriores a la última
   // mirada llevan "Nuevo". Los avisos del sistema (registro editado) van centrados. El cuadro para escribir está
   // cerrado; se abre con "Responder" y se cierra al enviar o cancelar.
+  // [NUEVO · reacciones] íconos disponibles (el script valida la misma lista)
+  const REACCIONES = ['👍', '✅', '👀', '❗'];
+  const SVG_RESP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h10a4 4 0 0 1 4 4v0"/><path d="m13 21 4-4-4-4"/></svg>';
+  const SVG_SEND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>';
+  const SVG_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg>';
+  const SVG_CARA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/><path d="M19 3v4"/><path d="M17 5h4"/></svg>';
+  const reaccionesHTML = (m, puede) => {
+    const chips = Object.entries(m.reac || {}).map(([ic, q]) => `<button type="button" class="reac ${q.includes(YO) ? 'mia' : ''}" data-ic="${ic}" data-fecha="${m.fecha}" title="${q.map(nombreDe).join(', ')}">${ic}${q.length > 1 ? `<b>${q.length}</b>` : ''}</button>`).join('');
+    if (!chips && !puede) return '';
+    return `<div class="reacs">${chips}${puede ? `<button type="button" class="reac add" data-fecha="${m.fecha}" aria-label="Reaccionar">${SVG_CARA}</button>` : ''}</div>
+        ${puede ? `<div class="picker hidden">${REACCIONES.map(ic => `<button type="button" class="pick" data-ic="${ic}" data-fecha="${m.fecha}" aria-label="Reaccionar ${ic}">${ic}</button>`).join('')}</div>` : ''}`;
+  };
   const hiloHTML = r => {
     const ms = mensajesDe(r);
     const desde = MODO_COORD ? nuevoDesde : (r.vistoMsgHasta || 0);
@@ -1566,14 +1601,15 @@
         <div class="msg ${m.de} ${m.de === YO ? 'mio' : ''} ${nuevo ? 'nuevo' : ''}">
           <div class="quien">${esc(m.autor || nombreDe(m.de))}<small>${fmtFechaHora(m.fecha)}</small>${nuevo ? '<span class="pill nuevo">Nuevo</span>' : ''}</div>
           <p>${esc(m.texto)}</p>
+          ${reaccionesHTML(m, puede)}
         </div>`; }).join('');
     const vacio = ms.length ? '' : `<span class="hint">${MODO_COORD ? 'Sin devolución todavía.' : (puede ? 'Sin mensajes de coordinación.' : 'Los mensajes se habilitan cuando el registro se envía.')}</span>`;
     const abrir = ms.length ? 'Responder' : (MODO_COORD ? 'Escribir devolución' : 'Escribir a coordinación');
     const caja = !puede ? '' : `
-        <button type="button" class="link responder">${abrir}</button>
+        <button type="button" class="link responder">${SVG_RESP}${abrir}</button>
         <div class="resp-box hidden">
           <textarea class="resp-txt" placeholder="${MODO_COORD ? 'Ej.: Falta el destino del traslado. Gracias por las fotos.' : 'Ej.: Me olvidé de anotar que el paciente iba acompañado.'}"></textarea>
-          <div class="resp-actions"><button type="button" class="link cancelar">Cancelar</button><button type="button" class="link enviar-msg">Enviar</button></div>
+          <div class="resp-actions"><button type="button" class="link cancelar">${SVG_X}Cancelar</button><button type="button" class="link enviar-msg">${SVG_SEND}Enviar</button></div>
         </div>`;
     return `<div class="hilo">${vacio}${items ? `<div class="msgs">${items}</div>` : ''}${caja}</div>`;
   };
@@ -1683,13 +1719,28 @@
 
   // [NUEVO · mensajes] Envía un mensaje al hilo (coordinador con clave, campo sin clave). Al confirmar, el cuadro se
   // cierra y el mensaje queda como burbuja; solo se vuelve a dibujar el hilo, así la tarjeta no se pliega.
+  // [NUEVO · reacciones] manda la reacción y vuelve a dibujar el hilo con lo que devuelve el script
+  async function reaccionar(art, fecha, icono){
+    const id = art.dataset.id;
+    const body = { accion: 'reaccionar', de: YO, id, fecha: Number(fecha), icono, token: sesion?.token, llave: MODO_COORD ? undefined : llaveDispositivo };
+    if (MODO_COORD){ const cred = credCoord(); if (!hayCred(cred)) return; Object.assign(body, cred); }
+    try {
+      const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify(body) });
+      const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script');
+      const reg = registros.find(x => x.id === id); if (!reg) return;
+      reg.mensajes = res.mensajes; if (!MODO_COORD) persistirLocal();
+      const abierto = !art.querySelector('.resp-box')?.classList.contains('hidden'), texto = art.querySelector('.resp-txt')?.value || '';
+      art.querySelector('.hilo').outerHTML = hiloHTML(reg); bajarHilos(art);
+      if (abierto){ art.querySelector('.responder')?.classList.add('hidden'); art.querySelector('.resp-box')?.classList.remove('hidden'); art.querySelector('.resp-txt').value = texto; }
+    } catch (e){ toast('No se pudo reaccionar: ' + e.message, 'err'); }
+  }
   async function enviarMensaje(btn){
     const art = btn.closest('.rec'); const id = art.dataset.id;
     const texto = art.querySelector('.resp-txt').value.trim();
     if (!texto){ toast('Escribí el mensaje primero', 'err'); return; }
     const body = { accion: 'mensaje', de: YO, id, texto, token: sesion?.token, llave: MODO_COORD ? undefined : llaveDispositivo };   // [NUEVO · usuarios] firma el mensaje con nombre y rol · [NUEVO · seguridad] llave
     if (MODO_COORD){ const cred = credCoord(); if (!hayCred(cred)) return; Object.assign(body, cred); }   // [NUEVO · roles coord]
-    btn.disabled = true; btn.textContent = 'Enviando…';
+    btn.disabled = true; btn.innerHTML = 'Enviando…';
     try {
       const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify(body) });
       const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script');
@@ -1731,7 +1782,7 @@
         const d = res.devoluciones?.[r.id]; if (!d || !Array.isArray(d.mensajes)) continue;
         const loc = mensajesDe(r);
         const ultLoc = loc[loc.length - 1], ultSrv = d.mensajes[d.mensajes.length - 1];
-        if (d.mensajes.length !== loc.length || (ultSrv && ultLoc && ultSrv.fecha !== ultLoc.fecha)){ r.mensajes = d.mensajes; cambios++; }
+        if (d.mensajes.length !== loc.length || (ultSrv && ultLoc && ultSrv.fecha !== ultLoc.fecha) || JSON.stringify(d.mensajes) !== JSON.stringify(loc)){ r.mensajes = d.mensajes; cambios++; }   // [NUEVO · reacciones] también si cambió una reacción
       }
       if (cambios){
         persistirLocal();
@@ -1864,6 +1915,11 @@
     if (cancelar){ const h = cancelar.closest('.hilo'); h.querySelector('.resp-box').classList.add('hidden'); h.querySelector('.responder').classList.remove('hidden'); return; }
     const enviar = e.target.closest('button.enviar-msg');
     if (enviar){ enviarMensaje(enviar); return; }
+    // [NUEVO · reacciones] la carita abre el selector; un ícono del selector o un chip existente agrega/quita la reacción
+    const add = e.target.closest('button.reac.add');
+    if (add){ const p = add.closest('.msg').querySelector('.picker'); if (p) p.classList.toggle('hidden'); return; }
+    const pick = e.target.closest('button.pick, button.reac');
+    if (pick){ reaccionar(pick.closest('.rec'), pick.dataset.fecha, pick.dataset.ic); return; }
     if (e.target.closest('.hilo')) return;                                            // tocar dentro del hilo no pliega la tarjeta
     const b = e.target.closest('button.fotos-btn');
     if (b){
