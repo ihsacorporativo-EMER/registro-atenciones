@@ -1086,7 +1086,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 k';
+  const VERSION = '2026-09-21 l';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1110,6 +1110,7 @@
     { v: '2026-09-20 s', para: 'todos', texto: 'Las preguntas de confirmación (cerrar sesión, quitar, eliminar) ahora son un cartel con el estilo de la app, en vez del aviso del navegador.' },
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
+    { v: '2026-09-21 l', para: 'todos', texto: 'Tus registros se ven compactos: tocá una tarjeta para desplegar el detalle, las fotos, Editar y la conversación; tocá de nuevo para plegarla. Una etiqueta avisa si hay respuesta nueva o si está pendiente de envío.' },
     { v: '2026-09-21 k', para: 'todos', texto: 'En celular, "Guardar registro" va al final del formulario (ya no queda flotando sobre la pantalla) y la cabecera dice "Servicios Corporativos" con tu rol debajo.' },
     { v: '2026-09-21 j', para: 'todos', texto: 'Las tarjetas de registros muestran con íconos el móvil, el paciente, quién atendió, cuántas fotos y mensajes tiene y si traslada.' },
     { v: '2026-09-21 i', para: 'todos', texto: 'En celular la app tiene barra de navegación abajo (Registros, Nuevo, Más) y una cabecera más chica con tu rol. En "Más" están tu perfil, Mis solicitudes, Información adicional y Cerrar sesión.' },
@@ -1572,11 +1573,18 @@
     return `<div class="hilo">${vacio}${items ? `<div class="msgs">${items}</div>` : ''}${caja}</div>`;
   };
 
-  // Tarjeta completa (modo campo): todos los datos a la vista, estado de envío, botón Editar y conversación
+  // [CORREGIDO · tarjetas campo] la tarjeta de campo también es compacta: título y filas con íconos a la vista; al tocarla se
+  // despliega el detalle (número, motivo, observaciones), las fotos, el estado de envío con Editar y la conversación.
+  // La etiqueta del título avisa lo importante sin abrirla: respuesta nueva, pendiente de envío, editado, con mensajes.
+  const etiquetaCampo = r => noVistosDe(r) ? ' <span class="pill nuevo">Respuesta nueva</span>'
+    : (FLOW_URL && !db && !r.enviado) ? ' <span class="pill pend">Pendiente de envío</span>'
+    : r.version > 1 ? ` <span class="pill resp">Editado · v${r.version}</span>`
+    : mensajesDe(r).length ? ' <span class="pill resp">Con mensajes</span>' : '';
   const tarjetaCampo = r => `
-      <article class="rec" data-id="${esc(r.id)}">
-        <div class="top"><b>${esc(r.evento)}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
+      <article class="rec compact ${abiertos.has(r.id) ? 'open' : ''}" data-id="${esc(r.id)}">
+        <div class="top"><b>${esc(r.evento)}${etiquetaCampo(r)}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
         ${filasIconos(r)}<!-- [NUEVO · tarjetas con íconos] -->
+        <div class="detalle">
         <dl>
           ${/^\d{9}$/.test(r.id) ? `<dt>N.º</dt><dd>${esc(r.id)}</dd>` : ''}
           <dt>Motivo</dt><dd>${esc(r.motivo)}</dd>
@@ -1585,6 +1593,7 @@
         <div class="fotos">${botonFotos(r)}</div>
         ${lineaEstado(r)}
         ${FLOW_URL && !db ? hiloHTML(r) : ''}
+        </div>
       </article>`;
 
   // [NUEVO · tarjetas con íconos] resumen del registro en dos filas con íconos (móvil, paciente; quién atendió, fotos,
