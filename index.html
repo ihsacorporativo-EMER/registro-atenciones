@@ -1000,7 +1000,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 d';
+  const VERSION = '2026-09-21 e';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1024,6 +1024,8 @@
     { v: '2026-09-20 s', para: 'todos', texto: 'Las preguntas de confirmación (cerrar sesión, quitar, eliminar) ahora son un cartel con el estilo de la app, en vez del aviso del navegador.' },
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
+    { v: '2026-09-21 e', para: 'todos', texto: 'Seguridad: las conversaciones y ediciones de un registro solo las ve y responde el usuario o el celular que lo cargó. No cambia nada en el uso.' },
+    { v: '2026-09-21 e', para: 'coord', texto: 'Seguridad del script: la planilla queda protegida contra fórmulas inyectadas, el archivado ya no borra hasta terminar de escribir, la habilitación de cambio de PIN vence a los 15 minutos y hay tope de altas de usuarios por celular.' },
     { v: '2026-09-21 d', para: 'todos', texto: 'Al tocar "Solicitar agregar" aparece un tilde verde de confirmación debajo del campo: "Solicitud enviada, en espera de coordinación". Queda mientras ese móvil o evento siga escrito.' },
     { v: '2026-09-21 b', para: 'todos', texto: 'El logo de Grupo IHSA aparece como ícono en la pestaña del navegador y al agregar la app a la pantalla de inicio.' },
     { v: '2026-09-21 a', para: 'todos', texto: 'Ajustes para iPhone: los campos de fecha y las listas desplegables se ven como el resto, la pantalla ya no hace zoom al tocar un campo, y los colores de etiquetas y botones se ven en Safari viejo.' },
@@ -1105,7 +1107,7 @@
     const d = new Date(); const p = n => String(n).padStart(2,'0');
     return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
   };
-  const fmtFecha = iso => { if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; };
+  const fmtFecha = iso => { if(!iso) return ''; if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return esc(iso); const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; };   // [CORREGIDO · seguridad] la fecha se pinta en HTML: fuera de formato se escapa
   const fmtHora = ts => { const d = new Date(ts); const p=n=>String(n).padStart(2,'0'); return `${p(d.getHours())}:${p(d.getMinutes())}`; };
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1288,7 +1290,7 @@
         // [NUEVO · edición] versión > 1 = el registro ya se había enviado y se editó: va como actualización.
         // No se mandan los campos de uso interno del celular (estado de envío, mensajes leídos, etc.).
         // [NUEVO · usuarios] token: con él el script sabe quién carga y firma el registro con nombre y rol
-        body: JSON.stringify({ accion: (reg.version || 1) > 1 ? 'actualizar' : 'alta', token: sesion?.token, registro: paraEnvio(reg), fila: filaExcel(reg), fotos: fotosReg || [] }),
+        body: JSON.stringify({ accion: (reg.version || 1) > 1 ? 'actualizar' : 'alta', token: sesion?.token, llave: llaveDispositivo, registro: paraEnvio(reg), fila: filaExcel(reg), fotos: fotosReg || [] }),   // [NUEVO · seguridad] llave
       });
       const res = await r.json();
       if (!res.ok) throw new Error(res.error || 'Respuesta no válida del script');
@@ -1565,7 +1567,7 @@
     const art = btn.closest('.rec'); const id = art.dataset.id;
     const texto = art.querySelector('.resp-txt').value.trim();
     if (!texto){ toast('Escribí el mensaje primero', 'err'); return; }
-    const body = { accion: 'mensaje', de: YO, id, texto, token: sesion?.token };   // [NUEVO · usuarios] firma el mensaje con nombre y rol
+    const body = { accion: 'mensaje', de: YO, id, texto, token: sesion?.token, llave: MODO_COORD ? undefined : llaveDispositivo };   // [NUEVO · usuarios] firma el mensaje con nombre y rol · [NUEVO · seguridad] llave
     if (MODO_COORD){ const cred = credCoord(); if (!hayCred(cred)) return; Object.assign(body, cred); }   // [NUEVO · roles coord]
     btn.disabled = true; btn.textContent = 'Enviando…';
     try {
@@ -1583,12 +1585,25 @@
   }
 
   // [NUEVO · mensajes] El celular de campo pregunta cada 60 s por los hilos de sus registros enviados
+  // [NUEVO · seguridad] Los registros cargados antes de la versión con llave no tienen dueño en la planilla. Una sola vez por
+  // celular (y por usuario) se manda la lista de IDs enviados y el script se los asigna a este celular o usuario.
+  async function adoptarRegistros(){
+    const marca = 'adoptado_' + claveLocal();
+    try { if (localStorage.getItem(marca)) return; } catch {}
+    const ids = registros.filter(r => r.enviado).map(r => r.id).slice(0, 200);
+    if (!ids.length){ try { localStorage.setItem(marca, '1'); } catch {} return; }
+    try {
+      const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify({ accion: 'adoptar', ids, token: sesion?.token, llave: llaveDispositivo }) });
+      const res = await r.json(); if (res.ok){ try { localStorage.setItem(marca, '1'); } catch {} }
+    } catch {}
+  }
   async function sondearMensajes(){
     if (MODO_COORD || !FLOW_URL || db || document.hidden) return;
     const ids = registros.filter(r => r.enviado).map(r => r.id).slice(0, 200);
     if (!ids.length) return;
     try {
       const u = new URL(FLOW_URL); u.searchParams.set('devoluciones', ids.join(','));
+      if (sesion?.token) u.searchParams.set('token', sesion.token); if (llaveDispositivo) u.searchParams.set('llave', llaveDispositivo);   // [NUEVO · seguridad]
       const res = await (await fetch(u)).json(); if (!res.ok) return;
       marcarConexion(true);                                        // [NUEVO · perfil]
       let cambios = 0, antes = registros.reduce((n, r) => n + noVistosDe(r), 0);
@@ -2033,6 +2048,7 @@
     if (FLOW_URL) pintarNoVistos(registros.reduce((n, r) => n + noVistosDe(r), 0));   // [NUEVO · campana] lo que quedó sin leer de la sesión anterior
     reintentarPendientes();                                            // [NUEVO · envío] lo que quedó sin señal
     window.addEventListener('online', () => reintentarPendientes());   // [NUEVO · envío] y al volver la conexión
+    adoptarRegistros();                                                // [NUEVO · seguridad] una vez: ata los registros viejos a este celular/usuario
     sondearMensajes();                                                 // [NUEVO · mensajes] al abrir, cada 15 s y al volver a la app
     setInterval(sondearMensajes, 15000);
     document.addEventListener('visibilitychange', sondearMensajes);
@@ -2103,7 +2119,7 @@
     if (p1 !== p2){ toast('Los PIN no coinciden', 'err'); return; }
     const btn = $('#cr-ok'); btn.disabled = true; btn.textContent = 'Enviando…';
     try {
-      const res = await postUsuario({ accion: 'registrar', nombre, apellido, pin: p1, foto: fotoUsuario || '' });
+      const res = await postUsuario({ accion: 'registrar', nombre, apellido, pin: p1, foto: fotoUsuario || '', dispositivo: dispositivoId });   // [NUEVO · seguridad] tope de altas por celular
       guardarSesion({ ...res.usuario, token: res.token });
       ['cr-nombre','cr-apellido','cr-pin','cr-pin2'].forEach(i => { $('#'+i).value = ''; }); fotoUsuario = null; $('#cr-thumb').innerHTML = '';
       esperarAprobacion();
@@ -2236,6 +2252,13 @@
   // ---- [NUEVO · catálogo] listas de móviles y eventos en el formulario, y solicitudes para agregar (campo) ----
   let catalogo = { moviles: [], eventos: [] };
   try { catalogo = JSON.parse(localStorage.getItem('catalogo') || 'null') || catalogo; } catch {}
+  // [NUEVO · seguridad] llave del celular: secreto aleatorio de 256 bits que viaja en cada envío y lectura de hilos. El script
+  // ata cada registro cargado sin usuario a esta llave (guarda su hash) y después solo responde a este celular sobre esos registros.
+  let llaveDispositivo = '';
+  try {
+    llaveDispositivo = localStorage.getItem('llave_dispositivo') || '';
+    if (!llaveDispositivo){ const b = new Uint8Array(32); crypto.getRandomValues(b); llaveDispositivo = Array.from(b, x => x.toString(16).padStart(2, '0')).join(''); localStorage.setItem('llave_dispositivo', llaveDispositivo); }
+  } catch {}
   let dispositivoId = '';                                       // identifica el celular del link genérico para que le vuelvan las respuestas
   try { dispositivoId = localStorage.getItem('dispositivo_id') || ''; if (!dispositivoId){ dispositivoId = 'd' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); localStorage.setItem('dispositivo_id', dispositivoId); } } catch {}
   function pintarCatalogo(){ verificarCatalogo('movil'); verificarCatalogo('evento'); }
@@ -2562,7 +2585,7 @@
       $('#cf-si').onclick = () => fin(true); $('#cf-no').onclick = () => fin(false);
       m.onclick = e => { if (e.target === m) fin(false); };
       document.addEventListener('keydown', tecla);
-      setTimeout(() => $('#cf-si').focus(), 50);
+      setTimeout(() => $(o.peligro ? '#cf-no' : '#cf-si').focus(), 50);   // [CORREGIDO · confirmar] en acciones peligrosas, Enter no acepta por accidente
     });
   }
 
