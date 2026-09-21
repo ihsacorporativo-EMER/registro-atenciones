@@ -567,8 +567,15 @@
   @keyframes pulse{0%,100%{box-shadow:inset 0 -3px 0 rgba(0,0,0,.08),0 0 0 0 rgba(242,101,34,.55)}
     60%{box-shadow:inset 0 -3px 0 rgba(0,0,0,.08),0 0 0 12px rgba(242,101,34,0)}}
   /* [NUEVO · pie] firma en todas las vistas; en celular deja lugar a la barra fija de Guardar */
-  .pie{text-align:center;font-size:12.5px;color:var(--muted);padding:18px 16px calc(18px + env(safe-area-inset-bottom));opacity:.9}
+  /* [CORREGIDO · pie] pie profesional: línea superior, marca, crédito y versión, centrado y discreto */
+  .pie{max-width:640px;margin:28px auto 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));border-top:1px solid var(--line);text-align:center;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px;align-items:center;letter-spacing:.1px}
   .pie b{font-weight:700}
+  .pie-marca{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 10px;align-items:baseline}
+  .pie-marca b{color:var(--ink);font-size:13px}
+  .pie-credito b{color:var(--ink)}
+  .pie-meta{display:flex;gap:10px;opacity:.75;font-size:11.5px;letter-spacing:.3px;text-transform:uppercase}
+  .pie-meta span + span::before{content:"·";margin-right:10px}
+  .pie.pie-mas{max-width:none;margin:18px 0 0;padding:14px 0 0}
   @media (max-width:640px){body.en-form .pie{padding-bottom:calc(84px + env(safe-area-inset-bottom))}}   /* [CORREGIDO · app celular] solo la barra */
   .tabs button{transition:color .2s,background .25s,transform .15s}
   .tabs button:active{transform:scale(.97)}
@@ -667,7 +674,8 @@
     main > div{max-width:1600px}
     #view-form,#view-login{max-width:1120px}
     main h1{margin-top:0}
-    .pie{margin-left:var(--sb)}
+    .pie{max-width:none;margin:28px 0 0 var(--sb);padding:18px 84px 28px 28px}
+    .pie.pie-mas{margin-left:0;padding:14px 0 0}
     body.cargando header{visibility:hidden}
     /* formulario en dos columnas: datos a la izquierda; fotos, Guardar y avisos a la derecha */
     #view-form{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
@@ -933,8 +941,7 @@
       <button class="primary hidden" id="copy" type="button" style="background:var(--brand)">Copiar resumen</button>
     </div>
     <p class="foot">Los registros quedan guardados en esta página y los puede ver el equipo desde la pestaña <b>Registros</b>.</p>
-    <p class="foot small">Uso interno · Servicios Corporativos · Grupo IHSA</p>
-  </div>
+  </div><!-- [CORREGIDO · pie] la línea "Uso interno…" del formulario ya está en el pie general -->
 
   <!-- ===== LISTADO ===== -->
   <div id="view-list" class="hidden">
@@ -1007,7 +1014,11 @@
       <a class="mas-item hidden" id="mas-cargar" href="?modo=usuario&amp;cargar=1" ><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></svg><span class="lbl">Cargar un registro</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></a>
     </div>
     <button type="button" class="mas-salir" id="mas-salir">Cerrar sesión</button>
-    <p class="mas-pie">Uso interno · Servicios Corporativos · Grupo IHSA<br>Desarrollado por Nicolás Chiolo</p>
+    <footer class="pie pie-mas"><!-- [CORREGIDO · pie] pie profesional, el mismo en todas las pantallas -->
+  <div class="pie-marca"><b>Registro de atenciones</b><span>Servicios Corporativos · Grupo IHSA</span></div>
+  <div class="pie-credito">Desarrollado por <b>Nicolás Chiolo</b> · Servicios Corporativos</div>
+  <div class="pie-meta"><span class="pie-version"></span><span>Uso interno</span></div>
+</footer>
   </div>
 
   <div id="view-board" class="hidden" style="max-width:none">
@@ -1070,7 +1081,11 @@
   <button type="button" data-go="mas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>Más<span class="bdot" id="bnav-masdot"></span></button>
 </nav>
 <!-- [NUEVO · pie] -->
-<footer class="pie">Desarrollado por <b>Nicolás Chiolo</b> · Servicios Corporativos</footer>
+<footer class="pie"><!-- [CORREGIDO · pie] pie profesional, el mismo en todas las pantallas -->
+  <div class="pie-marca"><b>Registro de atenciones</b><span>Servicios Corporativos · Grupo IHSA</span></div>
+  <div class="pie-credito">Desarrollado por <b>Nicolás Chiolo</b> · Servicios Corporativos</div>
+  <div class="pie-meta"><span class="pie-version"></span><span>Uso interno</span></div>
+</footer>
 
 <!-- [NUEVO · período] selector de período para descargar Excel o paquete cuando no hay fechas elegidas -->
 <div class="modal" id="modal-excel" role="dialog" aria-modal="true">
@@ -1229,7 +1244,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 s';
+  const VERSION = '2026-09-21 t';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1254,6 +1269,7 @@
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
     { v: '2026-09-21 o', para: 'todos', texto: 'En computadora y tablet la app tiene barra lateral: el logo arriba, las secciones con íconos, tu cuenta abajo y la campana arriba a la derecha. En tablet la barra se achica a solo íconos.' },
+    { v: '2026-09-21 t', para: 'todos', texto: 'Pie de página nuevo en todas las pantallas: nombre del sistema, Servicios Corporativos · Grupo IHSA, el crédito de desarrollo y la versión.' },
     { v: '2026-09-21 s', para: 'todos', texto: 'Las reacciones a los mensajes aparecen al instante al tocarlas; el envío al servidor sigue por detrás. Y en monitores grandes el Tablero ya ocupa todo el ancho.' },
     { v: '2026-09-21 r', para: 'coord', texto: 'En computadora, Usuarios se ve en dos columnas, el Tablero queda compacto con el paquete y los mails al costado, Catálogo tiene las solicitudes a la izquierda y las listas a la derecha, y Configuración va en una sola fila.' },
     { v: '2026-09-21 r', para: 'todos', texto: 'En la barra lateral de computadora, tu cuenta muestra la foto de perfil (o tus iniciales), el nombre y el rol.' },
@@ -1276,6 +1292,7 @@
     { v: '2026-09-21 a', para: 'todos', texto: 'Ajustes para iPhone: los campos de fecha y las listas desplegables se ven como el resto, la pantalla ya no hace zoom al tocar un campo, y los colores de etiquetas y botones se ven en Safari viejo.' },
   ];
   let novedadPendiente = false;
+  document.querySelectorAll('.pie-version').forEach(e => e.textContent = 'Versión ' + VERSION);   // [CORREGIDO · pie]
 
   // [NUEVO · envío] Dos modos según la URL con la que se abre la app:
   //  - modo campo (URL normal): formulario + registros propios. Cada registro se envía al guardar;
