@@ -311,10 +311,24 @@
 
   /* [NUEVO · mensajes] conversación anidada bajo cada registro: burbujas azules del coordinador, naranjas de campo;
      las propias van a la derecha. El cuadro para escribir está cerrado hasta tocar "Responder". */
-  .hilo{margin-top:12px;padding-left:12px;border-left:2px solid var(--line);display:flex;flex-direction:column;gap:8px;align-items:flex-start}
-  .msg{max-width:92%;border-radius:12px;padding:8px 12px;font-size:14px;background:color-mix(in srgb,var(--brand) 8%,var(--card));border-top-left-radius:4px}
-  .msg.campo{background:color-mix(in srgb,var(--accent) 10%,var(--card))}
-  .msg.mio{align-self:flex-end;border-top-left-radius:12px;border-top-right-radius:4px}
+  /* [CORREGIDO · burbujas] conversación como en un chat: burbujas con puntita; las mías en azul a la derecha,
+     las del otro lado en claro a la izquierda, con borde. Los avisos del sistema siguen centrados. */
+  .hilo{margin-top:12px;padding:10px 10px 4px;border-radius:14px;background:color-mix(in srgb,var(--brand) 4%,var(--bg));border:1px solid var(--line);display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+  .msg{position:relative;max-width:86%;border-radius:16px;border-bottom-left-radius:4px;padding:8px 12px 9px;font-size:14px;background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+  .msg::before{content:"";position:absolute;bottom:-1px;left:-7px;width:0;height:0;border-style:solid;border-width:0 0 9px 8px;border-color:transparent transparent var(--card) transparent}
+  .msg::after{content:"";position:absolute;bottom:-2px;left:-9px;width:0;height:0;border-style:solid;border-width:0 0 11px 10px;border-color:transparent transparent var(--line) transparent;z-index:-1}
+  .msg.mio{align-self:flex-end;background:var(--brand);color:#fff;border-color:var(--brand);border-bottom-left-radius:16px;border-bottom-right-radius:4px}
+  .msg.mio::before{left:auto;right:-7px;border-width:0 8px 9px 0;border-color:transparent transparent var(--brand) transparent}
+  .msg.mio::after{left:auto;right:-9px;border-width:0 10px 11px 0;border-color:transparent transparent var(--brand) transparent}
+  .msg.mio .quien,.msg.mio .quien small{color:#fff}
+  .msg.mio .quien small{opacity:.8}
+  .msg.mio .reac{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.35);color:#fff}
+  .msg.mio .reac b{color:rgba(255,255,255,.85)}
+  .msg.mio .reac.mia{border-color:#fff;background:rgba(255,255,255,.28)}
+  .msg.mio .reac.add{color:rgba(255,255,255,.85)}
+  .msg.mio .picker{color:var(--ink)}
+  .msg.mio .quien .env{color:#ffd8c2}
+  .msg.mio.nuevo{box-shadow:none}
   .msg.nuevo{box-shadow:inset 0 0 0 1.5px var(--accent)}
   .msg.enviando{opacity:.7}   /* [NUEVO · rapidez] todavía no confirmado por el script */
   .msg .quien .env{color:var(--accent-deep);font-weight:700}
@@ -347,7 +361,7 @@
   .picker .pick:hover{background:color-mix(in srgb,var(--brand) 10%,var(--card))}
   .badge:empty{display:none !important}   /* [CORREGIDO · campana] sin número no hay círculo: nunca se muestra un cero */
   /* [NUEVO · mensajes] el hilo tiene alto máximo y scroll propio; se abre en el último mensaje */
-  .msgs{width:100%;max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;align-items:flex-start;padding-right:4px;-webkit-overflow-scrolling:touch}
+  .msgs{width:100%;max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;align-items:flex-start;padding:2px 10px 2px 10px;-webkit-overflow-scrolling:touch}   /* [CORREGIDO · burbujas] lugar para las puntitas */
   .msg.sistema{align-self:center;max-width:100%;background:transparent;border:1px dashed var(--line);color:var(--muted);font-size:12.5px;text-align:center;border-radius:999px;padding:4px 12px}
   /* [NUEVO · edición] aviso de que se está editando un registro ya guardado */
   #editando{border-left-color:var(--brand);background:color-mix(in srgb,var(--brand) 8%,var(--card))}
@@ -547,7 +561,7 @@
   @supports not (background:color-mix(in srgb,red 10%,white)){
     .pill.si,.rec .fila .tras{background:rgba(31,138,76,.15)} .rec .fila .tras.no{background:var(--line)}
     .rec.compact .detalle{background:rgba(11,61,145,.07)} .reac.mia{background:rgba(11,61,145,.12)} .pill.pend,.pill.reset{background:rgba(242,101,34,.15)} .pill.resp,.pill.rol{background:rgba(11,61,145,.12)}
-    .msg{background:rgba(11,61,145,.08)} .msg.campo{background:rgba(242,101,34,.1)}
+    .hilo{background:var(--bg)}
     .solrow.nueva{background:rgba(242,101,34,.08)} #editando{background:rgba(11,61,145,.08)}
     .menu-yo .mi:hover,.menu-yo .mi:focus-visible,.sugerencias div:hover,.sugerencias div.activa,.photo-actions label:hover{background:rgba(11,61,145,.1)}
     .menu-yo .mi.salir{background:rgba(198,40,40,.1);border-color:rgba(198,40,40,.3)}
@@ -1247,7 +1261,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 w';
+  const VERSION = '2026-09-21 x';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1272,6 +1286,7 @@
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
     { v: '2026-09-21 o', para: 'todos', texto: 'En computadora y tablet la app tiene barra lateral: el logo arriba, las secciones con íconos, tu cuenta abajo y la campana arriba a la derecha. En tablet la barra se achica a solo íconos.' },
+    { v: '2026-09-21 x', para: 'todos', texto: 'Los mensajes se ven en burbujas como en un chat: los tuyos en azul a la derecha, los del otro lado en claro a la izquierda, con la puntita de burbuja.' },
     { v: '2026-09-21 w', para: 'todos', texto: 'Reacciones como en un chat: quedan fijas al tocarlas, y cuando el otro lado reacciona a tu mensaje te avisa en la campana y el ícono se marca como nuevo.' },
     { v: '2026-09-21 v', para: 'todos', texto: 'Más rápido: el mensaje aparece en el momento de tocar Enviar (con "enviando…" hasta que confirma), y mientras usás la app consulta novedades cada 5 segundos en vez de 15.' },
     { v: '2026-09-21 u', para: 'todos', texto: 'Pie de página más simple: el crédito de desarrollo, la versión y "Uso interno".' },
