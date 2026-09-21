@@ -408,11 +408,12 @@
   /* [CORREGIDO · celular] cabecera compacta: sin subtítulo, etiqueta chica, pestañas en dos filas si no entran */
   @media (max-width:640px){
     .brand{gap:10px}
-    .brand b{font-size:16px}
+    .brand b{font-size:16px;white-space:nowrap}   /* [CORREGIDO · iPhone] "Grupo IHSA" en una sola línea */
+    .brand > div{min-width:0}
     .brand .subtitulo{display:none}
     .solo-grande{display:none}
     .solo-chico{display:inline}
-    .brand .tag{font-size:11px;padding:3px 8px;white-space:nowrap;letter-spacing:.2px}
+    .brand .tag{font-size:10px;padding:3px 7px;white-space:nowrap;letter-spacing:.1px}   /* [CORREGIDO · iPhone] más chico para que entre el título */
     .perfil-btn{font-size:11px;max-width:150px;padding:2px 8px 2px 7px}
     .mark{padding:4px 7px}
     .mark img{height:28px !important}
@@ -438,6 +439,34 @@
       border-top:1px solid var(--line);z-index:5}
     .sticky .primary{margin-top:0}
     .foot{display:none}
+  }
+
+  /* ===== [CORREGIDO · iPhone] Safari iOS =====
+     · Los campos de fecha, los select y los botones traen estilo nativo (bordes redondeados, sombra interior, texto centrado
+       y ancho fijo en la fecha): se anula con -webkit-appearance y se dibuja la flecha del select a mano.
+     · Safari hace zoom al tocar un campo con letra menor a 16 px: en celular todos los campos usan 16 px.
+     · color-mix() no existe en iOS anteriores a 16.2: sin esto las etiquetas y algunos botones quedaban sin fondo. */
+  input:not([type=checkbox]):not([type=radio]):not([type=file]),textarea,select,button{-webkit-appearance:none;appearance:none}
+  input[type=date]{display:block;width:100%;min-width:0;max-width:100%;text-align:left;-webkit-text-fill-color:var(--ink);-webkit-min-logical-width:0}
+  input[type=date]::-webkit-datetime-edit{display:block;text-align:left;padding:0}
+  input[type=date]::-webkit-date-and-time-value{text-align:left;min-height:1.3em}
+  input[type=date]::-webkit-calendar-picker-indicator{opacity:.6}
+  select{background-image:url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'><path d=\'M1 1l5 5 5-5\' fill=\'none\' stroke=\'%235b6478\' stroke-width=\'2\' stroke-linecap=\'round\'/></svg>");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px !important}
+  input,textarea,select,button{-webkit-tap-highlight-color:transparent}
+  @media (max-width:640px){
+    .field input,.field textarea,.search,.ed-contacto input,.resp-box textarea,.urow select,.modal input,.modal textarea{font-size:16px}
+  }
+  @supports not (background:color-mix(in srgb,red 10%,white)){
+    .pill.si{background:rgba(31,138,76,.15)} .pill.pend,.pill.reset{background:rgba(242,101,34,.15)} .pill.resp,.pill.rol{background:rgba(11,61,145,.12)}
+    .msg{background:rgba(11,61,145,.08)} .msg.campo{background:rgba(242,101,34,.1)}
+    .solrow.nueva{background:rgba(242,101,34,.08)} #editando{background:rgba(11,61,145,.08)}
+    .menu-yo .mi:hover,.menu-yo .mi:focus-visible,.sugerencias div:hover,.sugerencias div.activa,.photo-actions label:hover{background:rgba(11,61,145,.1)}
+    .menu-yo .mi.salir{background:rgba(198,40,40,.1);border-color:rgba(198,40,40,.3)}
+    .modal.confirmar .ico{background:rgba(11,61,145,.12)} .modal.confirmar.peligro .ico{background:rgba(198,40,40,.12)}
+    tbody tr:nth-child(even){background:rgba(11,61,145,.03)} tbody tr:hover{background:rgba(242,101,34,.08)}
+    .field input:not(:placeholder-shown),.field textarea:not(:placeholder-shown){background:var(--field)}
+    .photo-actions label{background:rgba(11,61,145,.06)} .notice{background:rgba(242,101,34,.1)}
+    @media (max-width:640px){.sticky{background:var(--bg)}}
   }
 
   /* ===== Estilo y animaciones ===== */
@@ -962,7 +991,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-20 u';
+  const VERSION = '2026-09-21 a';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -986,6 +1015,7 @@
     { v: '2026-09-20 s', para: 'todos', texto: 'Las preguntas de confirmación (cerrar sesión, quitar, eliminar) ahora son un cartel con el estilo de la app, en vez del aviso del navegador.' },
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
+    { v: '2026-09-21 a', para: 'todos', texto: 'Ajustes para iPhone: los campos de fecha y las listas desplegables se ven como el resto, la pantalla ya no hace zoom al tocar un campo, y los colores de etiquetas y botones se ven en Safari viejo.' },
   ];
   let novedadPendiente = false;
 
