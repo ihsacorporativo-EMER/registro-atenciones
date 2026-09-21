@@ -338,6 +338,7 @@
   .reac{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:2px 8px;font-size:13px;line-height:1.4;cursor:pointer;display:inline-flex;align-items:center;gap:4px;color:var(--ink)}
   .reac b{font-size:11px;color:var(--muted)}
   .reac.mia{border-color:var(--brand-txt);background:color-mix(in srgb,var(--brand) 12%,var(--card))}
+  .reac.nuevo{box-shadow:0 0 0 1.5px var(--accent)}   /* [CORREGIDO · reacciones] reacción del otro lado sin ver */
   .reac.add{color:var(--muted);padding:2px 7px}
   .reac.add svg{width:15px;height:15px}
   .picker{display:flex;gap:4px;margin-top:6px;padding:4px;border-radius:999px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);width:max-content}
@@ -1246,7 +1247,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 v';
+  const VERSION = '2026-09-21 w';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1271,6 +1272,7 @@
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
     { v: '2026-09-21 o', para: 'todos', texto: 'En computadora y tablet la app tiene barra lateral: el logo arriba, las secciones con íconos, tu cuenta abajo y la campana arriba a la derecha. En tablet la barra se achica a solo íconos.' },
+    { v: '2026-09-21 w', para: 'todos', texto: 'Reacciones como en un chat: quedan fijas al tocarlas, y cuando el otro lado reacciona a tu mensaje te avisa en la campana y el ícono se marca como nuevo.' },
     { v: '2026-09-21 v', para: 'todos', texto: 'Más rápido: el mensaje aparece en el momento de tocar Enviar (con "enviando…" hasta que confirma), y mientras usás la app consulta novedades cada 5 segundos en vez de 15.' },
     { v: '2026-09-21 u', para: 'todos', texto: 'Pie de página más simple: el crédito de desarrollo, la versión y "Uso interno".' },
     { v: '2026-09-21 u', para: 'coord', texto: 'En la barra lateral, si entraste con la clave, la cuenta dice "Acceso con clave" y el menú ofrece "Entrar con mi usuario" para que aparezcan tu nombre y tu foto.' },
@@ -1637,6 +1639,8 @@
     try {
       const res = await pedirCentral();
       nuevoDesde = vistoHasta || Infinity;                   // [NUEVO · campana] lo posterior a la última mirada lleva "Nuevo" (la primera vez, nada)
+      // [CORREGIDO · reacciones] si hay un mensaje o reacción en camino en algún registro, se conserva su hilo local
+      (res.registros || []).forEach(r => { if (enviandoIds.has(r.id)){ const loc = registros.find(x => x.id === r.id); if (loc) r.mensajes = loc.mensajes; } });
       registros = res.registros || []; renderList(); renderBoard();
       marcarVisto();                                         // [NUEVO · campana] ya lo vio: contador a cero
       mostrarAlerta(res.alerta);                             // [NUEVO · migración] cartel si el script dejó un aviso
@@ -1704,7 +1708,9 @@
   const esAjeno = m => MODO_COORD ? m.de !== 'coord' : m.de === 'coord';
   // "sin ver" de un registro: mensajes ajenos posteriores a la última mirada
   // (coordinador: marca global nuevoDesde; campo: marca por registro vistoMsgHasta)
-  const noVistosDe = r => mensajesDe(r).filter(m => esAjeno(m) && m.fecha > (MODO_COORD ? nuevoDesde : (r.vistoMsgHasta || 0))).length;
+  // [CORREGIDO · reacciones] también cuenta una reacción del otro lado posterior a la última mirada (reacDe / reacFecha las pone el script)
+  const reacAjenaNueva = (m, desde) => !!m.reacDe && m.reacDe !== YO && (m.reacFecha || 0) > desde;
+  const noVistosDe = r => { const desde = MODO_COORD ? nuevoDesde : (r.vistoMsgHasta || 0); return mensajesDe(r).filter(m => (esAjeno(m) && m.fecha > desde) || reacAjenaNueva(m, desde)).length; };
   // [NUEVO · mensajes] el hilo tiene alto máximo con scroll; al dibujarlo se lleva al último mensaje
   const bajarHilos = root => (root || document).querySelectorAll('.msgs').forEach(m => { m.scrollTop = m.scrollHeight; });
   // [NUEVO · foto] nombre de archivo para descargar una foto: fecha, evento y número
@@ -1731,8 +1737,9 @@
   const SVG_SEND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>';
   const SVG_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg>';
   const SVG_CARA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/><path d="M19 3v4"/><path d="M17 5h4"/></svg>';
-  const reaccionesHTML = (m, puede) => {
-    const chips = Object.entries(m.reac || {}).map(([ic, q]) => `<button type="button" class="reac ${q.includes(YO) ? 'mia' : ''}" data-ic="${ic}" data-fecha="${m.fecha}" title="${q.map(nombreDe).join(', ')}">${ic}${q.length > 1 ? `<b>${q.length}</b>` : ''}</button>`).join('');
+  const reaccionesHTML = (m, puede, desde) => {
+    const nuevaR = reacAjenaNueva(m, desde || 0);
+    const chips = Object.entries(m.reac || {}).map(([ic, q]) => `<button type="button" class="reac ${q.includes(YO) ? 'mia' : ''} ${nuevaR && !q.includes(YO) ? 'nuevo' : ''}" data-ic="${ic}" data-fecha="${m.fecha}" title="${q.map(nombreDe).join(', ')}">${ic}${q.length > 1 ? `<b>${q.length}</b>` : ''}</button>`).join('');
     if (!chips && !puede) return '';
     return `<div class="reacs">${chips}${puede ? `<button type="button" class="reac add" data-fecha="${m.fecha}" aria-label="Reaccionar">${SVG_CARA}</button>` : ''}</div>
         ${puede ? `<div class="picker hidden">${REACCIONES.map(ic => `<button type="button" class="pick" data-ic="${ic}" data-fecha="${m.fecha}" aria-label="Reaccionar ${ic}">${ic}</button>`).join('')}</div>` : ''}`;
@@ -1747,7 +1754,7 @@
         <div class="msg ${m.de} ${m.de === YO ? 'mio' : ''} ${nuevo ? 'nuevo' : ''} ${m.enviando ? 'enviando' : ''}">
           <div class="quien">${esc(m.autor || nombreDe(m.de))}<small>${fmtFechaHora(m.fecha)}</small>${nuevo ? '<span class="pill nuevo">Nuevo</span>' : ''}${m.enviando ? '<small class="env">enviando…</small>' : ''}</div>
           <p>${esc(m.texto)}</p>
-          ${reaccionesHTML(m, puede)}
+          ${reaccionesHTML(m, puede, desde)}
         </div>`; }).join('');
     const vacio = ms.length ? '' : `<span class="hint">${MODO_COORD ? 'Sin devolución todavía.' : (puede ? 'Sin mensajes de coordinación.' : 'Los mensajes se habilitan cuando el registro se envía.')}</span>`;
     const abrir = ms.length ? 'Responder' : (MODO_COORD ? 'Escribir devolución' : 'Escribir a coordinación');
@@ -1887,7 +1894,8 @@
     const id = art.dataset.id; const reg = registros.find(x => x.id === id); if (!reg) return;
     const body = { accion: 'reaccionar', de: YO, id, fecha: Number(fecha), icono, token: sesion?.token, llave: MODO_COORD ? undefined : llaveDispositivo };
     if (MODO_COORD){ const cred = credCoord(); if (!hayCred(cred)) return; Object.assign(body, cred); }
-    marcarActividad();
+    if (enviandoIds.has(id)) return;                            // [CORREGIDO · reacciones] un toque por vez: dos seguidos la ponían y la sacaban
+    marcarActividad(); enviandoIds.add(id);
     const antes = JSON.stringify(mensajesDe(reg));
     const ms = mensajesDe(reg).map(m => ({ ...m })); const m = ms.find(x => Number(x.fecha) === Number(fecha) && x.de !== 'sistema');
     if (m){
@@ -1901,9 +1909,13 @@
       const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify(body) });
       const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script');
       reg.mensajes = res.mensajes; if (!MODO_COORD) persistirLocal();
-      if (JSON.stringify(res.mensajes) !== JSON.stringify(ms)) redibujarHilo(art, reg);   // solo si el script devolvió algo distinto
+      enviandoIds.delete(id);
+      const regAhora = registros.find(x => x.id === id); if (regAhora && regAhora !== reg) regAhora.mensajes = res.mensajes;   // la lista pudo recargarse
+      const artAhora = art.isConnected ? art : document.querySelector('.rec[data-id="' + CSS.escape(id) + '"]');
+      if (artAhora) redibujarHilo(artAhora, regAhora || reg);   // [CORREGIDO · reacciones] siempre: un sondeo pudo haber pisado el dibujo mientras tanto
     } catch (e){
-      reg.mensajes = JSON.parse(antes); redibujarHilo(art, reg);
+      enviandoIds.delete(id);
+      reg.mensajes = JSON.parse(antes); if (art.isConnected) redibujarHilo(art, reg);
       toast('No se pudo reaccionar: ' + e.message, 'err');
     }
   }
@@ -1972,7 +1984,7 @@
         if (!$('#view-list').classList.contains('hidden') && !document.querySelector('.resp-box:not(.hidden)')) renderList();
       }
       const ahora = registros.reduce((n, r) => n + noVistosDe(r), 0);
-      if (ahora > antes) toast('Tenés un mensaje nuevo de coordinación', 'ok');
+      if (ahora > antes) toast('Coordinación respondió o reaccionó en uno de tus registros', 'ok');   // [CORREGIDO · reacciones]
       pintarNoVistos(ahora);
     } catch { marcarConexion(false); }                             // [NUEVO · perfil] sin respuesta del script: punto rojo
   }
@@ -2068,11 +2080,11 @@
   // Al abrir Registros: ya se vio todo lo que había. Coordinador guarda una marca global; campo, una por registro.
   function marcarVisto(){
     if (MODO_COORD){
-      vistoHasta = registros.reduce((m, r) => Math.max(m, r.createdAt || 0, r.actualizadoEn || 0, ...mensajesDe(r).filter(x => x.de !== 'coord').map(x => x.fecha)), vistoHasta);
+      vistoHasta = registros.reduce((m, r) => Math.max(m, r.createdAt || 0, r.actualizadoEn || 0, ...mensajesDe(r).filter(x => x.de !== 'coord').map(x => x.fecha), ...mensajesDe(r).filter(x => x.reacDe === 'campo').map(x => x.reacFecha || 0)), vistoHasta);   // [CORREGIDO · reacciones]
       try { localStorage.setItem('coord_visto', String(vistoHasta)); } catch {}
     } else {
       let hubo = false;
-      registros.forEach(r => { const mx = mensajesDe(r).reduce((m, x) => Math.max(m, x.fecha), 0); if (mx > (r.vistoMsgHasta || 0)){ r.vistoMsgHasta = mx; hubo = true; } });
+      registros.forEach(r => { const mx = mensajesDe(r).reduce((m, x) => Math.max(m, x.fecha, x.reacFecha || 0), 0); if (mx > (r.vistoMsgHasta || 0)){ r.vistoMsgHasta = mx; hubo = true; } });   // [CORREGIDO · reacciones]
       if (hubo) persistirLocal();
     }
     nuevosPrev = 0; pintarNoVistos(0);
