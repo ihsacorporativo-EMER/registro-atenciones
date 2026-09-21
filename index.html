@@ -292,6 +292,10 @@
   .rec .fila .der .it.msg{color:var(--brand-txt)}
   .rec .fila .der .it.msg svg{color:var(--brand-txt)}
   .rec.compact .fila{cursor:pointer}
+  /* [NUEVO · ícono traslado] chip verde con vehículo y flecha; gris con guion si no traslada */
+  .rec .fila .tras{display:inline-flex;align-items:center;padding:3px 8px;border-radius:10px;background:color-mix(in srgb,var(--ok) 15%,var(--card));color:var(--ok)}
+  .rec .fila .tras svg{width:26px;height:17px;display:block}
+  .rec .fila .tras.no{background:var(--line);color:var(--muted)}
   .rec.compact .detalle{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
   .rec.compact.open .detalle{display:block}
   .rec.compact .detalle dl{margin-top:0}
@@ -515,7 +519,7 @@
     .field input,.field textarea,.search,.ed-contacto input,.resp-box textarea,.urow select,.modal input,.modal textarea{font-size:16px}
   }
   @supports not (background:color-mix(in srgb,red 10%,white)){
-    .pill.si{background:rgba(31,138,76,.15)} .pill.pend,.pill.reset{background:rgba(242,101,34,.15)} .pill.resp,.pill.rol{background:rgba(11,61,145,.12)}
+    .pill.si,.rec .fila .tras{background:rgba(31,138,76,.15)} .rec .fila .tras.no{background:var(--line)} .pill.pend,.pill.reset{background:rgba(242,101,34,.15)} .pill.resp,.pill.rol{background:rgba(11,61,145,.12)}
     .msg{background:rgba(11,61,145,.08)} .msg.campo{background:rgba(242,101,34,.1)}
     .solrow.nueva{background:rgba(242,101,34,.08)} #editando{background:rgba(11,61,145,.08)}
     .menu-yo .mi:hover,.menu-yo .mi:focus-visible,.sugerencias div:hover,.sugerencias div.activa,.photo-actions label:hover{background:rgba(11,61,145,.1)}
@@ -1086,7 +1090,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 l';
+  const VERSION = '2026-09-21 m';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1110,6 +1114,7 @@
     { v: '2026-09-20 s', para: 'todos', texto: 'Las preguntas de confirmación (cerrar sesión, quitar, eliminar) ahora son un cartel con el estilo de la app, en vez del aviso del navegador.' },
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
+    { v: '2026-09-21 m', para: 'todos', texto: 'En las tarjetas, el traslado se indica con un ícono verde de vehículo con flecha (gris si no traslada), y ya no aparece la etiqueta "Con mensajes": el globo con el número ya lo dice.' },
     { v: '2026-09-21 l', para: 'todos', texto: 'Tus registros se ven compactos: tocá una tarjeta para desplegar el detalle, las fotos, Editar y la conversación; tocá de nuevo para plegarla. Una etiqueta avisa si hay respuesta nueva o si está pendiente de envío.' },
     { v: '2026-09-21 k', para: 'todos', texto: 'En celular, "Guardar registro" va al final del formulario (ya no queda flotando sobre la pantalla) y la cabecera dice "Servicios Corporativos" con tu rol debajo.' },
     { v: '2026-09-21 j', para: 'todos', texto: 'Las tarjetas de registros muestran con íconos el móvil, el paciente, quién atendió, cuántas fotos y mensajes tiene y si traslada.' },
@@ -1578,8 +1583,7 @@
   // La etiqueta del título avisa lo importante sin abrirla: respuesta nueva, pendiente de envío, editado, con mensajes.
   const etiquetaCampo = r => noVistosDe(r) ? ' <span class="pill nuevo">Respuesta nueva</span>'
     : (FLOW_URL && !db && !r.enviado) ? ' <span class="pill pend">Pendiente de envío</span>'
-    : r.version > 1 ? ` <span class="pill resp">Editado · v${r.version}</span>`
-    : mensajesDe(r).length ? ' <span class="pill resp">Con mensajes</span>' : '';
+    : r.version > 1 ? ` <span class="pill resp">Editado · v${r.version}</span>` : '';   // [CORREGIDO · tarjetas] sin "Con mensajes"
   const tarjetaCampo = r => `
       <article class="rec compact ${abiertos.has(r.id) ? 'open' : ''}" data-id="${esc(r.id)}">
         <div class="top"><b>${esc(r.evento)}${etiquetaCampo(r)}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
@@ -1603,13 +1607,16 @@
     persona: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
     foto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="13" r="3.5"/></svg>',
     msg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>',
+    // [NUEVO · ícono traslado] vehículo con flecha hacia arriba (traslada) o con un guion (no traslada)
+    tras: '<svg viewBox="0 0 30 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11v9H2z"/><path d="M13 11h4l3 3v3h-7"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><path d="M26 15V5"/><path d="m22.5 8.5 3.5-3.5 3.5 3.5"/></svg>',
+    noTras: '<svg viewBox="0 0 30 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11v9H2z"/><path d="M13 11h4l3 3v3h-7"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><path d="M22.5 10h7"/></svg>',
   };
   const filasIconos = r => {
     const nMsg = mensajesDe(r).filter(m => m.de !== 'sistema').length;
     return `
         <div class="fila"><span class="it">${I.movil}Móvil ${esc(r.movil)}</span><span class="it">${I.persona}${esc(r.paciente || '—')}${r.edad ? `, ${esc(r.edad)}` : ''}</span></div>
         <div class="fila dos"><span class="quien" title="Quién atendió">${esc(r.medico || (r.usuarioNombre || 'genérico'))}</span>
-          <span class="der"><span class="it" title="Fotos">${I.foto}${r.nFotos || 0}</span>${nMsg ? `<span class="it msg" title="Mensajes">${I.msg}${nMsg}</span>` : ''}<span class="pill ${r.traslada === 'si' ? 'si' : 'no'}">${r.traslada === 'si' ? 'Traslada' : 'No traslada'}</span></span></div>`;
+          <span class="der"><span class="it" title="Fotos">${I.foto}${r.nFotos || 0}</span>${nMsg ? `<span class="it msg" title="Mensajes">${I.msg}${nMsg}</span>` : ''}<span class="tras ${r.traslada === 'si' ? '' : 'no'}" title="${r.traslada === 'si' ? 'Traslada' : 'No traslada'}" aria-label="${r.traslada === 'si' ? 'Traslada' : 'No traslada'}">${r.traslada === 'si' ? I.tras : I.noTras}</span></span></div>`;   // [NUEVO · ícono traslado]
   };
 
   // [NUEVO · coordinador] Tarjeta compacta: dos líneas de resumen; se toca y se despliega el detalle con fotos y conversación.
@@ -1617,8 +1624,7 @@
   const etiquetaTop = r => r.createdAt > nuevoDesde ? ' <span class="pill nuevo">Nuevo</span>'
     : (r.actualizadoEn || 0) > nuevoDesde ? ' <span class="pill nuevo">Actualizado</span>'
     : noVistosDe(r) ? ' <span class="pill nuevo">Respuesta nueva</span>'
-    : r.version > 1 ? ` <span class="pill resp">Editado · v${r.version}</span>`
-    : mensajesDe(r).length ? ' <span class="pill resp">Con mensajes</span>' : '';
+    : r.version > 1 ? ` <span class="pill resp">Editado · v${r.version}</span>` : '';   // [CORREGIDO · tarjetas] sin "Con mensajes": el globo con el número ya lo dice
   const tarjetaCompacta = r => `
       <article class="rec compact ${abiertos.has(r.id) ? 'open' : ''}" data-id="${esc(r.id)}">
         <div class="top"><b>${esc(r.evento)}${etiquetaTop(r)}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
