@@ -238,6 +238,7 @@
   .perfil-btn #perfil-nombre{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .perfil-btn .chev{font-size:11px;opacity:.8}
   .estado-dot{width:9px;height:9px;border-radius:50%;background:#34d27b;box-shadow:0 0 0 2px rgba(255,255,255,.25);flex:none}
+  .yo-av{display:none}   /* [NUEVO · app PC] la foto de la cuenta solo se ve en la barra lateral */
   .estado-dot.off{background:#ff4d4f}
   .avatar.grande{width:64px;height:64px;font-size:20px}
   /* [NUEVO · menú] lista desplegable debajo del nombre, por encima de la interfaz (fixed: la cabecera recorta lo que sobresale) */
@@ -652,11 +653,15 @@
     .tabs button.hidden{display:none}
     .tabs-sec{padding:14px 12px 4px;font-size:11px;font-weight:800;color:#c3d2f5;letter-spacing:.6px;text-transform:uppercase}
     .tabs:has(button[data-tab="users"]:not(.hidden)) .tabs-sec{display:block}
-    .yo{margin:auto 0 0;padding:10px;border-radius:12px;background:rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;width:100%}
+    /* cuenta abajo: foto (o iniciales), nombre con flecha y, debajo, el rol */
+    .yo{margin:auto 0 0;padding:8px;border-radius:12px;background:rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:stretch;gap:2px;min-width:0;width:100%}
     .bell:not(.hidden) + .yo{margin-left:0}
-    .brand .tag{margin-left:0;font-size:10px;padding:2px 8px}
-    .perfil-btn{max-width:100%;width:100%;justify-content:flex-start;background:none;padding:0 2px}
+    .brand .tag{order:1;margin:0 0 0 46px;align-self:flex-start;font-size:10px;padding:2px 8px}
+    .perfil-btn{order:0;max-width:100%;width:100%;justify-content:flex-start;background:none;padding:0;font-size:13px;gap:8px}
     .perfil-btn .chev{margin-left:auto}
+    .yo-av{display:grid;width:36px;height:36px;font-size:13px;background:rgba(255,255,255,.2)}
+    .yo-av img{width:100%;height:100%;object-fit:cover;display:block}
+    .perfil-btn .estado-dot{width:8px;height:8px;margin-left:-14px;margin-top:22px;box-shadow:0 0 0 2px var(--brand-deep)}
     main{margin:0 0 0 var(--sb);max-width:none;padding:24px 84px 40px 28px}
     /* [CORREGIDO · app PC] sin tope angosto: en pantallas grandes el contenido crece hasta 1600 px */
     main > div{max-width:1600px}
@@ -680,6 +685,27 @@
     #list{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
     #list .rec{margin-bottom:0}
     #list > .pager,#list > .hint,#list > p{grid-column:1/-1}
+    /* [CORREGIDO · app PC] Usuarios en dos columnas: los títulos de sección ocupan el ancho, las tarjetas se reparten */
+    #ulist{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+    #ulist .usec,#ulist .empty{grid-column:1/-1}
+    #ulist .urow{margin-bottom:0}
+    /* Tablero compacto: indicadores y barras a la izquierda; paquete y mails a la derecha; la tabla abajo a todo el ancho */
+    #view-board{display:grid;grid-template-columns:minmax(0,2fr) minmax(320px,1fr);gap:0 16px;align-items:start}
+    #view-board > h1,#view-board > .lead,#view-board > .filters,#view-board > .kpis,#view-board > .tabla-titulo,#view-board > #pager-tabla-top,#view-board > .tablewrap,#view-board > #pager-tabla-bottom{grid-column:1/-1}
+    #view-board > .mini:not(#migra){grid-column:1;margin-top:0}
+    #view-board > #migra{grid-column:2;grid-template-columns:1fr;margin-top:0}
+    #view-board > #migra.hidden{display:none}
+    #view-board > .tabla-titulo{margin-top:18px}
+    /* Catálogo: solicitudes a la izquierda; listas de móviles y eventos a la derecha, una sobre otra */
+    #view-cat{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 16px;align-items:start}
+    #view-cat > h1,#view-cat > .lead{grid-column:1/-1}
+    #view-cat > #cat-sol{grid-column:1}
+    #view-cat > #cat-listas{grid-column:2;grid-template-columns:1fr;margin-top:0}
+    #cat-sol .scrollbox{max-height:300px}
+    #cat-sol .scrollbox.pend{max-height:420px}
+    .catlista{max-height:260px}
+    /* Configuración: archivar, importar y mails en una sola fila */
+    #config{grid-template-columns:repeat(3,minmax(0,1fr))}
   }
   /* tablet (641–1023 px): la barra lateral queda solo con íconos */
   @media (min-width:641px) and (max-width:1023px){
@@ -698,9 +724,10 @@
     .tabs-sec{display:none !important}
     .yo{padding:6px;align-items:center}
     .brand .tag{display:none}
-    .perfil-btn{justify-content:center;padding:0}
+    .perfil-btn{justify-content:center;padding:0;gap:0}
     .perfil-btn #perfil-nombre,.perfil-btn .chev{display:none}
-    .estado-dot{width:12px;height:12px}
+    .yo-av{width:34px;height:34px}
+    .perfil-btn .estado-dot{width:10px;height:10px;margin-left:-12px;margin-top:22px}
     main{padding:24px 84px 40px 20px}
     #view-form{grid-template-columns:minmax(0,1fr)}
     #view-form > section.card:first-of-type,#view-form > section.card:nth-of-type(2),#view-form > .sticky{grid-column:1;grid-row:auto}
@@ -730,7 +757,7 @@
     <!-- [NUEVO · perfil] rol arriba; debajo, punto de conexión + nombre + flecha, que abre "Mi perfil" -->
     <div class="yo">
       <div class="tag">USO INTERNO</div><!-- [NUEVO] se reemplaza por PERSONAL DE CAMPO, el rol, COORDINADOR o ADMINISTRADOR -->
-      <button type="button" class="perfil-btn hidden" id="perfil-btn" aria-label="Menú" aria-haspopup="menu" aria-expanded="false"><span class="estado-dot" id="estado-dot"></span><span id="perfil-nombre"></span><span class="chev">▾</span></button><!-- [NUEVO · menú] abre la lista desplegable -->
+      <button type="button" class="perfil-btn hidden" id="perfil-btn" aria-label="Menú" aria-haspopup="menu" aria-expanded="false"><span class="avatar yo-av" id="yo-avatar"></span><span class="estado-dot" id="estado-dot"></span><span id="perfil-nombre"></span><span class="chev">▾</span></button><!-- [NUEVO · menú] abre la lista desplegable -->
     </div>
   </div>
   <div class="tabs" role="tablist">
@@ -1202,7 +1229,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 q';
+  const VERSION = '2026-09-21 r';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1227,6 +1254,8 @@
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
     { v: '2026-09-21 o', para: 'todos', texto: 'En computadora y tablet la app tiene barra lateral: el logo arriba, las secciones con íconos, tu cuenta abajo y la campana arriba a la derecha. En tablet la barra se achica a solo íconos.' },
+    { v: '2026-09-21 r', para: 'coord', texto: 'En computadora, Usuarios se ve en dos columnas, el Tablero queda compacto con el paquete y los mails al costado, Catálogo tiene las solicitudes a la izquierda y las listas a la derecha, y Configuración va en una sola fila.' },
+    { v: '2026-09-21 r', para: 'todos', texto: 'En la barra lateral de computadora, tu cuenta muestra la foto de perfil (o tus iniciales), el nombre y el rol.' },
     { v: '2026-09-21 q', para: 'todos', texto: 'En computadora el contenido aprovecha las pantallas grandes: los registros se ven en dos columnas y el tablero ocupa todo el ancho. En la barra lateral el texto va al lado del logo.' },
     { v: '2026-09-21 q', para: 'coord', texto: '"Cargar un registro" desde el panel: con tu usuario cargás como vos y volvés con "Volver a coordinación" o "Volver a administración"; con la clave, cargás desde el link genérico y también podés volver.' },
     { v: '2026-09-21 p', para: 'coord', texto: 'En celular, Catálogo sale de la barra de abajo y queda solo dentro de "Más", junto a Usuarios y Configuración. El punto naranja de pedidos pendientes pasa a "Más".' },
@@ -2818,9 +2847,15 @@
   function pintarPerfil(){
     const b = $('#perfil-btn'), sm = sesionMenu();
     // [NUEVO · menú] sin sesión, el link de coordinación (con clave) también tiene menú: Información adicional y Salir
-    if (!sm){ if (!MODO_COORD && !volverA){ b.classList.add('hidden'); return; } $('#perfil-nombre').textContent = 'Menú'; b.classList.remove('hidden'); pintarEstado(); return; }   // [CORREGIDO · volver al panel] con ?volver también hay menú
+    if (!sm){ if (!MODO_COORD && !volverA){ b.classList.add('hidden'); return; } $('#perfil-nombre').textContent = 'Menú'; { const av = $('#yo-avatar'); av.dataset.foto = '-'; av.textContent = MODO_ADMIN ? 'AD' : MODO_COORD ? 'CO' : 'PC'; } b.classList.remove('hidden'); pintarEstado(); return; }   // [CORREGIDO · volver al panel] con ?volver también hay menú · [NUEVO · app PC] iniciales genéricas
     $('#perfil-nombre').textContent = `${sm.nombre} ${sm.apellido}`;
     b.classList.remove('hidden'); pintarEstado();
+    // [NUEVO · app PC] foto de perfil (o iniciales) en la cuenta de la barra lateral; se trae una vez por foto
+    const av = $('#yo-avatar');
+    if (av.dataset.foto !== (sm.fotoId || '')){
+      av.dataset.foto = sm.fotoId || ''; av.innerHTML = esc(iniciales(sm));
+      if (sm.fotoId){ try { const u = new URL(FLOW_URL); u.searchParams.set('fotoUsuario', sm.id); fetch(u).then(x => x.json()).then(x => { if (x.data && av.dataset.foto === sm.fotoId) av.innerHTML = `<img src="${x.data}" alt="">`; }).catch(() => {}); } catch {} }
+    }
   }
   async function abrirPerfil(){
     if (!sesionMenu()) return;                                 // [CORREGIDO · menú] en coordinación con clave no hay perfil
