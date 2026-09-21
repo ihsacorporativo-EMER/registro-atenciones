@@ -347,6 +347,34 @@
   .resp-actions .enviar-msg{display:inline-flex;align-items:center;gap:7px;border:0;border-radius:999px;padding:9px 16px;background:var(--brand);color:#fff;font:inherit;font-size:14px;font-weight:700;text-decoration:none;cursor:pointer}
   .resp-actions .enviar-msg svg{width:16px;height:16px}
   .resp-actions .enviar-msg:disabled{opacity:.6}
+  /* [NUEVO · adjuntos] barra para escribir: clip, cuadro que crece y botón redondo de enviar */
+  .composer{width:100%;margin-top:6px}
+  .comp-fila{display:flex;align-items:flex-end;gap:6px;background:var(--card);border:1.5px solid var(--line);border-radius:22px;padding:5px 5px 5px 6px}
+  .comp-fila:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px rgba(11,61,145,.12)}
+  .comp-fila .resp-txt{flex:1;min-width:0;min-height:34px;max-height:120px;border:0;background:transparent;padding:8px 4px;resize:none;font:inherit;font-size:14px;color:var(--ink);outline:0;line-height:1.35}
+  .adj-btn{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--muted);cursor:pointer;flex:none;margin-bottom:0}
+  .adj-btn:hover{background:color-mix(in srgb,var(--brand) 10%,var(--card));color:var(--brand-txt)}
+  .adj-btn input{display:none}
+  .adj-btn svg{width:20px;height:20px}
+  .comp-fila .enviar-msg{width:36px;height:36px;border-radius:50%;padding:0;justify-content:center;flex:none;margin:0}
+  .comp-fila .enviar-msg svg{width:16px;height:16px;margin:0 0 0 -2px}
+  .adj-prev{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+  .adj-prev:empty{display:none}
+  .adj-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;padding:4px 6px 4px 4px;font-size:12px;background:var(--card);max-width:100%}
+  .adj-chip img{width:30px;height:30px;object-fit:cover;border-radius:6px}
+  .adj-chip .nom{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .adj-chip .quitar{border:0;background:none;color:var(--muted);cursor:pointer;font-weight:800;font-size:14px;padding:0 2px}
+  /* adjuntos dentro de un mensaje */
+  .adjs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .adj-img{border:0;padding:0;background:var(--line);cursor:zoom-in;border-radius:10px;overflow:hidden;width:132px;height:96px;display:block;position:relative}
+  .adj-img img{width:100%;height:100%;object-fit:cover;display:block}
+  .adj-img img[data-src]{opacity:0}
+  .adj-img.cargando::after{content:"";position:absolute;inset:0;margin:auto;width:18px;height:18px;border:2px solid var(--muted);border-top-color:transparent;border-radius:50%;animation:girar .8s linear infinite}
+  @keyframes girar{to{transform:rotate(360deg)}}
+  .adj-file{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;padding:6px 10px;font:inherit;font-size:13px;font-weight:700;background:var(--card);color:var(--brand-txt);cursor:pointer;max-width:100%}
+  .adj-file svg{width:16px;height:16px;flex:none}
+  .adj-file span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .msg.mio .adj-file{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.35);color:#fff}
   /* [NUEVO · reacciones] chips debajo de cada mensaje; la carita abre el selector */
   .reacs{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;align-items:center}
   .reac{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:2px 8px;font-size:13px;line-height:1.4;cursor:pointer;display:inline-flex;align-items:center;gap:4px;color:var(--ink)}
@@ -1261,7 +1289,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 x';
+  const VERSION = '2026-09-21 z';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1286,6 +1314,8 @@
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
     { v: '2026-09-21 o', para: 'todos', texto: 'En computadora y tablet la app tiene barra lateral: el logo arriba, las secciones con íconos, tu cuenta abajo y la campana arriba a la derecha. En tablet la barra se achica a solo íconos.' },
+    { v: '2026-09-21 z', para: 'todos', texto: 'La conversación tiene una barra para escribir como en un chat, con clip para adjuntar fotos o PDF y botón de enviar. Los adjuntos se ven en el hilo: tocá una foto para agrandarla y descargarla, o un archivo para bajarlo.' },
+    { v: '2026-09-21 y', para: 'todos', texto: 'Las etiquetas "Nuevo", "Actualizado" y "Respuesta nueva", y el número de la campana, quedan hasta que abrís esa tarjeta. Entrar a Registros ya no las borra todas.' },
     { v: '2026-09-21 x', para: 'todos', texto: 'Los mensajes se ven en burbujas como en un chat: los tuyos en azul a la derecha, los del otro lado en claro a la izquierda, con la puntita de burbuja.' },
     { v: '2026-09-21 w', para: 'todos', texto: 'Reacciones como en un chat: quedan fijas al tocarlas, y cuando el otro lado reacciona a tu mensaje te avisa en la campana y el ícono se marca como nuevo.' },
     { v: '2026-09-21 v', para: 'todos', texto: 'Más rápido: el mensaje aparece en el momento de tocar Enviar (con "enviando…" hasta que confirma), y mientras usás la app consulta novedades cada 5 segundos en vez de 15.' },
@@ -1653,13 +1683,16 @@
     if (!FLOW_URL){ toast('Falta configurar FLOW_URL en el HTML', 'err'); return; }
     try {
       const res = await pedirCentral();
-      nuevoDesde = vistoHasta || Infinity;                   // [NUEVO · campana] lo posterior a la última mirada lleva "Nuevo" (la primera vez, nada)
+      // [CORREGIDO · vistos por registro] base fija: lo anterior a la primera vez que se usó esta versión no cuenta como nuevo
+      if (nuevoDesde === Infinity){ let base = 0; try { base = +(localStorage.getItem('coord_base') || 0); } catch {} if (!base){ base = vistoHasta || Date.now(); try { localStorage.setItem('coord_base', String(base)); } catch {} } nuevoDesde = base; }
       // [CORREGIDO · reacciones] si hay un mensaje o reacción en camino en algún registro, se conserva su hilo local
       (res.registros || []).forEach(r => { if (enviandoIds.has(r.id)){ const loc = registros.find(x => x.id === r.id); if (loc) r.mensajes = loc.mensajes; } });
-      registros = res.registros || []; renderList(); renderBoard();
-      marcarVisto();                                         // [NUEVO · campana] ya lo vio: contador a cero
+      registros = res.registros || [];
+      abiertos.forEach(id => marcarVistoRegistro(id, true));   // [CORREGIDO · vistos por registro] lo que está desplegado a la vista se da por visto
+      renderList(); renderBoard();
+      marcarVisto();                                         // [NUEVO · campana] base del servidor para detectar novedades; el contador es por registro
       mostrarAlerta(res.alerta);                             // [NUEVO · migración] cartel si el script dejó un aviso
-      actualizarSolicitudes(res.solicitudes, res.pedidos); pintarNoVistos(0);   // [NUEVO · usuarios / catálogo] la campana refleja las solicitudes
+      actualizarSolicitudes(res.solicitudes, res.pedidos); pintarNoVistos(contarPendientes());   // [NUEVO · usuarios / catálogo] la campana refleja las solicitudes
     } catch (e){
       toast(e.message === 'Sin clave' ? 'Necesitás la clave de coordinador' : 'No se pudieron cargar los registros: ' + e.message, 'err');
     }
@@ -1692,17 +1725,17 @@
   });
   // [CORREGIDO · chat] Si hay una respuesta a medio escribir, se guarda antes de redibujar la lista y se restaura después
   // (mismo registro, mismo texto, mismo foco), venga el redibujo de donde venga.
+  // [NUEVO · adjuntos] la barra de escritura siempre está a la vista: hay borrador si tiene texto o foco
+  const hayBorrador = () => !!document.querySelector('#list .resp-txt:focus') || Array.from(document.querySelectorAll('#list .resp-txt')).some(t => t.value.trim());
   function borradorAbierto(){
-    const box = document.querySelector('#list .resp-box:not(.hidden)'); if (!box) return null;
-    const ta = box.querySelector('.resp-txt');
-    return { id: box.closest('.rec').dataset.id, texto: ta.value, foco: document.activeElement === ta };
+    const ta = document.querySelector('#list .resp-txt:focus') || Array.from(document.querySelectorAll('#list .resp-txt')).find(t => t.value.trim()); if (!ta) return null;
+    return { id: ta.closest('.rec').dataset.id, texto: ta.value, foco: document.activeElement === ta };
   }
   function restaurarBorrador(b){
     if (!b) return;
     const art = Array.from(document.querySelectorAll('#list .rec')).find(a => a.dataset.id === b.id); if (!art) return;
-    const box = art.querySelector('.resp-box'), btn = art.querySelector('.responder'); if (!box) return;
-    box.classList.remove('hidden'); if (btn) btn.classList.add('hidden');
-    const ta = box.querySelector('.resp-txt'); ta.value = b.texto; if (b.foco) ta.focus();
+    const ta = art.querySelector('.resp-txt'); if (!ta) return;
+    ta.value = b.texto; if (b.foco) ta.focus();
   }
   const acotar = (pag, total, por) => Math.min(Math.max(0, pag), Math.max(0, Math.ceil(total / por) - 1));
   const pagerHTML = (para, pag, total, por) => {   // `para` ('lista' o 'tabla') lo usa el manejador de clics
@@ -1711,6 +1744,28 @@
   };
   const abiertos = new Set();                      // ids de tarjetas desplegadas, para que sobrevivan al re-render
   let nuevoDesde = Infinity;                       // los registros posteriores a esta marca llevan la etiqueta "Nuevo"
+  // [CORREGIDO · vistos por registro] Cada tarjeta se da por vista recién cuando se abre. Coordinación guarda una marca
+  // por registro (coord_vistos) más una base fija (coord_base) para que lo anterior a instalar esto no salga como nuevo.
+  // Campo ya tenía la marca por registro (vistoMsgHasta), pero se ponía a todas al entrar a Registros; ahora, al abrir.
+  let vistosCoord = {}; try { vistosCoord = JSON.parse(localStorage.getItem('coord_vistos') || '{}') || {}; } catch {}
+  const vistoDe = r => MODO_COORD ? Math.max(nuevoDesde, vistosCoord[r.id] || 0) : (r.vistoMsgHasta || 0);
+  const pendienteDe = r => { const v = vistoDe(r); return (r.createdAt || 0) > v || (r.actualizadoEn || 0) > v || noVistosDe(r) > 0; };
+  const contarPendientes = () => MODO_COORD ? registros.filter(pendienteDe).length : registros.reduce((n, r) => n + noVistosDe(r), 0);
+  function marcarVistoRegistro(id, silencioso){
+    const r = registros.find(x => x.id === id); if (!r) return;
+    if (MODO_COORD){
+      vistosCoord[id] = Date.now();
+      Object.keys(vistosCoord).forEach(k => { if (!registros.some(x => x.id === k)) delete vistosCoord[k]; });   // se limpia lo archivado
+      try { localStorage.setItem('coord_vistos', JSON.stringify(vistosCoord)); } catch {}
+    } else {
+      const mx = mensajesDe(r).reduce((m, x) => Math.max(m, x.fecha, x.reacFecha || 0), 0);
+      if (mx > (r.vistoMsgHasta || 0)){ r.vistoMsgHasta = mx; persistirLocal(); }
+    }
+    if (silencioso) return;
+    const art = document.querySelector('.rec[data-id="' + CSS.escape(id) + '"]');
+    if (art){ const b = art.querySelector('.top b'); if (b){ b.querySelectorAll('.pill').forEach(p => p.remove()); b.insertAdjacentHTML('beforeend', MODO_COORD ? etiquetaTop(r) : etiquetaCampo(r)); } }
+    pintarNoVistos(contarPendientes());
+  }
   let tituloBase = document.title;
   const fmtFechaHora = ts => { const d = new Date(ts); const p=n=>String(n).padStart(2,'0'); return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`; };
   // [NUEVO · mensajes] Conversación por registro: lista de {de:'coord'|'campo', texto, fecha}, la misma en los dos lados.
@@ -1725,9 +1780,9 @@
   // (coordinador: marca global nuevoDesde; campo: marca por registro vistoMsgHasta)
   // [CORREGIDO · reacciones] también cuenta una reacción del otro lado posterior a la última mirada (reacDe / reacFecha las pone el script)
   const reacAjenaNueva = (m, desde) => !!m.reacDe && m.reacDe !== YO && (m.reacFecha || 0) > desde;
-  const noVistosDe = r => { const desde = MODO_COORD ? nuevoDesde : (r.vistoMsgHasta || 0); return mensajesDe(r).filter(m => (esAjeno(m) && m.fecha > desde) || reacAjenaNueva(m, desde)).length; };
+  const noVistosDe = r => { const desde = vistoDe(r); return mensajesDe(r).filter(m => (esAjeno(m) && m.fecha > desde) || reacAjenaNueva(m, desde)).length; };   // [CORREGIDO · vistos por registro]
   // [NUEVO · mensajes] el hilo tiene alto máximo con scroll; al dibujarlo se lleva al último mensaje
-  const bajarHilos = root => (root || document).querySelectorAll('.msgs').forEach(m => { m.scrollTop = m.scrollHeight; });
+  const bajarHilos = root => { (root || document).querySelectorAll('.msgs').forEach(m => { m.scrollTop = m.scrollHeight; }); cargarAdjuntos(root); };   // [NUEVO · adjuntos]
   // [NUEVO · foto] nombre de archivo para descargar una foto: fecha, evento y número
   const nombreFoto = (r, i) => `${r?.fecha || 'foto'}_${String(r?.evento || 'registro').replace(/[^\w áéíóúñÁÉÍÓÚÑ-]/g, '').trim().replace(/\s+/g, '-').slice(0, 24)}_foto${i + 1}.jpg`;
   // [NUEVO · migración] nombre de la carpeta de un registro dentro del paquete ZIP: fecha_evento_id. Es lo que el Excel
@@ -1750,6 +1805,7 @@
   const REACCIONES = ['👍', '✅', '👀', '❗'];
   const SVG_RESP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h10a4 4 0 0 1 4 4v0"/><path d="m13 21 4-4-4-4"/></svg>';
   const SVG_SEND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>';
+  const SVG_CLIP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 11.5-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8l9-9a3.5 3.5 0 0 1 5 5l-9 9a1.5 1.5 0 0 1-2.1-2.1l8-8"/></svg>';
   const SVG_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg>';
   const SVG_CARA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/><path d="M19 3v4"/><path d="M17 5h4"/></svg>';
   const reaccionesHTML = (m, puede, desde) => {
@@ -1759,25 +1815,58 @@
     return `<div class="reacs">${chips}${puede ? `<button type="button" class="reac add" data-fecha="${m.fecha}" aria-label="Reaccionar">${SVG_CARA}</button>` : ''}</div>
         ${puede ? `<div class="picker hidden">${REACCIONES.map(ic => `<button type="button" class="pick" data-ic="${ic}" data-fecha="${m.fecha}" aria-label="Reaccionar ${ic}">${ic}</button>`).join('')}</div>` : ''}`;
   };
+  // [NUEVO · adjuntos] Adjuntos pendientes por registro (antes de enviar) y caché de los ya guardados en Drive.
+  // Imágenes: se comprimen como las fotos del registro. PDF: hasta 5 MB. Máximo 4 por mensaje.
+  const adjPend = new Map(), adjCache = new Map();
+  const ADJ_MAX = 4, ADJ_PDF_MAX = 5 * 1024 * 1024;
+  const adjPrevHTML = id => (adjPend.get(id) || []).map((a, i) => `<span class="adj-chip">${a.img ? `<img src="${a.data}" alt="">` : SVG_CLIP}<span class="nom">${esc(a.nombre)}</span><button type="button" class="quitar" data-i="${i}" aria-label="Quitar">×</button></span>`).join('');
+  const adjuntosHTML = (m, r) => {
+    const lista = m.adj || []; if (!lista.length) return '';
+    return `<div class="adjs">${lista.map(a => a.img
+      ? `<button type="button" class="adj-img ${a.data ? '' : 'cargando'}" data-rid="${esc(r.id)}" data-id="${esc(a.id || '')}" data-nombre="${esc(a.nombre)}" aria-label="Ver ${esc(a.nombre)}">${a.data ? `<img src="${a.data}" alt="">` : '<img data-src="1" alt="">'}</button>`
+      : `<button type="button" class="adj-file" data-rid="${esc(r.id)}" data-id="${esc(a.id || '')}" data-nombre="${esc(a.nombre)}">${SVG_CLIP}<span>${esc(a.nombre)}</span></button>`).join('')}</div>`;
+  };
+  async function obtenerAdjunto(rid, id){
+    if (adjCache.has(id)) return adjCache.get(id);
+    let data = '';
+    if (MODO_COORD){ const res = await pedirCentral({ adjunto: id, id: rid }); data = res.data || ''; }
+    else { const u = new URL(FLOW_URL); u.searchParams.set('adjunto', id); u.searchParams.set('id', rid); if (sesion?.token) u.searchParams.set('token', sesion.token); if (llaveDispositivo) u.searchParams.set('llave', llaveDispositivo); const res = await (await fetch(u)).json(); if (!res.ok) throw new Error(res.error || 'Error del script'); data = res.data || ''; }
+    if (data) adjCache.set(id, data);
+    return data;
+  }
+  // rellena las miniaturas que todavía no tienen imagen (se llama después de dibujar cualquier hilo)
+  function cargarAdjuntos(root){
+    (root || document).querySelectorAll('.adj-img img[data-src]').forEach(async img => {
+      const b = img.closest('.adj-img'); if (!b.dataset.id) return;
+      try { const d = await obtenerAdjunto(b.dataset.rid, b.dataset.id); if (d){ img.src = d; img.removeAttribute('data-src'); } } catch {}
+      b.classList.remove('cargando');
+    });
+  }
+  const dataUrlABlob = d => { const [meta, b64] = d.split(','); const bin = atob(b64); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); return new Blob([bytes], { type: (meta.match(/data:([^;]+)/) || [])[1] || 'application/octet-stream' }); };
+  function descargarDataUrl(d, nombre){ const a = document.createElement('a'); a.href = URL.createObjectURL(dataUrlABlob(d)); a.download = nombre || 'archivo'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
   const hiloHTML = r => {
     const ms = mensajesDe(r);
-    const desde = MODO_COORD ? nuevoDesde : (r.vistoMsgHasta || 0);
+    const desde = vistoDe(r);   // [CORREGIDO · vistos por registro]
     const puede = MODO_COORD || !!r.enviado;               // campo solo puede escribir sobre registros ya enviados
     const items = ms.map(m => {
       if (m.de === 'sistema') return `<div class="msg sistema">${esc(m.texto)} · ${fmtFechaHora(m.fecha)}</div>`;
       const nuevo = esAjeno(m) && m.fecha > desde; return `
         <div class="msg ${m.de} ${m.de === YO ? 'mio' : ''} ${nuevo ? 'nuevo' : ''} ${m.enviando ? 'enviando' : ''}">
           <div class="quien">${esc(m.autor || nombreDe(m.de))}<small>${fmtFechaHora(m.fecha)}</small>${nuevo ? '<span class="pill nuevo">Nuevo</span>' : ''}${m.enviando ? '<small class="env">enviando…</small>' : ''}</div>
-          <p>${esc(m.texto)}</p>
+          ${m.texto ? `<p>${esc(m.texto)}</p>` : ''}
+          ${adjuntosHTML(m, r)}
           ${reaccionesHTML(m, puede, desde)}
         </div>`; }).join('');
     const vacio = ms.length ? '' : `<span class="hint">${MODO_COORD ? 'Sin devolución todavía.' : (puede ? 'Sin mensajes de coordinación.' : 'Los mensajes se habilitan cuando el registro se envía.')}</span>`;
-    const abrir = ms.length ? 'Responder' : (MODO_COORD ? 'Escribir devolución' : 'Escribir a coordinación');
+    // [NUEVO · adjuntos] barra de chat siempre a la vista: clip para fotos o PDF, cuadro que crece al escribir, enviar
     const caja = !puede ? '' : `
-        <button type="button" class="link responder">${SVG_RESP}${abrir}</button>
-        <div class="resp-box hidden">
-          <textarea class="resp-txt" placeholder="${MODO_COORD ? 'Ej.: Falta el destino del traslado. Gracias por las fotos.' : 'Ej.: Me olvidé de anotar que el paciente iba acompañado.'}"></textarea>
-          <div class="resp-actions"><button type="button" class="link cancelar">${SVG_X}Cancelar</button><button type="button" class="link enviar-msg">${SVG_SEND}Enviar</button></div>
+        <div class="resp-box composer">
+          <div class="adj-prev">${adjPrevHTML(r.id)}</div>
+          <div class="comp-fila">
+            <label class="adj-btn" title="Adjuntar foto o PDF" aria-label="Adjuntar">${SVG_CLIP}<input type="file" class="adj-in" accept="image/*,application/pdf" multiple></label>
+            <textarea class="resp-txt" rows="1" placeholder="${MODO_COORD ? 'Escribir devolución…' : 'Escribir a coordinación…'}"></textarea>
+            <button type="button" class="enviar-msg" aria-label="Enviar">${SVG_SEND}</button>
+          </div>
         </div>`;
     return `<div class="hilo">${vacio}${items ? `<div class="msgs">${items}</div>` : ''}${caja}</div>`;
   };
@@ -1825,8 +1914,8 @@
 
   // [NUEVO · coordinador] Tarjeta compacta: dos líneas de resumen; se toca y se despliega el detalle con fotos y conversación.
   // [NUEVO · edición] Un registro editado desde campo se marca "Actualizado" hasta la próxima mirada y muestra la versión.
-  const etiquetaTop = r => r.createdAt > nuevoDesde ? ' <span class="pill nuevo">Nuevo</span>'
-    : (r.actualizadoEn || 0) > nuevoDesde ? ' <span class="pill nuevo">Actualizado</span>'
+  const etiquetaTop = r => r.createdAt > vistoDe(r) ? ' <span class="pill nuevo">Nuevo</span>'
+    : (r.actualizadoEn || 0) > vistoDe(r) ? ' <span class="pill nuevo">Actualizado</span>'
     : noVistosDe(r) ? ' <span class="pill nuevo">Respuesta nueva</span>'
     : r.version > 1 ? ` <span class="pill resp">Editado · v${r.version}</span>` : '';   // [CORREGIDO · tarjetas] sin "Con mensajes": el globo con el número ya lo dice
   const tarjetaCompacta = r => `
@@ -1887,6 +1976,27 @@
 
   // [NUEVO · mensajes] Envía un mensaje al hilo (coordinador con clave, campo sin clave). Al confirmar, el cuadro se
   // cierra y el mensaje queda como burbuja; solo se vuelve a dibujar el hilo, así la tarjeta no se pliega.
+  // [NUEVO · adjuntos] elegir archivos desde el clip: imágenes comprimidas, PDF hasta 5 MB, máximo 4 por mensaje
+  $('#list').addEventListener('change', async e => {
+    const inp = e.target.closest('input.adj-in'); if (!inp) return;
+    const art = inp.closest('.rec'), id = art.dataset.id, lista = adjPend.get(id) || [];
+    for (const f of Array.from(inp.files || [])){
+      if (lista.length >= ADJ_MAX){ toast(`Hasta ${ADJ_MAX} adjuntos por mensaje`, 'err'); break; }
+      try {
+        if (/^image\//.test(f.type)){ lista.push({ nombre: f.name.replace(/\.[^.]+$/, '') + '.jpg', tipo: 'image/jpeg', img: true, data: await compress(f) }); }
+        else if (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)){
+          if (f.size > ADJ_PDF_MAX){ toast(`${f.name}: el PDF supera los 5 MB`, 'err'); continue; }
+          lista.push({ nombre: f.name, tipo: 'application/pdf', img: false, data: await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => no(new Error('No se pudo leer')); r.readAsDataURL(f); }) });
+        } else toast(`${f.name}: solo fotos o PDF`, 'err');
+      } catch (err){ toast(err.message, 'err'); }
+    }
+    inp.value = '';
+    if (lista.length) adjPend.set(id, lista); else adjPend.delete(id);
+    art.querySelector('.adj-prev').innerHTML = adjPrevHTML(id); marcarActividad();
+  });
+  // el cuadro crece con el texto; en computadora, Enter envía y Shift+Enter hace salto de línea
+  $('#list').addEventListener('input', e => { const t = e.target.closest('.resp-txt'); if (!t) return; t.style.height = 'auto'; t.style.height = Math.min(120, t.scrollHeight) + 'px'; });
+  $('#list').addEventListener('keydown', e => { const t = e.target.closest('.resp-txt'); if (!t || e.key !== 'Enter' || e.shiftKey || esCelular()) return; e.preventDefault(); const b = t.closest('.comp-fila')?.querySelector('.enviar-msg'); if (b) enviarMensaje(b); });
   // [NUEVO · reacciones] manda la reacción y vuelve a dibujar el hilo con lo que devuelve el script
   // [NUEVO · rapidez] Sondeo adaptativo: con la pantalla a la vista y actividad en los últimos 2 minutos se consulta cada
   // 5 s; en reposo, cada 15 s. Cualquier toque o tecla cuenta como actividad, y enviar algo también.
@@ -1899,9 +2009,9 @@
   function sondeoAdaptativo(fn){ (async function ciclo(){ try { await fn(); } catch {} setTimeout(ciclo, periodoSondeo()); })(); }
   // vuelve a dibujar el hilo de una tarjeta sin perder el cuadro de respuesta abierto ni lo que se estaba escribiendo
   function redibujarHilo(art, reg){
-    const abierto = !art.querySelector('.resp-box')?.classList.contains('hidden'), texto = art.querySelector('.resp-txt')?.value || '';
+    const texto = art.querySelector('.resp-txt')?.value || '', foco = !!art.querySelector('.resp-txt:focus');
     art.querySelector('.hilo').outerHTML = hiloHTML(reg); bajarHilos(art);
-    if (abierto){ art.querySelector('.responder')?.classList.add('hidden'); art.querySelector('.resp-box')?.classList.remove('hidden'); art.querySelector('.resp-txt').value = texto; }
+    const ta = art.querySelector('.resp-txt'); if (ta){ ta.value = texto; if (foco) ta.focus(); }   // [NUEVO · adjuntos] la barra siempre está
   }
   // [CORREGIDO · reacciones] al instante: la reacción se aplica y se dibuja en el celular antes de mandarla al script
   // (que tarda unos segundos). Si el script la rechaza, se deshace y avisa.
@@ -1937,28 +2047,33 @@
   async function enviarMensaje(btn){
     const art = btn.closest('.rec'); const id = art.dataset.id;
     const texto = art.querySelector('.resp-txt').value.trim();
-    if (!texto){ toast('Escribí el mensaje primero', 'err'); return; }
-    const body = { accion: 'mensaje', de: YO, id, texto, token: sesion?.token, llave: MODO_COORD ? undefined : llaveDispositivo };   // [NUEVO · usuarios] firma el mensaje con nombre y rol · [NUEVO · seguridad] llave
+    const adj = adjPend.get(id) || [];                             // [NUEVO · adjuntos]
+    if (!texto && !adj.length){ toast('Escribí un mensaje o adjuntá un archivo', 'err'); return; }
+    if (enviandoIds.has(id)) return;
+    const body = { accion: 'mensaje', de: YO, id, texto, adjuntos: adj.map(a => ({ nombre: a.nombre, tipo: a.tipo, data: a.data })), token: sesion?.token, llave: MODO_COORD ? undefined : llaveDispositivo };   // [NUEVO · usuarios] firma el mensaje con nombre y rol · [NUEVO · seguridad] llave
     if (MODO_COORD){ const cred = credCoord(); if (!hayCred(cred)) return; Object.assign(body, cred); }   // [NUEVO · roles coord]
     // [NUEVO · rapidez] la burbuja aparece ya, marcada "enviando…"; el cuadro se cierra; el script confirma por detrás.
     // Mientras tanto el sondeo no pisa este hilo. Si falla, la burbuja se quita y el texto vuelve al cuadro.
     const reg = registros.find(x => x.id === id); if (!reg) return;
     const antes = JSON.stringify(mensajesDe(reg));
     const autor = sesion && sesion.token ? `${sesion.nombre} ${sesion.apellido} · ${sesion.rol}` : '';
-    const tmp = { de: YO, texto, fecha: Date.now(), enviando: true, ...(autor ? { autor } : {}) };
+    const tmp = { de: YO, texto, fecha: Date.now(), enviando: true, ...(autor ? { autor } : {}), ...(adj.length ? { adj: adj.map(a => ({ nombre: a.nombre, img: a.img, data: a.data })) } : {}) };
     reg.mensajes = [...mensajesDe(reg), tmp]; enviandoIds.add(id); marcarActividad();
+    adjPend.delete(id);                                            // [NUEVO · adjuntos] la barra queda limpia; si falla, se restauran
     art.querySelector('.hilo').outerHTML = hiloHTML(reg); bajarHilos(art);
     try {
       const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify(body) });
       const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script');
       reg.mensajes = res.mensajes;
+      { const ult = res.mensajes[res.mensajes.length - 1]; if (ult && ult.adj) ult.adj.forEach((a, i) => { if (a.id && adj[i] && adj[i].data) adjCache.set(a.id, adj[i].data); }); }   // [NUEVO · adjuntos] sin volver a bajar lo que se acaba de subir
       if (!MODO_COORD){ reg.vistoMsgHasta = res.mensajes.reduce((m, x) => Math.max(m, x.fecha), 0); persistirLocal(); }
       enviandoIds.delete(id);
       if (art.isConnected) redibujarHilo(art, reg);
       toast(MODO_COORD ? 'Devolución enviada. La verá en su celular.' : 'Mensaje enviado a coordinación', 'ok');
     } catch (e){
       enviandoIds.delete(id); reg.mensajes = JSON.parse(antes);
-      if (art.isConnected){ redibujarHilo(art, reg); art.querySelector('.responder')?.classList.add('hidden'); const box = art.querySelector('.resp-box'); if (box){ box.classList.remove('hidden'); box.querySelector('.resp-txt').value = texto; } }
+      if (adj.length) adjPend.set(id, adj);                         // [NUEVO · adjuntos] vuelven a la barra
+      if (art.isConnected){ redibujarHilo(art, reg); const ta = art.querySelector('.resp-txt'); if (ta) ta.value = texto; }
       toast('No se pudo enviar: ' + e.message, 'err');
     }
   }
@@ -1995,8 +2110,9 @@
       }
       if (cambios){
         persistirLocal();
+        if (!$('#view-list').classList.contains('hidden')) abiertos.forEach(id => marcarVistoRegistro(id, true));   // [CORREGIDO · vistos por registro] lo desplegado a la vista
         // no se redibuja si hay un cuadro de respuesta abierto, para no borrar lo que se está escribiendo
-        if (!$('#view-list').classList.contains('hidden') && !document.querySelector('.resp-box:not(.hidden)')) renderList();
+        if (!$('#view-list').classList.contains('hidden') && !hayBorrador()) renderList();   // [NUEVO · adjuntos]
       }
       const ahora = registros.reduce((n, r) => n + noVistosDe(r), 0);
       if (ahora > antes) toast('Coordinación respondió o reaccionó en uno de tus registros', 'ok');   // [CORREGIDO · reacciones]
@@ -2008,6 +2124,7 @@
   // Coordinador: registros nuevos + respuestas de campo desde la última mirada (lo cuenta el script cada 30 s).
   // Campo: mensajes de coordinación no leídos (se cuenta acá). Al abrir Registros, todo vuelve a cero.
   let vistoHasta = 0; try { vistoHasta = +(localStorage.getItem('coord_visto') || 0); } catch {}
+  let servidorPrev = 0;                                      // [CORREGIDO · vistos por registro] último conteo del servidor, solo para detectar que entró algo
   let nuevosPrev = 0;
   const claveGuardada = () => { if (MODO_ADMIN ? sesionAdmin() : sesionCoord()) return 'sesion'; try { return localStorage.getItem(MODO_ADMIN ? 'admin_clave' : 'coord_clave') || ''; } catch { return ''; } };   // [NUEVO · roles coord / admin]
   // [NUEVO · sonido] Doble bip corto, tipo handy: onda cuadrada, 1000 Hz y 800 Hz, 90 ms cada uno. El navegador
@@ -2083,12 +2200,13 @@
     if (!MODO_COORD || !FLOW_URL || db || document.hidden || !claveGuardada()) return;
     try {
       const res = await pedirCentral({ desde: vistoHasta, solo: 'conteo' });
-      const n = res.nuevos || 0, subio = n > nuevosPrev;
+      const n = res.nuevos || 0, subio = n > servidorPrev; servidorPrev = n;   // [CORREGIDO · vistos por registro]
       actualizarSolicitudes(res.solicitudes, res.pedidos);     // [NUEVO · usuarios / catálogo]
-      pintarNoVistos(n); mostrarAlerta(res.alerta);
+      if (subio && $('#view-list').classList.contains('hidden')) await cargarCentral();   // la lista no está a la vista: se recarga igual para contar por registro
+      pintarNoVistos(contarPendientes()); mostrarAlerta(res.alerta);
       // [NUEVO · rapidez] si entró algo y la lista está a la vista, se recarga sola con las etiquetas "Nuevo",
       // salvo que haya una respuesta a medio escribir (no se pisa lo que el coordinador está tecleando)
-      if (subio && !$('#view-list').classList.contains('hidden') && !document.querySelector('.resp-box:not(.hidden)')) await cargarCentral();
+      if (subio && !$('#view-list').classList.contains('hidden') && !hayBorrador()) await cargarCentral();   // [NUEVO · adjuntos]
       marcarConexion(true);                                      // [NUEVO · perfil]
     } catch { marcarConexion(false); }
   }
@@ -2097,12 +2215,9 @@
     if (MODO_COORD){
       vistoHasta = registros.reduce((m, r) => Math.max(m, r.createdAt || 0, r.actualizadoEn || 0, ...mensajesDe(r).filter(x => x.de !== 'coord').map(x => x.fecha), ...mensajesDe(r).filter(x => x.reacDe === 'campo').map(x => x.reacFecha || 0)), vistoHasta);   // [CORREGIDO · reacciones]
       try { localStorage.setItem('coord_visto', String(vistoHasta)); } catch {}
-    } else {
-      let hubo = false;
-      registros.forEach(r => { const mx = mensajesDe(r).reduce((m, x) => Math.max(m, x.fecha, x.reacFecha || 0), 0); if (mx > (r.vistoMsgHasta || 0)){ r.vistoMsgHasta = mx; hubo = true; } });   // [CORREGIDO · reacciones]
-      if (hubo) persistirLocal();
     }
-    nuevosPrev = 0; pintarNoVistos(0);
+    // [CORREGIDO · vistos por registro] campo: nada se marca acá; cada tarjeta se marca al abrirla
+    servidorPrev = 0; pintarNoVistos(contarPendientes());
   }
   // novedades primero; después, solicitudes de usuarios (coordinador); si no, a la lista
   $('#bell').addEventListener('click', () => {
@@ -2124,6 +2239,13 @@
     if (cancelar){ const h = cancelar.closest('.hilo'); h.querySelector('.resp-box').classList.add('hidden'); h.querySelector('.responder').classList.remove('hidden'); return; }
     const enviar = e.target.closest('button.enviar-msg');
     if (enviar){ enviarMensaje(enviar); return; }
+    // [NUEVO · adjuntos] quitar un adjunto pendiente; ver una foto grande; descargar un archivo
+    const quitar = e.target.closest('.adj-chip .quitar');
+    if (quitar){ const art = quitar.closest('.rec'), lista = adjPend.get(art.dataset.id) || []; lista.splice(+quitar.dataset.i, 1); if (lista.length) adjPend.set(art.dataset.id, lista); else adjPend.delete(art.dataset.id); art.querySelector('.adj-prev').innerHTML = adjPrevHTML(art.dataset.id); return; }
+    const verImg = e.target.closest('button.adj-img');
+    if (verImg){ const img = verImg.querySelector('img'); if (img && img.src && !img.dataset.src){ $('#lb img').src = img.src; $('#lb').dataset.nombre = verImg.dataset.nombre || 'adjunto.jpg'; $('#lb').classList.add('open'); } return; }
+    const verFile = e.target.closest('button.adj-file');
+    if (verFile){ (async () => { try { verFile.disabled = true; const d = await obtenerAdjunto(verFile.dataset.rid, verFile.dataset.id); if (d) descargarDataUrl(d, verFile.dataset.nombre); else toast('No se pudo bajar el archivo', 'err'); } catch (err){ toast('No se pudo bajar el archivo: ' + err.message, 'err'); } finally { verFile.disabled = false; } })(); return; }
     // [NUEVO · reacciones] la carita abre el selector; un ícono del selector o un chip existente agrega/quita la reacción
     const add = e.target.closest('button.reac.add');
     if (add){ const p = add.closest('.msg').querySelector('.picker'); if (p) p.classList.toggle('hidden'); return; }
@@ -2161,6 +2283,7 @@
           setTimeout(() => art.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
         }
         abiertos.add(art.dataset.id); bajarHilos(art);
+        marcarVistoRegistro(art.dataset.id);                   // [CORREGIDO · vistos por registro] recién ahora desaparece la etiqueta
       } else abiertos.delete(art.dataset.id);
     }
   });
