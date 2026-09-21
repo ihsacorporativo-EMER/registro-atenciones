@@ -662,7 +662,7 @@
     .yo-av{display:grid;width:36px;height:36px;font-size:13px;background:rgba(255,255,255,.2)}
     .yo-av img{width:100%;height:100%;object-fit:cover;display:block}
     .perfil-btn .estado-dot{width:8px;height:8px;margin-left:-14px;margin-top:22px;box-shadow:0 0 0 2px var(--brand-deep)}
-    main{margin:0 0 0 var(--sb);max-width:none;padding:24px 84px 40px 28px}
+    main,main.wide{margin:0 0 0 var(--sb);max-width:none;padding:24px 84px 40px 28px}   /* [CORREGIDO · app PC] main.wide tenía tope de 1100 px y dejaba el Tablero angosto en monitores grandes */
     /* [CORREGIDO · app PC] sin tope angosto: en pantallas grandes el contenido crece hasta 1600 px */
     main > div{max-width:1600px}
     #view-form,#view-login{max-width:1120px}
@@ -1229,7 +1229,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 r';
+  const VERSION = '2026-09-21 s';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1254,6 +1254,7 @@
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
     { v: '2026-09-21 o', para: 'todos', texto: 'En computadora y tablet la app tiene barra lateral: el logo arriba, las secciones con íconos, tu cuenta abajo y la campana arriba a la derecha. En tablet la barra se achica a solo íconos.' },
+    { v: '2026-09-21 s', para: 'todos', texto: 'Las reacciones a los mensajes aparecen al instante al tocarlas; el envío al servidor sigue por detrás. Y en monitores grandes el Tablero ya ocupa todo el ancho.' },
     { v: '2026-09-21 r', para: 'coord', texto: 'En computadora, Usuarios se ve en dos columnas, el Tablero queda compacto con el paquete y los mails al costado, Catálogo tiene las solicitudes a la izquierda y las listas a la derecha, y Configuración va en una sola fila.' },
     { v: '2026-09-21 r', para: 'todos', texto: 'En la barra lateral de computadora, tu cuenta muestra la foto de perfil (o tus iniciales), el nombre y el rol.' },
     { v: '2026-09-21 q', para: 'todos', texto: 'En computadora el contenido aprovecha las pantallas grandes: los registros se ven en dos columnas y el tablero ocupa todo el ancho. En la barra lateral el texto va al lado del logo.' },
@@ -1844,19 +1845,36 @@
   // [NUEVO · mensajes] Envía un mensaje al hilo (coordinador con clave, campo sin clave). Al confirmar, el cuadro se
   // cierra y el mensaje queda como burbuja; solo se vuelve a dibujar el hilo, así la tarjeta no se pliega.
   // [NUEVO · reacciones] manda la reacción y vuelve a dibujar el hilo con lo que devuelve el script
+  // vuelve a dibujar el hilo de una tarjeta sin perder el cuadro de respuesta abierto ni lo que se estaba escribiendo
+  function redibujarHilo(art, reg){
+    const abierto = !art.querySelector('.resp-box')?.classList.contains('hidden'), texto = art.querySelector('.resp-txt')?.value || '';
+    art.querySelector('.hilo').outerHTML = hiloHTML(reg); bajarHilos(art);
+    if (abierto){ art.querySelector('.responder')?.classList.add('hidden'); art.querySelector('.resp-box')?.classList.remove('hidden'); art.querySelector('.resp-txt').value = texto; }
+  }
+  // [CORREGIDO · reacciones] al instante: la reacción se aplica y se dibuja en el celular antes de mandarla al script
+  // (que tarda unos segundos). Si el script la rechaza, se deshace y avisa.
   async function reaccionar(art, fecha, icono){
-    const id = art.dataset.id;
+    const id = art.dataset.id; const reg = registros.find(x => x.id === id); if (!reg) return;
     const body = { accion: 'reaccionar', de: YO, id, fecha: Number(fecha), icono, token: sesion?.token, llave: MODO_COORD ? undefined : llaveDispositivo };
     if (MODO_COORD){ const cred = credCoord(); if (!hayCred(cred)) return; Object.assign(body, cred); }
+    const antes = JSON.stringify(mensajesDe(reg));
+    const ms = mensajesDe(reg).map(m => ({ ...m })); const m = ms.find(x => Number(x.fecha) === Number(fecha) && x.de !== 'sistema');
+    if (m){
+      const reac = { ...(m.reac || {}) }; const lista = (reac[icono] || []).slice(); const i = lista.indexOf(YO);
+      if (i >= 0) lista.splice(i, 1); else lista.push(YO);
+      if (lista.length) reac[icono] = lista; else delete reac[icono];
+      if (Object.keys(reac).length) m.reac = reac; else delete m.reac;
+      reg.mensajes = ms; redibujarHilo(art, reg);
+    }
     try {
       const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify(body) });
       const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script');
-      const reg = registros.find(x => x.id === id); if (!reg) return;
       reg.mensajes = res.mensajes; if (!MODO_COORD) persistirLocal();
-      const abierto = !art.querySelector('.resp-box')?.classList.contains('hidden'), texto = art.querySelector('.resp-txt')?.value || '';
-      art.querySelector('.hilo').outerHTML = hiloHTML(reg); bajarHilos(art);
-      if (abierto){ art.querySelector('.responder')?.classList.add('hidden'); art.querySelector('.resp-box')?.classList.remove('hidden'); art.querySelector('.resp-txt').value = texto; }
-    } catch (e){ toast('No se pudo reaccionar: ' + e.message, 'err'); }
+      if (JSON.stringify(res.mensajes) !== JSON.stringify(ms)) redibujarHilo(art, reg);   // solo si el script devolvió algo distinto
+    } catch (e){
+      reg.mensajes = JSON.parse(antes); redibujarHilo(art, reg);
+      toast('No se pudo reaccionar: ' + e.message, 'err');
+    }
   }
   async function enviarMensaje(btn){
     const art = btn.closest('.rec'); const id = art.dataset.id;
