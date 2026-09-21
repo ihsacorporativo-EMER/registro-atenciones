@@ -618,6 +618,84 @@
 
   /* [CORREGIDO] Había dos reglas de prefers-reduced-motion; la segunda repetía lo que ya hacía la primera */
   @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+  .tabs-sec{display:none}
+  .tabs button svg{display:none}
+  /* ===== [NUEVO · app PC] PC y tablet (desde 641 px): barra lateral azul con logo, navegación vertical con íconos, grupo
+     "Administración" y la cuenta abajo. La campana queda fija arriba a la derecha del contenido. Nada de esto toca el
+     celular (≤640 px), que sigue con la barra de abajo. ===== */
+  @media (min-width:641px){
+    :root{--sb:232px}
+    header{position:fixed;left:0;top:0;bottom:0;width:var(--sb);padding:18px 12px 14px;display:flex;flex-direction:column;gap:8px;overflow:auto;z-index:7;border-radius:0}
+    header::before{display:none}
+    /* la marca deja de ser contenedor: logo, título, navegación y cuenta pasan a ser hijos directos de la barra, así la
+       cuenta se puede mandar al fondo con margin-top:auto */
+    .brand{display:contents}
+    .mark{margin:0 6px;align-self:flex-start}
+    .brand .titulo{min-width:0;padding:0 6px}
+    .tabs{order:1}
+    .yo{order:2}
+    .brand b{font-size:13px;line-height:1.2}
+    .brand .subtitulo{font-size:11px;line-height:1.2;opacity:.85}
+    .mark{padding:4px 7px}
+    .mark img{height:26px !important}
+    .bell{position:fixed;top:16px;right:24px;margin:0;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);order:0}
+    .bell .badge{top:-5px;right:-5px}
+    .tabs{max-width:none;margin:12px 0 0;flex-direction:column;gap:4px;background:none;padding:0;border-radius:0;flex:none}
+    .tabs button{display:flex;align-items:center;gap:12px;justify-content:flex-start;height:44px;padding:0 12px;border-radius:10px;font-size:14px;color:#e3eaff;text-align:left;transform:none}
+    .tabs button svg{display:block;width:20px;height:20px;flex:none}
+    .tabs button[aria-selected="true"]{background:#fff;color:var(--brand);box-shadow:none}
+    .tabs button > span{margin-left:auto;font-size:12px;font-weight:800}
+    .tabs button .tabdot{margin-left:auto;width:8px;height:8px}
+    .tabs button span:empty{display:none}
+    .tabs button.hidden{display:none}
+    .tabs-sec{padding:14px 12px 4px;font-size:11px;font-weight:800;color:#c3d2f5;letter-spacing:.6px;text-transform:uppercase}
+    .tabs:has(button[data-tab="users"]:not(.hidden)) .tabs-sec{display:block}
+    .yo{margin:auto 0 0;padding:10px;border-radius:12px;background:rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;width:100%}
+    .bell:not(.hidden) + .yo{margin-left:0}
+    .brand .tag{margin-left:0;font-size:10px;padding:2px 8px}
+    .perfil-btn{max-width:100%;width:100%;justify-content:flex-start;background:none;padding:0 2px}
+    .perfil-btn .chev{margin-left:auto}
+    main{margin:0 0 0 var(--sb);max-width:none;padding:24px 84px 40px 28px}
+    main > div{max-width:760px}
+    main.wide > div{max-width:1120px}
+    main h1{margin-top:0}
+    .pie{margin-left:var(--sb)}
+    body.cargando header{visibility:hidden}
+    /* formulario en dos columnas: datos a la izquierda; fotos, Guardar y avisos a la derecha */
+    #view-form{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+    main:not(.wide) > #view-form{max-width:1120px}
+    #view-form > h1,#view-form > .lead,#view-form > .notice,#view-form > #sesion-bar,#view-form > .foot{grid-column:1/-1}
+    #view-form > .lead{margin-bottom:4px}
+    #view-form > section.card:first-of-type{grid-column:1;grid-row:span 3}
+    #view-form > section.card:nth-of-type(2),#view-form > .sticky{grid-column:2}
+    #view-form > .sticky{margin-top:0;padding:16px;border-radius:14px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+    #view-form > .sticky .primary{margin-top:0}
+    #view-form > .sticky .primary + .primary{margin-top:8px}
+  }
+  /* tablet (641–1023 px): la barra lateral queda solo con íconos */
+  @media (min-width:641px) and (max-width:1023px){
+    :root{--sb:76px}
+    header{padding:14px 10px 12px}
+    .mark{margin:0 auto}
+    .brand .titulo{display:none}
+    .mark{padding:3px 5px}
+    .mark img{height:22px !important}
+    .tabs button{justify-content:center;padding:0;gap:0;font-size:0}
+    .tabs button svg{width:22px;height:22px}
+    .tabs button > span{display:none}
+    .tabs button .tabdot{display:none}
+    .tabs button[data-tab="list"] .tabdot.on{display:block;position:absolute;top:8px;right:10px;margin:0}
+    .tabs button{position:relative}
+    .tabs-sec{display:none !important}
+    .yo{padding:6px;align-items:center}
+    .brand .tag{display:none}
+    .perfil-btn{justify-content:center;padding:0}
+    .perfil-btn #perfil-nombre,.perfil-btn .chev{display:none}
+    .estado-dot{width:12px;height:12px}
+    main{padding:24px 84px 40px 20px}
+    #view-form{grid-template-columns:minmax(0,1fr)}
+    #view-form > section.card:first-of-type,#view-form > section.card:nth-of-type(2),#view-form > .sticky{grid-column:1;grid-row:auto}
+  }
 </style>
 </head>
 <body class="en-form cargando">
@@ -648,6 +726,7 @@
     <button role="tab" aria-selected="true" data-tab="form">Nuevo registro</button>
     <button role="tab" aria-selected="false" data-tab="list">Registros <span id="count"></span><span class="tabdot" id="tabdot"></span></button>
     <button role="tab" aria-selected="false" data-tab="board">Tablero</button>
+    <div class="tabs-sec">Administración</div><!-- [NUEVO · app PC] título del grupo; se ve en la barra lateral cuando hay pestañas de administración -->
     <button role="tab" aria-selected="false" data-tab="users" class="hidden">Usuarios <span id="ucount"></span></button><!-- [NUEVO · usuarios] coordinador y administrador -->
     <button role="tab" aria-selected="false" data-tab="cat" class="hidden">Catálogo <span id="catcount"></span></button><!-- [NUEVO · catálogo] coordinador y administrador -->
     <button role="tab" aria-selected="false" data-tab="config" class="hidden">Configuración</button><!-- [NUEVO · admin] solo administrador -->
@@ -949,7 +1028,7 @@
   <button type="button" data-go="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>Registros<span class="bdot" id="bnav-dot"></span></button>
   <button type="button" data-go="form"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>Nuevo</button>
   <button type="button" data-go="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>Tablero</button>
-  <button type="button" data-go="cat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 10h16"/><path d="M9 5v14"/></svg>Catálogo<span class="bdot" id="bnav-catdot"></span></button>
+<!-- [CORREGIDO · app celular] Catálogo ya no va en la barra: está dentro de "Más" (con Usuarios y Configuración) -->
   <button type="button" data-go="mas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>Más<span class="bdot" id="bnav-masdot"></span></button>
 </nav>
 <!-- [NUEVO · pie] -->
@@ -1112,7 +1191,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 n';
+  const VERSION = '2026-09-21 p';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1136,6 +1215,9 @@
     { v: '2026-09-20 s', para: 'todos', texto: 'Las preguntas de confirmación (cerrar sesión, quitar, eliminar) ahora son un cartel con el estilo de la app, en vez del aviso del navegador.' },
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
+    { v: '2026-09-21 o', para: 'todos', texto: 'En computadora y tablet la app tiene barra lateral: el logo arriba, las secciones con íconos, tu cuenta abajo y la campana arriba a la derecha. En tablet la barra se achica a solo íconos.' },
+    { v: '2026-09-21 p', para: 'coord', texto: 'En celular, Catálogo sale de la barra de abajo y queda solo dentro de "Más", junto a Usuarios y Configuración. El punto naranja de pedidos pendientes pasa a "Más".' },
+    { v: '2026-09-21 o', para: 'coord', texto: 'En computadora, Usuarios, Catálogo y Configuración quedan agrupados como "Administración" en la barra lateral, con el contador de pendientes al lado.' },
     { v: '2026-09-21 n', para: 'todos', texto: 'Al desplegar una tarjeta, el detalle se ve con otro fondo para distinguirlo. El cuadro para responder tiene botones con íconos, y a cada mensaje se le puede reaccionar con 👍 ✅ 👀 ❗ tocando la carita.' },
     { v: '2026-09-21 m', para: 'todos', texto: 'En las tarjetas, el traslado se indica con un ícono verde de vehículo con flecha (gris si no traslada), y ya no aparece la etiqueta "Con mensajes": el globo con el número ya lo dice.' },
     { v: '2026-09-21 l', para: 'todos', texto: 'Tus registros se ven compactos: tocá una tarjeta para desplegar el detalle, las fotos, Editar y la conversación; tocá de nuevo para plegarla. Una etiqueta avisa si hay respuesta nueva o si está pendiente de envío.' },
@@ -2752,11 +2834,23 @@
   // ---- [NUEVO · app celular] barra de navegación abajo y pantalla "Más" ----
   // La barra refleja las pestañas de arriba: un botón se ve si la pestaña del mismo nombre está visible; "Más" siempre.
   // Cuando la pestaña activa es Usuarios o Configuración (que no tienen botón), queda marcado "Más".
+  // [NUEVO · app PC] las pestañas de arriba llevan ícono (se ven en la barra lateral de PC y tablet; en celular están ocultas)
+  (function(){
+    const ic = {
+      form: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>',
+      list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>',
+      board: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>',
+      users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><path d="M16 5a3.5 3.5 0 0 1 0 7"/><path d="M22 20a6 6 0 0 0-4-5.6"/></svg>',
+      cat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 10h16"/><path d="M9 5v14"/></svg>',
+      config: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h2"/><path d="M10 17h10"/><circle cx="8" cy="17" r="2"/></svg>',
+    };
+    document.querySelectorAll('.tabs button[data-tab]').forEach(b => { if (ic[b.dataset.tab]) b.insertAdjacentHTML('afterbegin', ic[b.dataset.tab]); });
+  })();
   function sincronizarBnav(){
     const tabs = $('.tabs'); const bnav = $('#bnav');
     bnav.classList.toggle('hidden', tabs.classList.contains('hidden'));
     const activa = (document.querySelector('.tabs button[aria-selected="true"]') || {}).dataset?.tab || '';
-    const enMas = activa === 'mas' || activa === 'users' || activa === 'config';
+    const enMas = activa === 'mas' || activa === 'users' || activa === 'config' || activa === 'cat';   // [CORREGIDO · app celular] Catálogo vive en Más
     bnav.querySelectorAll('button[data-go]').forEach(b => {
       const go = b.dataset.go;
       const t = document.querySelector('.tabs button[data-tab="' + go + '"]');
@@ -2764,8 +2858,7 @@
       b.setAttribute('aria-selected', go === 'mas' ? enMas : activa === go);
     });
     $('#bnav-dot').classList.toggle('on', $('#tabdot').classList.contains('on'));
-    $('#bnav-catdot').classList.toggle('on', !!$('#catcount').textContent.trim());
-    $('#bnav-masdot').classList.toggle('on', !!$('#ucount').textContent.trim());
+    $('#bnav-masdot').classList.toggle('on', !!$('#ucount').textContent.trim() || !!$('#catcount').textContent.trim());   // [CORREGIDO · app celular] usuarios o pedidos pendientes
   }
   try {
     const obs = new MutationObserver(sincronizarBnav);
@@ -2854,7 +2947,9 @@
     $('#my-coord').classList.toggle('hidden', !(conSesion && esRolCoord(sm.rol) && !MODO_COORD));
     $('#my-cargar').classList.toggle('hidden', !MODO_COORD);
     $('#my-salir-txt').textContent = conSesion ? 'Cerrar sesión' : 'Salir';
-    menu.style.top = (r.bottom + 8) + 'px'; menu.style.right = Math.max(12, window.innerWidth - r.right) + 'px';
+    // [NUEVO · app PC] en la barra lateral el botón está abajo a la izquierda: el menú se abre hacia arriba, alineado a la izquierda
+    if (esCelular()){ menu.style.top = (r.bottom + 8) + 'px'; menu.style.bottom = ''; menu.style.right = Math.max(12, window.innerWidth - r.right) + 'px'; menu.style.left = ''; }
+    else { menu.style.top = ''; menu.style.bottom = (window.innerHeight - r.top + 8) + 'px'; menu.style.left = Math.max(12, r.left) + 'px'; menu.style.right = ''; }
     menu.classList.remove('hidden'); b.setAttribute('aria-expanded', 'true');
   }
   const cerrarMenu = () => { menu.classList.add('hidden'); $('#perfil-btn').setAttribute('aria-expanded', 'false'); };
