@@ -316,6 +316,8 @@
   .msg.campo{background:color-mix(in srgb,var(--accent) 10%,var(--card))}
   .msg.mio{align-self:flex-end;border-top-left-radius:12px;border-top-right-radius:4px}
   .msg.nuevo{box-shadow:inset 0 0 0 1.5px var(--accent)}
+  .msg.enviando{opacity:.7}   /* [NUEVO · rapidez] todavía no confirmado por el script */
+  .msg .quien .env{color:var(--accent-deep);font-weight:700}
   .msg .quien{font-size:12.5px;font-weight:700;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
   .msg .quien small{color:var(--muted);font-weight:500}
   .msg p{margin:3px 0 0;white-space:pre-wrap}
@@ -1244,7 +1246,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 u';
+  const VERSION = '2026-09-21 v';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1269,6 +1271,7 @@
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
     { v: '2026-09-21 o', para: 'todos', texto: 'En computadora y tablet la app tiene barra lateral: el logo arriba, las secciones con íconos, tu cuenta abajo y la campana arriba a la derecha. En tablet la barra se achica a solo íconos.' },
+    { v: '2026-09-21 v', para: 'todos', texto: 'Más rápido: el mensaje aparece en el momento de tocar Enviar (con "enviando…" hasta que confirma), y mientras usás la app consulta novedades cada 5 segundos en vez de 15.' },
     { v: '2026-09-21 u', para: 'todos', texto: 'Pie de página más simple: el crédito de desarrollo, la versión y "Uso interno".' },
     { v: '2026-09-21 u', para: 'coord', texto: 'En la barra lateral, si entraste con la clave, la cuenta dice "Acceso con clave" y el menú ofrece "Entrar con mi usuario" para que aparezcan tu nombre y tu foto.' },
     { v: '2026-09-21 s', para: 'todos', texto: 'Las reacciones a los mensajes aparecen al instante al tocarlas; el envío al servidor sigue por detrás. Y en monitores grandes el Tablero ya ocupa todo el ancho.' },
@@ -1741,8 +1744,8 @@
     const items = ms.map(m => {
       if (m.de === 'sistema') return `<div class="msg sistema">${esc(m.texto)} · ${fmtFechaHora(m.fecha)}</div>`;
       const nuevo = esAjeno(m) && m.fecha > desde; return `
-        <div class="msg ${m.de} ${m.de === YO ? 'mio' : ''} ${nuevo ? 'nuevo' : ''}">
-          <div class="quien">${esc(m.autor || nombreDe(m.de))}<small>${fmtFechaHora(m.fecha)}</small>${nuevo ? '<span class="pill nuevo">Nuevo</span>' : ''}</div>
+        <div class="msg ${m.de} ${m.de === YO ? 'mio' : ''} ${nuevo ? 'nuevo' : ''} ${m.enviando ? 'enviando' : ''}">
+          <div class="quien">${esc(m.autor || nombreDe(m.de))}<small>${fmtFechaHora(m.fecha)}</small>${nuevo ? '<span class="pill nuevo">Nuevo</span>' : ''}${m.enviando ? '<small class="env">enviando…</small>' : ''}</div>
           <p>${esc(m.texto)}</p>
           ${reaccionesHTML(m, puede)}
         </div>`; }).join('');
@@ -1863,6 +1866,15 @@
   // [NUEVO · mensajes] Envía un mensaje al hilo (coordinador con clave, campo sin clave). Al confirmar, el cuadro se
   // cierra y el mensaje queda como burbuja; solo se vuelve a dibujar el hilo, así la tarjeta no se pliega.
   // [NUEVO · reacciones] manda la reacción y vuelve a dibujar el hilo con lo que devuelve el script
+  // [NUEVO · rapidez] Sondeo adaptativo: con la pantalla a la vista y actividad en los últimos 2 minutos se consulta cada
+  // 5 s; en reposo, cada 15 s. Cualquier toque o tecla cuenta como actividad, y enviar algo también.
+  const enviandoIds = new Set();                                 // registros con un mensaje en camino
+  let ultimaActividad = Date.now();
+  const marcarActividad = () => { ultimaActividad = Date.now(); };
+  document.addEventListener('pointerdown', marcarActividad, { passive: true });
+  document.addEventListener('keydown', marcarActividad);
+  const periodoSondeo = () => (!document.hidden && Date.now() - ultimaActividad < 120000) ? 5000 : 15000;
+  function sondeoAdaptativo(fn){ (async function ciclo(){ try { await fn(); } catch {} setTimeout(ciclo, periodoSondeo()); })(); }
   // vuelve a dibujar el hilo de una tarjeta sin perder el cuadro de respuesta abierto ni lo que se estaba escribiendo
   function redibujarHilo(art, reg){
     const abierto = !art.querySelector('.resp-box')?.classList.contains('hidden'), texto = art.querySelector('.resp-txt')?.value || '';
@@ -1875,6 +1887,7 @@
     const id = art.dataset.id; const reg = registros.find(x => x.id === id); if (!reg) return;
     const body = { accion: 'reaccionar', de: YO, id, fecha: Number(fecha), icono, token: sesion?.token, llave: MODO_COORD ? undefined : llaveDispositivo };
     if (MODO_COORD){ const cred = credCoord(); if (!hayCred(cred)) return; Object.assign(body, cred); }
+    marcarActividad();
     const antes = JSON.stringify(mensajesDe(reg));
     const ms = mensajesDe(reg).map(m => ({ ...m })); const m = ms.find(x => Number(x.fecha) === Number(fecha) && x.de !== 'sistema');
     if (m){
@@ -1900,19 +1913,27 @@
     if (!texto){ toast('Escribí el mensaje primero', 'err'); return; }
     const body = { accion: 'mensaje', de: YO, id, texto, token: sesion?.token, llave: MODO_COORD ? undefined : llaveDispositivo };   // [NUEVO · usuarios] firma el mensaje con nombre y rol · [NUEVO · seguridad] llave
     if (MODO_COORD){ const cred = credCoord(); if (!hayCred(cred)) return; Object.assign(body, cred); }   // [NUEVO · roles coord]
-    btn.disabled = true; btn.innerHTML = 'Enviando…';
+    // [NUEVO · rapidez] la burbuja aparece ya, marcada "enviando…"; el cuadro se cierra; el script confirma por detrás.
+    // Mientras tanto el sondeo no pisa este hilo. Si falla, la burbuja se quita y el texto vuelve al cuadro.
+    const reg = registros.find(x => x.id === id); if (!reg) return;
+    const antes = JSON.stringify(mensajesDe(reg));
+    const autor = sesion && sesion.token ? `${sesion.nombre} ${sesion.apellido} · ${sesion.rol}` : '';
+    const tmp = { de: YO, texto, fecha: Date.now(), enviando: true, ...(autor ? { autor } : {}) };
+    reg.mensajes = [...mensajesDe(reg), tmp]; enviandoIds.add(id); marcarActividad();
+    art.querySelector('.hilo').outerHTML = hiloHTML(reg); bajarHilos(art);
     try {
       const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify(body) });
       const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script');
-      const reg = registros.find(x => x.id === id);
-      if (reg){
-        reg.mensajes = res.mensajes;
-        if (!MODO_COORD){ reg.vistoMsgHasta = res.mensajes.reduce((m, x) => Math.max(m, x.fecha), 0); persistirLocal(); }
-        art.querySelector('.hilo').outerHTML = hiloHTML(reg); bajarHilos(art);
-        if (MODO_COORD && !art.querySelector('.top .pill')) art.querySelector('.top b').insertAdjacentHTML('beforeend', ' <span class="pill resp">Con mensajes</span>');
-      }
+      reg.mensajes = res.mensajes;
+      if (!MODO_COORD){ reg.vistoMsgHasta = res.mensajes.reduce((m, x) => Math.max(m, x.fecha), 0); persistirLocal(); }
+      enviandoIds.delete(id);
+      if (art.isConnected) redibujarHilo(art, reg);
       toast(MODO_COORD ? 'Devolución enviada. La verá en su celular.' : 'Mensaje enviado a coordinación', 'ok');
-    } catch (e){ toast('No se pudo enviar: ' + e.message, 'err'); btn.disabled = false; btn.textContent = 'Enviar'; }
+    } catch (e){
+      enviandoIds.delete(id); reg.mensajes = JSON.parse(antes);
+      if (art.isConnected){ redibujarHilo(art, reg); art.querySelector('.responder')?.classList.add('hidden'); const box = art.querySelector('.resp-box'); if (box){ box.classList.remove('hidden'); box.querySelector('.resp-txt').value = texto; } }
+      toast('No se pudo enviar: ' + e.message, 'err');
+    }
   }
 
   // [NUEVO · mensajes] El celular de campo pregunta cada 60 s por los hilos de sus registros enviados
@@ -1939,6 +1960,7 @@
       marcarConexion(true);                                        // [NUEVO · perfil]
       let cambios = 0, antes = registros.reduce((n, r) => n + noVistosDe(r), 0);
       for (const r of registros){
+        if (enviandoIds.has(r.id)) continue;                        // [NUEVO · rapidez] hay un mensaje en camino: no pisar
         const d = res.devoluciones?.[r.id]; if (!d || !Array.isArray(d.mensajes)) continue;
         const loc = mensajesDe(r);
         const ultLoc = loc[loc.length - 1], ultSrv = d.mensajes[d.mensajes.length - 1];
@@ -2385,8 +2407,7 @@
     reintentarPendientes();                                            // [NUEVO · envío] lo que quedó sin señal
     window.addEventListener('online', () => reintentarPendientes());   // [NUEVO · envío] y al volver la conexión
     adoptarRegistros();                                                // [NUEVO · seguridad] una vez: ata los registros viejos a este celular/usuario
-    sondearMensajes();                                                 // [NUEVO · mensajes] al abrir, cada 15 s y al volver a la app
-    setInterval(sondearMensajes, 15000);
+    sondeoAdaptativo(sondearMensajes);                                 // [NUEVO · rapidez] al abrir, cada 5 s con actividad, 15 s en reposo
     document.addEventListener('visibilitychange', sondearMensajes);
     // [NUEVO · catálogo] listas del formulario (desde caché primero, después del script) y mis solicitudes
     pintarCatalogo(); cargarCatalogo(); setInterval(cargarCatalogo, 300000);
@@ -3157,7 +3178,7 @@
         $('#view-list .lead').textContent = 'Registros enviados por el equipo de campo. Tocá una tarjeta para ver el detalle; tocá la pestaña para actualizar.';
         $('.tabs button[data-tab="list"]').click();              // dispara cargarCentral (pide la clave la primera vez)
         listo();                                                 // [CORREGIDO · arranque]
-        setInterval(sondearNuevos, 15000);                       // [NUEVO · campana] cada 15 s (antes 30): registros y respuestas llegan antes
+        sondeoAdaptativo(sondearNuevos);                         // [NUEVO · rapidez] cada 5 s con actividad, 15 s en reposo
         document.addEventListener('visibilitychange', sondearNuevos);
         return;
       }
