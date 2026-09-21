@@ -995,7 +995,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 b';
+  const VERSION = '2026-09-21 c';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -2651,6 +2651,9 @@
   // ---- conexión con la base ----
   // [CORREGIDO · arranque] listo(): muestra la pantalla una vez decidido el modo. Con red de seguridad a los 6 s por si algo falla.
   const listo = () => document.body.classList.remove('cargando');
+  // [CORREGIDO · ícono] el navegador guarda el ícono por dirección (link genérico, ?modo=usuario, ?modo=coordinador…) y en
+  // pestañas viejas seguía mostrando el mundito. Volver a insertar el <link> al arrancar lo obliga a refrescarlo en cada link.
+  try { document.querySelectorAll('link[rel="icon"]').forEach(l => { const n = l.cloneNode(); l.remove(); document.head.appendChild(n); }); } catch {}
   setTimeout(listo, 6000);
   (async () => {
     try { db = await (window.claude?.use ? window.claude.use('db') : Promise.resolve(null)); } catch { db = null; }
