@@ -452,7 +452,7 @@
     .bnav .bdot{position:absolute;top:10px;left:calc(50% + 8px);width:8px;height:8px;border-radius:50%;background:var(--accent);display:none}
     .bnav .bdot.on{display:block}
     main{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
-    body.en-form main{padding-bottom:calc(160px + env(safe-area-inset-bottom))}
+    body.en-form main{padding-bottom:calc(84px + env(safe-area-inset-bottom))}   /* [CORREGIDO · app celular] solo la barra */
     .pie{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
     /* [NUEVO · acordeón] pestañas plegadas: se ve solo la actual con una flecha; al tocarla se despliegan las demás */
     .tabs{flex-direction:column;gap:0;padding:0;overflow:hidden}
@@ -470,10 +470,8 @@
     main{padding:14px 12px calc(96px + env(safe-area-inset-bottom))}
     h1{font-size:23px}
     section.card{border-radius:14px;padding:16px 14px 18px}
-    .sticky{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));padding:10px 12px 10px;   /* [NUEVO · app celular] encima de la barra */
-      background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-      border-top:1px solid var(--line);z-index:5}
-    .sticky .primary{margin-top:0}
+    /* [CORREGIDO · app celular] "Guardar registro" ya no flota sobre el scroll: queda al final del formulario, como en escritorio */
+    .sticky{position:static;padding:0;margin-top:14px}
     .foot{display:none}
   }
 
@@ -526,7 +524,7 @@
     tbody tr:nth-child(even){background:rgba(11,61,145,.03)} tbody tr:hover{background:rgba(242,101,34,.08)}
     .field input:not(:placeholder-shown),.field textarea:not(:placeholder-shown){background:var(--field)}
     .photo-actions label{background:rgba(11,61,145,.06)} .notice{background:rgba(242,101,34,.1)}
-    @media (max-width:640px){.sticky{background:var(--bg)}}
+    @media (max-width:640px){.sticky{background:transparent}}
   }
 
   /* ===== Estilo y animaciones ===== */
@@ -543,7 +541,7 @@
   /* [NUEVO · pie] firma en todas las vistas; en celular deja lugar a la barra fija de Guardar */
   .pie{text-align:center;font-size:12.5px;color:var(--muted);padding:18px 16px calc(18px + env(safe-area-inset-bottom));opacity:.9}
   .pie b{font-weight:700}
-  @media (max-width:640px){body.en-form .pie{padding-bottom:calc(170px + env(safe-area-inset-bottom))}}   /* [NUEVO · app celular] barra + Guardar */
+  @media (max-width:640px){body.en-form .pie{padding-bottom:calc(84px + env(safe-area-inset-bottom))}}   /* [CORREGIDO · app celular] solo la barra */
   .tabs button{transition:color .2s,background .25s,transform .15s}
   .tabs button:active{transform:scale(.97)}
 
@@ -606,8 +604,8 @@
       <!-- [CORREGIDO · celular] en celular el título es "Grupo IHSA"; en pantallas grandes, "Emergencias" con subtítulo -->
       <!-- [CORREGIDO · cabecera] el logo ya dice Grupo IHSA: en pantalla grande "Servicios Corporativos / Registro de atenciones"; en celular solo "Registro de atenciones" -->
       <!-- [NUEVO · app celular] en celular se invierten: título "Registro de atenciones", subtítulo "Servicios Corporativos · rol" -->
-      <b><span class="solo-grande">Servicios Corporativos</span><span class="solo-chico">Registro de atenciones</span></b>
-      <span class="subtitulo"><span class="solo-grande">Registro de atenciones</span><span class="solo-chico">Servicios Corporativos<span id="sub-rol"></span></span></span>
+      <b>Servicios Corporativos</b><!-- [CORREGIDO · app celular] el mismo título en los dos tamaños -->
+      <span class="subtitulo"><span class="solo-grande">Registro de atenciones</span><span class="solo-chico" id="sub-rol"></span></span>
     </div>
     <!-- [NUEVO · campana] solo se muestra en modo coordinador -->
     <button class="bell hidden" id="bell" type="button" aria-label="Registros nuevos">
@@ -1088,7 +1086,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 j';
+  const VERSION = '2026-09-21 k';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1112,6 +1110,7 @@
     { v: '2026-09-20 s', para: 'todos', texto: 'Las preguntas de confirmación (cerrar sesión, quitar, eliminar) ahora son un cartel con el estilo de la app, en vez del aviso del navegador.' },
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
+    { v: '2026-09-21 k', para: 'todos', texto: 'En celular, "Guardar registro" va al final del formulario (ya no queda flotando sobre la pantalla) y la cabecera dice "Servicios Corporativos" con tu rol debajo.' },
     { v: '2026-09-21 j', para: 'todos', texto: 'Las tarjetas de registros muestran con íconos el móvil, el paciente, quién atendió, cuántas fotos y mensajes tiene y si traslada.' },
     { v: '2026-09-21 i', para: 'todos', texto: 'En celular la app tiene barra de navegación abajo (Registros, Nuevo, Más) y una cabecera más chica con tu rol. En "Más" están tu perfil, Mis solicitudes, Información adicional y Cerrar sesión.' },
     { v: '2026-09-21 i', para: 'coord', texto: 'En celular, coordinación tiene abajo Registros, Tablero, Catálogo y Más; en "Más" quedan Usuarios, Configuración y Cargar un registro.' },
@@ -2712,7 +2711,7 @@
   // subtítulo de celular: "Servicios Corporativos · Chofer" sigue a la etiqueta del rol
   function pintarSubRol(){
     const t = $('.brand .tag').textContent.trim().toLowerCase();
-    $('#sub-rol').textContent = t ? ' · ' + t.charAt(0).toUpperCase() + t.slice(1) : '';
+    $('#sub-rol').textContent = t ? t.charAt(0).toUpperCase() + t.slice(1) : '';   // [CORREGIDO · app celular] solo el rol: "Médico", "Administrador"
   }
   try { new MutationObserver(pintarSubRol).observe($('.brand .tag'), { childList: true, characterData: true, subtree: true }); } catch {}
   pintarSubRol();
