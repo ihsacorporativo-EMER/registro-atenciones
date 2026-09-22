@@ -1347,7 +1347,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-22 e';
+  const VERSION = '2026-09-22 f';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1372,6 +1372,7 @@
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
     { v: '2026-09-21 o', para: 'todos', texto: 'En computadora y tablet la app tiene barra lateral: el logo arriba, las secciones con íconos, tu cuenta abajo y la campana arriba a la derecha. En tablet la barra se achica a solo íconos.' },
+    { v: '2026-09-22 f', para: 'todos', texto: 'Se corrigió una lentitud general: la app consultaba novedades demasiado seguido y el servidor se saturaba. Ahora consulta cada 15 segundos (30 en reposo) y, si no hay nada nuevo, la consulta es casi instantánea.' },
     { v: '2026-09-22 c', para: 'todos', texto: 'En computadora, la barra lateral tiene un grupo "Mi cuenta" con Perfil, Mis solicitudes, Información adicional y los accesos para cargar o volver al panel. El nombre del sistema ya no se corta.' },
     { v: '2026-09-22 a', para: 'todos', texto: 'La campana abre un panel de notificaciones: registros con novedades, respuestas, pedidos y avisos de la app. Tocá uno y te lleva directo; también podés marcar todo como visto.' },
     { v: '2026-09-21 z', para: 'todos', texto: 'La conversación tiene una barra para escribir como en un chat, con clip para adjuntar fotos o PDF y botón de enviar. Los adjuntos se ven en el hilo: tocá una foto para agrandarla y descargarla, o un archivo para bajarlo.' },
@@ -1727,11 +1728,13 @@
     if ((MODO_ADMIN && sesionAdmin()) || (!MODO_ADMIN && sesionCoord())){ guardarSesion(null); toast('Tu sesión ya no es válida. Volvé a entrar.', 'err'); setTimeout(() => location.replace(location.pathname + '?modo=usuario'), 1500); }
     else { try { localStorage.removeItem(MODO_ADMIN ? 'admin_clave' : 'coord_clave'); } catch {} }   // la vuelve a pedir
   }
+  // [CORREGIDO · carga] tope de espera para cualquier pedido al script: si no responde en 25 s, se corta y se avisa
+  const fetchT = (u, opt, ms) => { const c = new AbortController(); const t = setTimeout(() => c.abort(), ms || 25000); return fetch(u, { ...(opt || {}), signal: c.signal }).finally(() => clearTimeout(t)); };
   async function pedirCentral(params){
     const cred = credCoord(); if (!hayCred(cred)) throw new Error('Sin clave');
     const u = new URL(FLOW_URL); Object.entries(cred).forEach(([k, v]) => u.searchParams.set(k, v));
     Object.entries(params || {}).forEach(([k,v]) => u.searchParams.set(k, v));
-    const res = await (await fetch(u)).json();
+    const res = await (await fetchT(u)).json();
     if (!res.ok){
       if (/clave|sesión/i.test(res.error || '')) credRechazada();
       throw new Error(res.error || 'Error del script');
@@ -2061,11 +2064,13 @@
   // [NUEVO · rapidez] Sondeo adaptativo: con la pantalla a la vista y actividad en los últimos 2 minutos se consulta cada
   // 5 s; en reposo, cada 15 s. Cualquier toque o tecla cuenta como actividad, y enviar algo también.
   const enviandoIds = new Set();                                 // registros con un mensaje en camino
+  let verServidor = '';                                          // [CORREGIDO · carga] última "versión" de datos que devolvió el script
   let ultimaActividad = Date.now();
   const marcarActividad = () => { ultimaActividad = Date.now(); };
   document.addEventListener('pointerdown', marcarActividad, { passive: true });
   document.addEventListener('keydown', marcarActividad);
-  const periodoSondeo = () => (!document.hidden && Date.now() - ultimaActividad < 120000) ? 5000 : 15000;
+  // [CORREGIDO · carga] cada 5 s con varios celulares saturaba el script (pedidos de 20-50 s). Ahora 15 s con actividad, 30 s en reposo.
+  const periodoSondeo = () => (!document.hidden && Date.now() - ultimaActividad < 120000) ? 15000 : 30000;
   function sondeoAdaptativo(fn){ (async function ciclo(){ try { await fn(); } catch {} setTimeout(ciclo, periodoSondeo()); })(); }
   // vuelve a dibujar el hilo de una tarjeta sin perder el cuadro de respuesta abierto ni lo que se estaba escribiendo
   function redibujarHilo(art, reg){
@@ -2156,10 +2161,12 @@
     const ids = registros.filter(r => r.enviado).map(r => r.id).slice(0, 200);
     if (!ids.length) return;
     try {
-      const u = new URL(FLOW_URL); u.searchParams.set('devoluciones', ids.join(','));
+      const u = new URL(FLOW_URL); u.searchParams.set('devoluciones', ids.join(',')); u.searchParams.set('ver', verServidor);   // [CORREGIDO · carga]
       if (sesion?.token) u.searchParams.set('token', sesion.token); if (llaveDispositivo) u.searchParams.set('llave', llaveDispositivo);   // [NUEVO · seguridad]
-      const res = await (await fetch(u)).json(); if (!res.ok) return;
+      const res = await (await fetchT(u)).json(); if (!res.ok) return;
       marcarConexion(true);                                        // [NUEVO · perfil]
+      if (res.sinCambios) return;                                  // [CORREGIDO · carga] nada nuevo: consulta barata
+      verServidor = res.ver || verServidor;
       let cambios = 0, antes = registros.reduce((n, r) => n + noVistosDe(r), 0);
       for (const r of registros){
         if (enviandoIds.has(r.id)) continue;                        // [NUEVO · rapidez] hay un mensaje en camino: no pisar
@@ -2259,7 +2266,10 @@
   async function sondearNuevos(){
     if (!MODO_COORD || !FLOW_URL || db || document.hidden || !claveGuardada()) return;
     try {
-      const res = await pedirCentral({ desde: vistoHasta, solo: 'conteo' });
+      const res = await pedirCentral({ desde: vistoHasta, solo: 'conteo', ver: verServidor });
+      marcarConexion(true);
+      if (res.sinCambios){ return; }                              // [CORREGIDO · carga] nada nuevo desde la última vez: consulta barata
+      verServidor = res.ver || verServidor;
       const n = res.nuevos || 0, subio = n > servidorPrev; servidorPrev = n;   // [CORREGIDO · vistos por registro]
       actualizarSolicitudes(res.solicitudes, res.pedidos);     // [NUEVO · usuarios / catálogo]
       if (subio && $('#view-list').classList.contains('hidden')) await cargarCentral();   // la lista no está a la vista: se recarga igual para contar por registro
