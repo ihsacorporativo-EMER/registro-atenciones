@@ -52,11 +52,11 @@
      fondos: botones, cabecera, burbujas propias); verdes y naranjas de las etiquetas, más claros para que se lean */
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]) :is(.link-btn,.rec button.link,.notice .link,.contacto a,.pager button,.kpi b,.pill.resp,.pill.rol,.photo-actions svg,.menu-yo .mi svg,.modal.confirmar .ico,.mas-item .ic,.adj-file,.hilo .responder){color:var(--brand-txt)}
-    :root:not([data-theme="light"]) :is(.pill.si,.solenv,.rec .fila .tras:not(.no),.mas-estado:not(.off)){color:#5fd39a}
+    :root:not([data-theme="light"]) :is(.pill.si,.solenv,.rec .fila .tras:not(.no),.mas-estado:not(.off),.estado-chip.on){color:#5fd39a}
     :root:not([data-theme="light"]) :is(.pill.pend,.pill.reset){color:#ffb38a}
   }
   :root[data-theme="dark"] :is(.link-btn,.rec button.link,.notice .link,.contacto a,.pager button,.kpi b,.pill.resp,.pill.rol,.photo-actions svg,.menu-yo .mi svg,.modal.confirmar .ico,.mas-item .ic,.adj-file,.hilo .responder){color:var(--brand-txt)}
-  :root[data-theme="dark"] :is(.pill.si,.solenv,.rec .fila .tras:not(.no),.mas-estado:not(.off)){color:#5fd39a}
+  :root[data-theme="dark"] :is(.pill.si,.solenv,.rec .fila .tras:not(.no),.mas-estado:not(.off),.estado-chip.on){color:#5fd39a}
   :root[data-theme="dark"] :is(.pill.pend,.pill.reset){color:#ffb38a}
 
   *{box-sizing:border-box}
@@ -502,6 +502,11 @@
   .pill.rol{background:color-mix(in srgb,var(--brand) 12%,var(--card));color:var(--brand)}
   .pill.reset{background:color-mix(in srgb,var(--accent) 15%,var(--card));color:var(--accent-deep)}
   .link-btn.peligro{color:var(--danger)}
+  /* [NUEVO · conectados] estado de cada persona: verde en línea, ámbar hace unos minutos, gris desconectado */
+  .estado-chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--muted);flex:none}
+  .estado-chip .estado-dot{box-shadow:none;background:#9aa3b5}
+  .estado-chip.on{color:var(--ok)} .estado-chip.on .estado-dot{background:#34d27b;box-shadow:0 0 0 3px rgba(52,210,123,.25)}
+  .estado-chip.hace{color:#b8731a} .estado-chip.hace .estado-dot{background:#f2a950}
   /* [NUEVO · confirmar] cartel de confirmación propio, reemplaza al confirm() del navegador. Por encima de los otros modales. */
   #nv-lista .nv-v{list-style:none;margin:10px 0 4px -18px;font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}   /* [CORREGIDO · novedades] */
   /* [NUEVO · campana] panel de notificaciones */
@@ -892,6 +897,7 @@
     <button role="tab" aria-selected="false" data-tab="board">Tablero</button>
     <div class="tabs-sec">Administración</div><!-- [NUEVO · app PC] título del grupo; se ve en la barra lateral cuando hay pestañas de administración -->
     <button role="tab" aria-selected="false" data-tab="users" class="hidden">Usuarios <span id="ucount"></span></button><!-- [NUEVO · usuarios] coordinador y administrador -->
+    <button role="tab" aria-selected="false" data-tab="online" class="hidden">Conectados <span id="onlinecount"></span></button><!-- [NUEVO · conectados] quién tiene la app abierta -->
     <button role="tab" aria-selected="false" data-tab="cat" class="hidden">Catálogo <span id="catcount"></span></button><!-- [NUEVO · catálogo] coordinador y administrador -->
     <button role="tab" aria-selected="false" data-tab="config" class="hidden">Configuración</button><!-- [NUEVO · admin] solo administrador -->
     <button role="tab" aria-selected="false" data-tab="mas" class="hidden">Más</button><!-- [NUEVO · app celular] la abre la barra de abajo; nunca se ve arriba -->
@@ -1089,6 +1095,14 @@
     <div id="ulist"></div>
   </div>
 
+  <!-- ===== [NUEVO · conectados] CONECTADOS (coordinador y administrador): quién tiene la app abierta ahora ===== -->
+  <div id="view-online" class="hidden">
+    <h1>Conectados</h1>
+    <p class="lead">Quién tiene la app abierta en este momento. Verde: con actividad en los últimos 2 minutos. Se actualiza cada 30 segundos.</p>
+    <div class="sync" id="sync-online" role="status"><span class="spin"></span><span></span></div>
+    <div id="online-lista"></div>
+  </div>
+
   <!-- ===== [NUEVO · catálogo] CATÁLOGO (coordinador y administrador) ===== -->
   <div id="view-cat" class="hidden">
     <h1>Catálogo</h1>
@@ -1133,6 +1147,7 @@
     <div class="usec hidden" id="mas-admin-t">Administración</div>
     <div class="mas-grupo hidden" id="mas-admin">
       <button class="mas-item" id="mas-users" type="button" data-go="users"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><path d="M16 5a3.5 3.5 0 0 1 0 7"/><path d="M22 20a6 6 0 0 0-4-5.6"/></svg><span class="lbl">Usuarios</span><span class="cnt" id="mas-ucount"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+      <button class="mas-item" id="mas-online" type="button" data-go="online"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="18" cy="7" r="3" fill="currentColor" stroke="none"/></svg><span class="lbl">Conectados</span><span class="cnt" id="mas-onlinecount"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button><!-- [NUEVO · conectados] -->
       <button class="mas-item" id="mas-cat" type="button" data-go="cat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 10h16"/><path d="M9 5v14"/></svg><span class="lbl">Catálogo</span><span class="cnt" id="mas-catcount"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
       <button class="mas-item hidden" id="mas-config" type="button" data-go="config" ><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h2"/><path d="M10 17h10"/><circle cx="8" cy="17" r="2"/></svg><span class="lbl">Configuración</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
     </div>
@@ -1388,7 +1403,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-22 j';
+  const VERSION = '2026-09-22 k';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1413,6 +1428,8 @@
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
     { v: '2026-09-21 o', para: 'todos', texto: 'En computadora y tablet la app tiene barra lateral: el logo arriba, las secciones con íconos, tu cuenta abajo y la campana arriba a la derecha. En tablet la barra se achica a solo íconos.' },
+    { v: '2026-09-22 k', para: 'coord', texto: 'Pestaña Conectados: quién tiene la app abierta en este momento, en verde, separando Coordinación del resto del personal. Se actualiza sola cada 30 segundos. En celular está dentro de "Más".' },
+    { v: '2026-09-22 k', para: 'todos', texto: 'Coordinación ahora puede ver quién tiene la app abierta. No cambia nada en el uso ni agrega consumo de datos.' },
     { v: '2026-09-22 j', para: 'todos', texto: 'Botón de luna y sol en la cabecera para elegir tema claro u oscuro. La elección queda guardada en tu dispositivo; si no elegís, la app sigue al sistema. En oscuro, los textos azules y las etiquetas se ven con más contraste.' },
     { v: '2026-09-22 i', para: 'todos', texto: 'Registros, Usuarios y Catálogo abren mucho más rápido: el servidor guarda en memoria las respuestas y solo vuelve a leer la planilla cuando algo cambió. Mientras carga o actualiza, cada pantalla lo muestra con un indicador giratorio.' },
     { v: '2026-09-22 i', para: 'coord', texto: 'Al abrir el panel se muestra al instante lo último guardado en el dispositivo, y Usuarios y Catálogo se precargan por detrás. Al tocar Salir o Cerrar sesión se borran las copias locales del panel.' },
@@ -1552,7 +1569,8 @@
     }
     document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x===b));
     const tab = b.dataset.tab;
-    ['form','list','board','users','cat','config','login','mas'].forEach(n => $('#view-'+n).classList.toggle('hidden', tab!==n));   // [NUEVO · usuarios / admin / catálogo / app celular]
+    ['form','list','board','users','cat','config','login','mas','online'].forEach(n => $('#view-'+n).classList.toggle('hidden', tab!==n));   // [NUEVO · usuarios / admin / catálogo / app celular / conectados]
+    if (tab==='online') cargarConectados();                     // [NUEVO · conectados]
     if (tab==='mas') pintarMas();                                // [NUEVO · app celular]
     document.querySelector('main').classList.toggle('wide', tab==='board' || tab==='config' || tab==='cat');   // [CORREGIDO · estilo] paneles anchos
     document.body.classList.toggle('en-form', tab==='form');   // [NUEVO · pie] en celular, el pie se corre para no quedar bajo la barra de Guardar
@@ -1814,7 +1832,7 @@
       // pedido y otro más solo alarga la cola. Se reintenta únicamente ante un error de red o del script.
       for (let i = 0; i < 3; i++){
         // [NUEVO · rapidez] se manda la versión de lo que ya está en pantalla: si no cambió nada, el script responde al instante
-        try { res = await pedirCentral(verRegistros ? { ver: verRegistros } : null, 60000); err = null; break; }
+        try { res = await pedirCentral({ ...(verRegistros ? { ver: verRegistros } : {}), dispositivo: dispositivoId }, 60000); err = null; break; }
         catch (e){ err = e; if (e.name === 'AbortError' || e.message === 'Sin clave' || /clave|sesión/i.test(e.message)) break; await new Promise(r => setTimeout(r, 3000 * (i + 1))); }
       }
       if (!res) throw err;
@@ -2245,7 +2263,7 @@
     const ids = registros.filter(r => r.enviado).map(r => r.id).slice(0, 200);
     if (!ids.length) return;
     try {
-      const u = new URL(FLOW_URL); u.searchParams.set('devoluciones', ids.join(',')); u.searchParams.set('ver', verServidor);   // [CORREGIDO · carga]
+      const u = new URL(FLOW_URL); u.searchParams.set('devoluciones', ids.join(',')); u.searchParams.set('ver', verServidor); u.searchParams.set('dispositivo', dispositivoId);   // [CORREGIDO · carga] · [NUEVO · conectados]
       if (sesion?.token) u.searchParams.set('token', sesion.token); if (llaveDispositivo) u.searchParams.set('llave', llaveDispositivo);   // [NUEVO · seguridad]
       const res = await (await fetchT(u)).json(); if (!res.ok) return;
       marcarConexion(true);                                        // [NUEVO · perfil]
@@ -2350,7 +2368,7 @@
   async function sondearNuevos(){
     if (!MODO_COORD || !FLOW_URL || db || document.hidden || !claveGuardada()) return;
     try {
-      const res = await pedirCentral({ desde: vistoHasta, solo: 'conteo', ver: verServidor });
+      const res = await pedirCentral({ desde: vistoHasta, solo: 'conteo', ver: verServidor, dispositivo: dispositivoId });   // [NUEVO · conectados] dispositivo: señal de vida para "Conectados"
       marcarConexion(true);
       if (res.sinCambios){ return; }                              // [CORREGIDO · carga] nada nuevo desde la última vez: consulta barata
       guardarVer(res.ver);
@@ -2795,7 +2813,7 @@
   };
   function mostrarLogin(seccion){
     $('.tabs').classList.add('hidden');
-    ['form','list','board','users','mas'].forEach(n => $('#view-'+n).classList.add('hidden'));
+    ['form','list','board','users','mas','online'].forEach(n => $('#view-'+n).classList.add('hidden'));
     $('#view-login').classList.remove('hidden');
     ['entrar','crear','espera','pinnuevo'].forEach(s => $('#login-'+s).classList.toggle('hidden', s !== seccion));
     document.querySelectorAll('.seg3 button').forEach(b => b.setAttribute('aria-pressed', b.dataset.l === seccion));
@@ -2974,6 +2992,46 @@
     const s = e.target.closest('select.u-rol[data-que="rol"]'); if (!s) return;
     if (await accionUsuario(s.closest('.urow').dataset.id, 'rol', { rol: s.value })) toast('Rol actualizado', 'ok');
   });
+
+  // ---- [NUEVO · conectados] quién tiene la app abierta (coordinación) ----
+  // El script anota la última señal de cada usuario o celular con cada consulta periódica. Acá: verde si la señal tiene
+  // menos de 2 minutos, "Hace N min" hasta 30 minutos, y "Desconectado" después. Los celulares sin usuario solo se listan
+  // mientras estén dentro de esos 30 minutos; los usuarios activos aparecen siempre, con su estado.
+  let conectados = [], ahoraServidor = 0, cargandoConectados = false;
+  const EN_LINEA_MS = 120000, RECIENTE_MS = 30 * 60000;
+  const estadoDe = c => { const d = ahoraServidor - (c.visto || 0); if (c.visto && d < EN_LINEA_MS) return { k: 'on', txt: 'En línea' }; if (c.visto && d < RECIENTE_MS) return { k: 'hace', txt: `Hace ${Math.max(1, Math.round(d / 60000))} min` }; return { k: 'off', txt: c.visto ? 'Desconectado · ' + fmtFechaHora(c.visto) : 'Desconectado' }; };
+  async function cargarConectados(){
+    if (!MODO_COORD || !FLOW_URL || cargandoConectados) return;
+    cargandoConectados = true;
+    if (conectados.length) sync('online', 'Actualizando…'); else $('#online-lista').innerHTML = cargandoHTML('Cargando…');
+    try { const res = await pedirCentral({ conectados: 1, dispositivo: dispositivoId }, 60000); conectados = res.conectados || []; ahoraServidor = res.ahora || Date.now(); renderConectados(); }
+    catch (e){ toast('No se pudo cargar Conectados: ' + e.message, 'err'); if (!conectados.length) $('#online-lista').innerHTML = '<div class="empty">No se pudo cargar.</div>'; }
+    finally { cargandoConectados = false; sync('online', ''); }
+  }
+  function renderConectados(){
+    const vis = conectados.filter(c => c.tipo === 'usuario' || (ahoraServidor - (c.visto || 0)) < RECIENTE_MS);
+    const peso = c => { const k = estadoDe(c).k; return (k === 'on' ? 0 : k === 'hace' ? 1 : 2) * 1e13 - (c.visto || 0); };
+    vis.sort((a, b) => peso(a) - peso(b));
+    const esCoordC = c => esRolCoord(c.rol) || c.modo === 'coord';
+    const coord = vis.filter(esCoordC), resto = vis.filter(c => !esCoordC(c));
+    const nOn = vis.filter(c => estadoDe(c).k === 'on').length;
+    $('#onlinecount').textContent = nOn ? `(${nOn})` : ''; $('#mas-onlinecount').textContent = nOn ? String(nOn) : '';
+    const fila = c => { const e = estadoDe(c), nombre = `${c.nombre || ''} ${c.apellido || ''}`.trim();
+      return `<div class="urow"><div class="avatar" ${c.tipo === 'usuario' ? `data-foto="${esc(c.id)}"` : ''}>${c.tipo === 'usuario' ? esc(iniciales(c)) : (c.modo === 'coord' ? 'CO' : 'PC')}</div>
+        <div class="datos"><b>${esc(nombre)}${c.rol ? ` <span class="pill rol">${esc(c.rol)}</span>` : ''}${c.tipo === 'usuario' ? ` <span class="pill rol">${esc(c.id)}</span>` : ''}</b>
+          <small>${e.k === 'off' ? 'Sin actividad reciente' : (c.modo === 'coord' ? 'En el panel de coordinación' : 'Cargando desde el celular')}</small></div>
+        <span class="estado-chip ${e.k}"><span class="estado-dot"></span>${esc(e.txt)}</span></div>`; };
+    const sec = (t, arr) => arr.length ? `<div class="usec">${t} (${arr.length})</div>` + arr.map(fila).join('') : '';
+    $('#online-lista').innerHTML = (sec('Coordinación', coord) + sec('Personal', resto)) || '<div class="empty">Todavía no hay usuarios activos.</div>';
+    cargarAvataresEn('#online-lista', id => conectados.find(x => x.tipo === 'usuario' && x.id === id));
+  }
+  async function cargarAvataresEn(sel, buscar){                        // fotos de perfil de una lista, con la misma caché que Usuarios
+    for (const el of Array.from(document.querySelectorAll(sel + ' .avatar[data-foto]')).slice(0, 40)){
+      const id = el.dataset.foto, u = buscar(id); if (!u || !u.fotoId) continue;
+      if (!avatarCache[id]){ try { const url = new URL(FLOW_URL); url.searchParams.set('fotoUsuario', id); const res = await (await fetch(url)).json(); if (res.data) avatarCache[id] = res.data; } catch {} }
+      if (avatarCache[id] && el.isConnected) el.innerHTML = `<img src="${avatarCache[id]}" alt="">`;
+    }
+  }
 
   // ---- [NUEVO · catálogo] listas de móviles y eventos en el formulario, y solicitudes para agregar (campo) ----
   let catalogo = { moviles: [], eventos: [] };
@@ -3339,6 +3397,7 @@
       users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><path d="M16 5a3.5 3.5 0 0 1 0 7"/><path d="M22 20a6 6 0 0 0-4-5.6"/></svg>',
       cat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 10h16"/><path d="M9 5v14"/></svg>',
       config: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h2"/><path d="M10 17h10"/><circle cx="8" cy="17" r="2"/></svg>',
+      online: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="18" cy="7" r="3" fill="currentColor" stroke="none"/></svg>',   // [NUEVO · conectados]
     };
     document.querySelectorAll('.tabs button[data-tab]').forEach(b => { if (ic[b.dataset.tab]) b.insertAdjacentHTML('afterbegin', ic[b.dataset.tab]); });
   })();
@@ -3346,7 +3405,7 @@
     const tabs = $('.tabs'); const bnav = $('#bnav');
     bnav.classList.toggle('hidden', tabs.classList.contains('hidden'));
     const activa = (document.querySelector('.tabs button[aria-selected="true"]') || {}).dataset?.tab || '';
-    const enMas = activa === 'mas' || activa === 'users' || activa === 'config' || activa === 'cat';   // [CORREGIDO · app celular] Catálogo vive en Más
+    const enMas = activa === 'mas' || activa === 'users' || activa === 'config' || activa === 'cat' || activa === 'online';   // [CORREGIDO · app celular] Catálogo y Conectados viven en Más
     bnav.querySelectorAll('button[data-go]').forEach(b => {
       const go = b.dataset.go;
       const t = document.querySelector('.tabs button[data-tab="' + go + '"]');
@@ -3567,6 +3626,8 @@
         { const d = new Date(); d.setDate(d.getDate() - 90); $('#arch-hasta').value = d.toISOString().slice(0, 10); }   // sugerencia: 90 días atrás
         $('.tabs button[data-tab="form"]').classList.add('hidden');
         $('.tabs button[data-tab="users"]').classList.remove('hidden');   // [NUEVO · usuarios] panel de usuarios
+        $('.tabs button[data-tab="online"]').classList.remove('hidden');  // [NUEVO · conectados]
+        setInterval(() => { if (!document.hidden && !$('#view-online').classList.contains('hidden')) cargarConectados(); }, 30000);   // [NUEVO · conectados] se refresca sola mientras está a la vista
         $('#view-list .lead').textContent = 'Registros enviados por el equipo de campo. Tocá una tarjeta para ver el detalle; tocá la pestaña para actualizar.';
         $('.tabs button[data-tab="list"]').click();              // dispara cargarCentral (pide la clave la primera vez)
         // [NUEVO · rapidez] Usuarios y Catálogo se traen por detrás apenas hay clave o sesión, así la pestaña abre al instante
