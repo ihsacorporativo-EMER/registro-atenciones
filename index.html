@@ -1347,7 +1347,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-22 f';
+  const VERSION = '2026-09-22 g';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1372,6 +1372,7 @@
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
     { v: '2026-09-21 o', para: 'todos', texto: 'En computadora y tablet la app tiene barra lateral: el logo arriba, las secciones con íconos, tu cuenta abajo y la campana arriba a la derecha. En tablet la barra se achica a solo íconos.' },
+    { v: '2026-09-22 g', para: 'coord', texto: 'El panel muestra al instante la última copia de los registros guardada en el dispositivo y la actualiza por detrás. Si el servidor tarda, reintenta solo tres veces antes de avisar.' },
     { v: '2026-09-22 f', para: 'todos', texto: 'Se corrigió una lentitud general: la app consultaba novedades demasiado seguido y el servidor se saturaba. Ahora consulta cada 15 segundos (30 en reposo) y, si no hay nada nuevo, la consulta es casi instantánea.' },
     { v: '2026-09-22 c', para: 'todos', texto: 'En computadora, la barra lateral tiene un grupo "Mi cuenta" con Perfil, Mis solicitudes, Información adicional y los accesos para cargar o volver al panel. El nombre del sistema ya no se corta.' },
     { v: '2026-09-22 a', para: 'todos', texto: 'La campana abre un panel de notificaciones: registros con novedades, respuestas, pedidos y avisos de la app. Tocá uno y te lleva directo; también podés marcar todo como visto.' },
@@ -1742,10 +1743,23 @@
     credAceptada();                                          // [CORREGIDO · novedades por rol]
     return res;
   }
+  // [CORREGIDO · carga siempre] La lista de coordinación se guarda en el dispositivo. Al abrir se muestra esa copia al
+  // instante y se pide la actualización por detrás; si el script tarda o falla, se reintenta 3 veces (3, 6 y 9 s) antes
+  // de avisar, y mientras tanto la copia sigue a la vista.
+  let cargandoCentral = false;
+  function copiaLocalCoord(){ try { const c = JSON.parse(localStorage.getItem('coord_copia') || 'null'); return Array.isArray(c) ? c : null; } catch { return null; } }
   async function cargarCentral(){
     if (!FLOW_URL){ toast('Falta configurar FLOW_URL en el HTML', 'err'); return; }
+    if (cargandoCentral) return; cargandoCentral = true;
+    if (!registros.length){ const c = copiaLocalCoord(); if (c && c.length){ registros = c; renderList(); renderBoard(); } }
     try {
-      const res = await pedirCentral();
+      let res = null, err = null;
+      for (let i = 0; i < 4; i++){
+        try { res = await pedirCentral(); err = null; break; }
+        catch (e){ err = e; if (e.message === 'Sin clave' || /clave|sesión/i.test(e.message)) break; await new Promise(r => setTimeout(r, 3000 * (i + 1))); }
+      }
+      if (!res) throw err;
+      try { localStorage.setItem('coord_copia', JSON.stringify((res.registros || []).slice(0, 300))); } catch {}
       // [CORREGIDO · vistos por registro] base fija: lo anterior a la primera vez que se usó esta versión no cuenta como nuevo
       if (nuevoDesde === Infinity){ let base = 0; try { base = +(localStorage.getItem('coord_base') || 0); } catch {} if (!base){ base = vistoHasta || Date.now(); try { localStorage.setItem('coord_base', String(base)); } catch {} } nuevoDesde = base; }
       // [CORREGIDO · reacciones] si hay un mensaje o reacción en camino en algún registro, se conserva su hilo local
@@ -1757,8 +1771,9 @@
       mostrarAlerta(res.alerta);                             // [NUEVO · migración] cartel si el script dejó un aviso
       actualizarSolicitudes(res.solicitudes, res.pedidos); pintarNoVistos(contarPendientes());   // [NUEVO · usuarios / catálogo] la campana refleja las solicitudes
     } catch (e){
-      toast(e.message === 'Sin clave' ? 'Necesitás la clave de coordinador' : 'No se pudieron cargar los registros: ' + e.message, 'err');
-    }
+      const msg = e.message === 'Sin clave' ? 'Necesitás la clave de coordinador' : (e.name === 'AbortError' ? 'El servidor no responde; se muestra la última copia guardada.' : 'No se pudieron cargar los registros: ' + e.message);
+      toast(msg, 'err'); marcarConexion(false);
+    } finally { cargandoCentral = false; }
   }
 
   $('#copy').addEventListener('click', async () => {
