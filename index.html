@@ -691,7 +691,7 @@
      celular (≤640 px), que sigue con la barra de abajo. ===== */
   @media (min-width:641px){
     :root{--sb:232px}
-    header{position:fixed;left:0;top:0;bottom:0;width:var(--sb);padding:18px 12px 14px;display:flex;flex-direction:column;gap:8px;overflow:auto;z-index:7;border-radius:0}
+    header{position:fixed;left:0;top:0;bottom:0;width:var(--sb);padding:18px 12px 14px;display:flex;flex-direction:column;gap:8px;overflow-x:hidden;overflow-y:auto;z-index:7;border-radius:0}   /* [CORREGIDO · app PC] nunca scroll horizontal */
     header::before{display:none}
     /* la marca deja de ser contenedor: logo, título, navegación y cuenta pasan a ser hijos directos de la barra, así la
        cuenta se puede mandar al fondo con margin-top:auto */
@@ -721,7 +721,10 @@
     .yo{margin:auto 0 0;padding:8px;border-radius:12px;background:rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:stretch;gap:2px;min-width:0;width:100%}
     .bell:not(.hidden) + .yo{margin-left:0}
     .brand .tag{order:1;margin:0 0 0 46px;align-self:flex-start;font-size:10px;padding:2px 8px}
-    .perfil-btn{order:0;max-width:100%;width:100%;justify-content:flex-start;background:none;padding:0;font-size:13px;gap:8px}
+    .perfil-btn{order:0;max-width:100%;width:100%;justify-content:flex-start;background:none;padding:0;font-size:13px;gap:8px;overflow:hidden}
+    .perfil-btn #perfil-nombre{flex:1;min-width:0}   /* [CORREGIDO · app PC] el nombre largo se corta con puntos en vez de ensanchar la barra y mostrar un scroll */
+    .tabs button{min-width:0;overflow:hidden}
+    .brand .titulo b,.brand .titulo .subtitulo{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .perfil-btn .chev{margin-left:auto}
     .yo-av{display:grid;width:36px;height:36px;font-size:13px;background:rgba(255,255,255,.2)}
     .yo-av img{width:100%;height:100%;object-fit:cover;display:block}
@@ -1313,7 +1316,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-22 a';
+  const VERSION = '2026-09-22 b';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
