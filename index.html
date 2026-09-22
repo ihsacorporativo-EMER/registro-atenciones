@@ -686,11 +686,12 @@
   @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
   .tabs-sec{display:none}
   .tabs button svg{display:none}
+  .nav-cuenta{display:none}   /* [NUEVO · app PC] solo en la barra lateral */
   /* ===== [NUEVO · app PC] PC y tablet (desde 641 px): barra lateral azul con logo, navegación vertical con íconos, grupo
      "Administración" y la cuenta abajo. La campana queda fija arriba a la derecha del contenido. Nada de esto toca el
      celular (≤640 px), que sigue con la barra de abajo. ===== */
   @media (min-width:641px){
-    :root{--sb:232px}
+    :root{--sb:244px}
     header{position:fixed;left:0;top:0;bottom:0;width:var(--sb);padding:18px 12px 14px;display:flex;flex-direction:column;gap:8px;overflow-x:hidden;overflow-y:auto;z-index:7;border-radius:0}   /* [CORREGIDO · app PC] nunca scroll horizontal */
     header::before{display:none}
     /* la marca deja de ser contenedor: logo, título, navegación y cuenta pasan a ser hijos directos de la barra, así la
@@ -716,6 +717,15 @@
     .tabs button span:empty{display:none}
     .tabs button.hidden{display:none}
     .tabs-sec{padding:14px 12px 4px;font-size:11px;font-weight:800;color:#c3d2f5;letter-spacing:.6px;text-transform:uppercase}
+    .cuenta-sec{display:block;order:1}
+    .nav-cuenta{display:flex;flex-direction:column;gap:4px;order:1}
+    .nav-cuenta .nc{display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:#e3eaff;font:inherit;font-size:13.5px;font-weight:600;text-align:left;text-decoration:none;cursor:pointer;min-width:0;overflow:hidden}
+    .nav-cuenta .nc:hover{background:rgba(255,255,255,.12)}
+    .nav-cuenta .nc svg{width:19px;height:19px;flex:none}
+    .nav-cuenta .nc > span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .nav-cuenta .nc .cnt{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center}
+    .nav-cuenta .nc .cnt:empty{display:none}
+    .nav-cuenta .nc.hidden{display:none}
     .tabs:has(button[data-tab="users"]:not(.hidden)) .tabs-sec{display:block}
     /* cuenta abajo: foto (o iniciales), nombre con flecha y, debajo, el rol */
     .yo{margin:auto 0 0;padding:8px;border-radius:12px;background:rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:stretch;gap:2px;min-width:0;width:100%}
@@ -724,7 +734,8 @@
     .perfil-btn{order:0;max-width:100%;width:100%;justify-content:flex-start;background:none;padding:0;font-size:13px;gap:8px;overflow:hidden}
     .perfil-btn #perfil-nombre{flex:1;min-width:0}   /* [CORREGIDO · app PC] el nombre largo se corta con puntos en vez de ensanchar la barra y mostrar un scroll */
     .tabs button{min-width:0;overflow:hidden}
-    .brand .titulo b,.brand .titulo .subtitulo{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .brand .titulo b,.brand .titulo .subtitulo{white-space:normal;overflow:visible;line-height:1.2}   /* [CORREGIDO · app PC] "Servicios Corporativos" en dos líneas si hace falta, nunca cortado */
+    .mark img{height:24px !important}
     .perfil-btn .chev{margin-left:auto}
     .yo-av{display:grid;width:36px;height:36px;font-size:13px;background:rgba(255,255,255,.2)}
     .yo-av img{width:100%;height:100%;object-fit:cover;display:block}
@@ -790,6 +801,8 @@
     .tabs button[data-tab="list"] .tabdot.on{display:block;position:absolute;top:8px;right:10px;margin:0}
     .tabs button{position:relative}
     .tabs-sec{display:none !important}
+    .nav-cuenta .nc{justify-content:center;padding:0;gap:0}
+    .nav-cuenta .nc > span,.nav-cuenta .nc .cnt{display:none}
     .yo{padding:6px;align-items:center}
     .brand .tag{display:none}
     .perfil-btn{justify-content:center;padding:0;gap:0}
@@ -837,6 +850,16 @@
     <button role="tab" aria-selected="false" data-tab="cat" class="hidden">Catálogo <span id="catcount"></span></button><!-- [NUEVO · catálogo] coordinador y administrador -->
     <button role="tab" aria-selected="false" data-tab="config" class="hidden">Configuración</button><!-- [NUEVO · admin] solo administrador -->
     <button role="tab" aria-selected="false" data-tab="mas" class="hidden">Más</button><!-- [NUEVO · app celular] la abre la barra de abajo; nunca se ve arriba -->
+  </div>
+  <!-- [NUEVO · app PC] grupo "Mi cuenta" en la barra lateral: los mismos accesos del menú del nombre, a la vista -->
+  <div class="tabs-sec cuenta-sec">Mi cuenta</div>
+  <div class="nav-cuenta" id="nav-cuenta">
+    <button type="button" class="nc hidden" data-mi="perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Perfil</span></button>
+    <button type="button" class="nc hidden" data-mi="sol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v13H8l-4 4z"/></svg><span>Mis solicitudes</span><b class="cnt" id="nc-sol-n"></b></button>
+    <button type="button" class="nc" data-mi="info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7h.01"/></svg><span>Información adicional</span></button>
+    <a class="nc hidden" data-mi="entrar" href="?modo=usuario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg><span>Entrar con mi usuario</span></a>
+    <a class="nc hidden" data-mi="cargar" href="?modo=usuario&amp;cargar=1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></svg><span>Cargar un registro</span></a>
+    <a class="nc hidden" data-mi="coord" href="?modo=coordinador"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 18v3"/></svg><span id="nc-coord-txt">Volver a coordinación</span></a>
   </div>
 </header>
 
@@ -1316,7 +1339,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-22 b';
+  const VERSION = '2026-09-22 c';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1341,6 +1364,7 @@
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
     { v: '2026-09-21 o', para: 'todos', texto: 'En computadora y tablet la app tiene barra lateral: el logo arriba, las secciones con íconos, tu cuenta abajo y la campana arriba a la derecha. En tablet la barra se achica a solo íconos.' },
+    { v: '2026-09-22 c', para: 'todos', texto: 'En computadora, la barra lateral tiene un grupo "Mi cuenta" con Perfil, Mis solicitudes, Información adicional y los accesos para cargar o volver al panel. El nombre del sistema ya no se corta.' },
     { v: '2026-09-22 a', para: 'todos', texto: 'La campana abre un panel de notificaciones: registros con novedades, respuestas, pedidos y avisos de la app. Tocá uno y te lleva directo; también podés marcar todo como visto.' },
     { v: '2026-09-21 z', para: 'todos', texto: 'La conversación tiene una barra para escribir como en un chat, con clip para adjuntar fotos o PDF y botón de enviar. Los adjuntos se ven en el hilo: tocá una foto para agrandarla y descargarla, o un archivo para bajarlo.' },
     { v: '2026-09-21 y', para: 'todos', texto: 'Las etiquetas "Nuevo", "Actualizado" y "Respuesta nueva", y el número de la campana, quedan hasta que abrís esa tarjeta. Entrar a Registros ya no las borra todas.' },
@@ -2933,7 +2957,7 @@
   $('#sol-cerrar').addEventListener('click', () => $('#modal-sol').classList.remove('open'));
   $('#modal-sol').addEventListener('click', e => { if (e.target === $('#modal-sol')) $('#modal-sol').classList.remove('open'); });
   function renderMisSolicitudes(){
-    const n = solNoVistas(); $('#my-sol-n').textContent = n ? String(n) : '';
+    const n = solNoVistas(); $('#my-sol-n').textContent = n ? String(n) : ''; try { $('#nc-sol-n').textContent = n ? String(n) : ''; } catch {}   // [NUEVO · app PC]
     $('#mis-sol-vacio').classList.toggle('hidden', misSolicitudes.length > 0);
     $('#mis-sol-lista').innerHTML = misSolicitudes.map(s => {
       const nueva = s.estado !== 'pendiente' && !solVistas.has(s.id);
@@ -3122,7 +3146,21 @@
   // (Coordinador/Supervisor/Administrador). Si el celular tiene sesión de un usuario de campo y se entró con la clave,
   // el panel no lo muestra como si fuera el coordinador: dice "Menú · Acceso con clave".
   const sesionMenu = () => MODO_COORD ? (MODO_ADMIN ? sesionAdmin() : sesionCoord()) : ((sesion && sesion.token) ? sesion : null);
+  // [NUEVO · app PC] grupo "Mi cuenta" de la barra lateral: mismas reglas que el menú del nombre
+  function pintarNavCuenta(){
+    const sm = sesionMenu(), conSesion = !!sm, d = destinoPanel(sm);
+    const v = (k, ver) => $('#nav-cuenta [data-mi="' + k + '"]').classList.toggle('hidden', !ver);
+    v('perfil', conSesion); v('sol', !MODO_COORD); v('entrar', MODO_COORD && !conSesion); v('cargar', MODO_COORD); v('coord', !!d);
+    if (d){ const a = $('#nav-cuenta [data-mi="coord"]'); a.href = d.href; $('#nc-coord-txt').textContent = d.txt; }
+    if (MODO_COORD) $('#nav-cuenta [data-mi="cargar"]').href = hrefCargar();
+    $('#nc-sol-n').textContent = MODO_COORD ? '' : String(solNoVistas() || '');
+  }
+  $('#nav-cuenta').addEventListener('click', e => {
+    const b = e.target.closest('button.nc'); if (!b) return;
+    if (b.dataset.mi === 'perfil') abrirPerfil(); else if (b.dataset.mi === 'sol') abrirSolicitudes(); else if (b.dataset.mi === 'info') abrirInfo();
+  });
   function pintarPerfil(){
+    try { pintarNavCuenta(); } catch {}
     const b = $('#perfil-btn'), sm = sesionMenu();
     // [NUEVO · menú] sin sesión, el link de coordinación (con clave) también tiene menú: Información adicional y Salir
     if (!sm){ if (!MODO_COORD && !volverA){ b.classList.add('hidden'); return; } $('#perfil-nombre').textContent = MODO_COORD ? 'Acceso con clave' : 'Menú'; { const av = $('#yo-avatar'); av.dataset.foto = '-'; av.textContent = MODO_ADMIN ? 'AD' : MODO_COORD ? 'CO' : 'PC'; } b.classList.remove('hidden'); pintarEstado(); return; }   // [CORREGIDO · volver al panel] con ?volver también hay menú · [NUEVO · app PC] iniciales genéricas
@@ -3365,7 +3403,7 @@
 
   // ---- conexión con la base ----
   // [CORREGIDO · arranque] listo(): muestra la pantalla una vez decidido el modo. Con red de seguridad a los 6 s por si algo falla.
-  const listo = () => { document.body.classList.remove('cargando'); sincronizarBnav(); };   // [NUEVO · app celular]
+  const listo = () => { document.body.classList.remove('cargando'); sincronizarBnav(); try { pintarNavCuenta(); } catch {} };   // [NUEVO · app celular] · [NUEVO · app PC]
   // [CORREGIDO · ícono] el navegador guarda el ícono por dirección (link genérico, ?modo=usuario, ?modo=coordinador…) y en
   // pestañas viejas seguía mostrando el mundito. Volver a insertar el <link> al arrancar lo obliga a refrescarlo en cada link.
   try { document.querySelectorAll('link[rel="icon"]').forEach(l => { const n = l.cloneNode(); l.remove(); document.head.appendChild(n); }); } catch {}
