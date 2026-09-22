@@ -754,8 +754,9 @@
     .tabs button span:empty{display:none}
     .tabs button.hidden{display:none}
     .tabs-sec{padding:14px 12px 4px;font-size:11px;font-weight:800;color:#c3d2f5;letter-spacing:.6px;text-transform:uppercase}
-    .cuenta-sec{display:block;order:1}
-    .nav-cuenta{display:flex;flex-direction:column;gap:4px;order:1}
+    /* [CORREGIDO · app PC] al fondo de la barra, en este orden: la cuenta (foto, nombre, rol), el título "Mi cuenta" y sus accesos */
+    .cuenta-sec{display:block;order:3;padding-top:10px}
+    .nav-cuenta{display:flex;flex-direction:column;gap:4px;order:4}
     .nav-cuenta .nc{display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:#e3eaff;font:inherit;font-size:13.5px;font-weight:600;text-align:left;text-decoration:none;cursor:pointer;min-width:0;overflow:hidden}
     .nav-cuenta .nc:hover{background:rgba(255,255,255,.12)}
     .nav-cuenta .nc svg{width:19px;height:19px;flex:none}
@@ -1413,14 +1414,14 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-22 m';
+  const VERSION = '2026-09-22 n';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
-    { v: '2026-09-22 m', para: 'todos', texto: 'En computadora, el grupo "Mi cuenta" de la barra lateral reúne todos los accesos (Perfil, Información adicional, Cargar un registro, Entrar con mi usuario, Cerrar sesión). La cuenta de abajo ya no despliega una lista: solo muestra quién está.' },
+    { v: '2026-09-22 n', para: 'todos', texto: 'En computadora, el grupo "Mi cuenta" de la barra lateral reúne todos los accesos (Perfil, Información adicional, Cargar un registro, Entrar con mi usuario, Cerrar sesión). Va todo al fondo de la barra, con la cuenta (foto, nombre y rol) arriba del grupo; la cuenta ya no despliega una lista.' },
     { v: '2026-09-22 l', para: 'coord', texto: 'Conectados: cada dispositivo figura una sola vez. Al entrar con tu usuario ya no aparece al lado "Coordinación (clave)" ni "link genérico" por el mismo celular o PC.' },
     { v: '2026-09-20 n', para: 'todos', texto: 'Móvil y Evento se eligen de una lista que filtra al escribir. Si falta uno, "Solicitar agregar" se lo pide a coordinación y la respuesta llega a la campana.' },
     { v: '2026-09-20 n', para: 'coord', texto: 'Pestaña Catálogo: aceptar o devolver solicitudes y administrar las listas de móviles y eventos.' },
