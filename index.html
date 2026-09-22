@@ -779,10 +779,18 @@
     #view-cat{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 16px;align-items:start}
     #view-cat > h1,#view-cat > .lead{grid-column:1/-1}
     #view-cat > #cat-sol{grid-column:1}
-    #view-cat > #cat-listas{grid-column:2;grid-template-columns:1fr;margin-top:0}
-    #cat-sol .scrollbox{max-height:300px}
-    #cat-sol .scrollbox.pend{max-height:420px}
-    .catlista{max-height:260px}
+    /* [CORREGIDO · catálogo PC] Móviles y Eventos uno al lado del otro, compactos y con scroll, a la altura de "Resueltas recientes" */
+    #view-cat > #cat-listas{grid-column:2;grid-template-columns:1fr 1fr;gap:10px;margin-top:0;align-items:start}
+    #cat-listas .box{padding:10px 12px 8px}
+    #cat-listas .box h3{font-size:13px;margin:0 0 6px}
+    #cat-listas .filters{margin:0 0 6px !important;gap:6px}
+    #cat-listas .filters .search{padding:8px 10px;font-size:13px;border-radius:9px}
+    #cat-listas .filters .primary{min-height:36px;padding:6px 12px;font-size:13px;border-radius:9px}
+    #cat-listas .catrow{padding:4px 0;font-size:13px}
+    #cat-listas .catrow .acc{gap:8px;font-size:12px}
+    #cat-sol .scrollbox{max-height:236px}
+    #cat-sol .scrollbox.pend{max-height:320px}
+    .catlista{max-height:196px}
     /* Configuración: archivar, importar y mails en una sola fila */
     #config{grid-template-columns:repeat(3,minmax(0,1fr))}
   }
@@ -1339,7 +1347,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-22 c';
+  const VERSION = '2026-09-22 d';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
