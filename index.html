@@ -476,6 +476,18 @@
   .link-btn.peligro{color:var(--danger)}
   /* [NUEVO · confirmar] cartel de confirmación propio, reemplaza al confirm() del navegador. Por encima de los otros modales. */
   #nv-lista .nv-v{list-style:none;margin:10px 0 4px -18px;font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}   /* [CORREGIDO · novedades] */
+  /* [NUEVO · campana] panel de notificaciones */
+  .notif-lista{display:flex;flex-direction:column;gap:6px;max-height:min(60vh,460px);overflow-y:auto;margin-top:8px;padding-right:2px}
+  .notif{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+  .notif:hover{background:color-mix(in srgb,var(--brand) 8%,var(--card))}
+  .notif .ic{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;background:color-mix(in srgb,var(--brand) 12%,var(--card));color:var(--brand-txt)}
+  .notif .ic svg{width:18px;height:18px}
+  .notif .ic.acc{background:color-mix(in srgb,var(--accent) 15%,var(--card));color:var(--accent-deep)}
+  .notif .tx{flex:1;min-width:0}
+  .notif b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .notif small{color:var(--muted);font-size:12px}
+  .notif .chev{width:16px;height:16px;color:var(--muted);flex:none}
+  .notif-vacio{text-align:center;color:var(--muted);padding:22px 8px;font-size:14px}
   .modal.confirmar{z-index:38}
   .modal.confirmar .box{width:min(420px,100%);padding:22px 22px 18px}
   .modal.confirmar .ico{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;margin-bottom:12px;background:color-mix(in srgb,var(--brand) 12%,var(--card));color:var(--brand)}
@@ -1234,6 +1246,18 @@
   </div>
 </div>
 
+<!-- [NUEVO · campana] panel de notificaciones: lo abre la campana; cada ítem lleva a su lugar -->
+<div class="modal" id="modal-notif" role="dialog" aria-modal="true">
+  <div class="box">
+    <h3>Notificaciones</h3>
+    <div class="notif-lista" id="notif-lista"></div>
+    <div class="modal-actions">
+      <button type="button" class="link-btn hidden" id="notif-todo">Marcar todo como visto</button>
+      <button type="button" class="primary" id="notif-cerrar">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- [NUEVO · confirmar] cartel de confirmación propio (función confirmar) -->
 <div class="modal confirmar" id="modal-confirm" role="alertdialog" aria-modal="true" aria-describedby="cf-texto">
   <div class="box">
@@ -1289,7 +1313,7 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-21 z';
+  const VERSION = '2026-09-22 a';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
@@ -1314,6 +1338,7 @@
     { v: '2026-09-20 t', para: 'todos', texto: 'El aviso de actualización muestra solo lo nuevo desde la última versión que viste, no toda la lista cada vez.' },
     { v: '2026-09-20 u', para: 'coord', texto: 'Pestaña Catálogo más compacta: las solicitudes resueltas y las listas de móviles y eventos muestran unas pocas filas y el resto se desliza adentro de cada cuadro.' },
     { v: '2026-09-21 o', para: 'todos', texto: 'En computadora y tablet la app tiene barra lateral: el logo arriba, las secciones con íconos, tu cuenta abajo y la campana arriba a la derecha. En tablet la barra se achica a solo íconos.' },
+    { v: '2026-09-22 a', para: 'todos', texto: 'La campana abre un panel de notificaciones: registros con novedades, respuestas, pedidos y avisos de la app. Tocá uno y te lleva directo; también podés marcar todo como visto.' },
     { v: '2026-09-21 z', para: 'todos', texto: 'La conversación tiene una barra para escribir como en un chat, con clip para adjuntar fotos o PDF y botón de enviar. Los adjuntos se ven en el hilo: tocá una foto para agrandarla y descargarla, o un archivo para bajarlo.' },
     { v: '2026-09-21 y', para: 'todos', texto: 'Las etiquetas "Nuevo", "Actualizado" y "Respuesta nueva", y el número de la campana, quedan hasta que abrís esa tarjeta. Entrar a Registros ya no las borra todas.' },
     { v: '2026-09-21 x', para: 'todos', texto: 'Los mensajes se ven en burbujas como en un chat: los tuyos en azul a la derecha, los del otro lado en claro a la izquierda, con la puntita de burbuja.' },
@@ -1749,7 +1774,7 @@
   // Campo ya tenía la marca por registro (vistoMsgHasta), pero se ponía a todas al entrar a Registros; ahora, al abrir.
   let vistosCoord = {}; try { vistosCoord = JSON.parse(localStorage.getItem('coord_vistos') || '{}') || {}; } catch {}
   const vistoDe = r => MODO_COORD ? Math.max(nuevoDesde, vistosCoord[r.id] || 0) : (r.vistoMsgHasta || 0);
-  const pendienteDe = r => { const v = vistoDe(r); return (r.createdAt || 0) > v || (r.actualizadoEn || 0) > v || noVistosDe(r) > 0; };
+  const pendienteDe = r => { if (!MODO_COORD) return noVistosDe(r) > 0; const v = vistoDe(r); return (r.createdAt || 0) > v || (r.actualizadoEn || 0) > v || noVistosDe(r) > 0; };   // [CORREGIDO · campana]
   const contarPendientes = () => MODO_COORD ? registros.filter(pendienteDe).length : registros.reduce((n, r) => n + noVistosDe(r), 0);
   function marcarVistoRegistro(id, silencioso){
     const r = registros.find(x => x.id === id); if (!r) return;
@@ -2220,12 +2245,55 @@
     servidorPrev = 0; pintarNoVistos(contarPendientes());
   }
   // novedades primero; después, solicitudes de usuarios (coordinador); si no, a la lista
-  $('#bell').addEventListener('click', () => {
-    if (novedadPendiente) abrirNovedades();
-    else if (MODO_COORD && usuariosPend) $('.tabs button[data-tab="users"]').click();
-    else if (MODO_COORD && pedidosPend) $('.tabs button[data-tab="cat"]').click();                     // [NUEVO · catálogo]
-    else if (!MODO_COORD && solNoVistas()) abrirSolicitudes();                                        // [NUEVO · menú] modal, ya no la sección del formulario
-    else $('.tabs button[data-tab="list"]').click();
+  // [NUEVO · campana] Panel de notificaciones. Antes la campana solo cambiaba de pestaña, y si ya se estaba en Registros
+  // parecía que no hacía nada. Ahora lista todo lo pendiente y cada ítem lleva a su lugar.
+  const NI = {
+    app: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.6 7.1 18.2l.9-5.5-4-3.9L9.5 8z"/></svg>',
+    reg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>',
+    nuevo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>',
+    users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><path d="M16 5a3.5 3.5 0 0 1 0 7"/><path d="M22 20a6 6 0 0 0-4-5.6"/></svg>',
+    cat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 10h16"/><path d="M9 5v14"/></svg>',
+    chev: '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
+  };
+  let notifAcciones = [];
+  function abrirNotificaciones(){
+    const items = [];
+    const it = (ic, acc, t, sub, go) => items.push({ ic, acc, t, sub, go });
+    if (novedadPendiente) it(NI.app, false, 'Se actualizó la app', 'Versión ' + VERSION + ' · tocá para ver qué cambió', abrirNovedades);
+    if (MODO_COORD && usuariosPend) it(NI.users, true, `${usuariosPend} usuario${usuariosPend > 1 ? 's' : ''} pendiente${usuariosPend > 1 ? 's' : ''}`, 'Aprobar, rechazar o restablecer PIN', () => $('.tabs button[data-tab="users"]').click());
+    if (MODO_COORD && pedidosPend) it(NI.cat, true, `${pedidosPend} pedido${pedidosPend > 1 ? 's' : ''} de catálogo`, 'Móviles, eventos o importaciones por resolver', () => $('.tabs button[data-tab="cat"]').click());
+    if (!MODO_COORD && solNoVistas()) it(NI.cat, true, `${solNoVistas()} respuesta${solNoVistas() > 1 ? 's' : ''} a tus solicitudes`, 'Coordinación respondió', abrirSolicitudes);
+    registros.filter(pendienteDe).slice(0, 40).forEach(r => {
+      const v = vistoDe(r), n = noVistosDe(r);
+      const que = MODO_COORD && r.createdAt > v ? 'Registro nuevo' : MODO_COORD && (r.actualizadoEn || 0) > v ? 'Registro actualizado' : `${n} novedad${n > 1 ? 'es' : ''} en la conversación`;
+      it(que === 'Registro nuevo' ? NI.nuevo : NI.reg, que !== 'Registro nuevo', `${r.evento} · Móvil ${r.movil}`, `${que} · ${fmtFecha(r.fecha)} ${fmtHora(r.createdAt)}`, () => irARegistro(r.id));
+    });
+    notifAcciones = items.map(x => x.go);
+    $('#notif-lista').innerHTML = items.length
+      ? items.map((x, i) => `<button type="button" class="notif" data-i="${i}"><span class="ic ${x.acc ? 'acc' : ''}">${x.ic}</span><span class="tx"><b>${esc(x.t)}</b><small>${esc(x.sub)}</small></span>${NI.chev}</button>`).join('')
+      : '<div class="notif-vacio">No hay notificaciones nuevas.</div>';
+    $('#notif-todo').classList.toggle('hidden', !registros.some(pendienteDe));
+    $('#modal-notif').classList.add('open');
+  }
+  // lleva a un registro: pestaña Registros, sin filtro, en la página que corresponde, desplegado y marcado como visto
+  function irARegistro(id){
+    $('.tabs button[data-tab="list"]').click();
+    $('#q').value = '';
+    const idx = registros.findIndex(r => r.id === id); if (idx < 0) return;
+    pagina = Math.floor(idx / porPaginaLista());
+    if (esCelular()) abiertos.clear();
+    abiertos.add(id); renderList();
+    const art = document.querySelector('.rec[data-id="' + CSS.escape(id) + '"]');
+    if (art){ setTimeout(() => art.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); bajarHilos(art); }
+    marcarVistoRegistro(id);
+  }
+  $('#bell').addEventListener('click', abrirNotificaciones);
+  $('#notif-lista').addEventListener('click', e => { const b = e.target.closest('.notif[data-i]'); if (!b) return; $('#modal-notif').classList.remove('open'); const go = notifAcciones[+b.dataset.i]; if (go) go(); });
+  $('#notif-cerrar').addEventListener('click', () => $('#modal-notif').classList.remove('open'));
+  $('#modal-notif').addEventListener('click', e => { if (e.target === $('#modal-notif')) $('#modal-notif').classList.remove('open'); });
+  $('#notif-todo').addEventListener('click', () => {
+    registros.filter(pendienteDe).forEach(r => marcarVistoRegistro(r.id, true));
+    pintarNoVistos(contarPendientes()); renderList(); $('#modal-notif').classList.remove('open'); toast('Todo marcado como visto', 'ok');
   });
   $('#list').addEventListener('click', async e => {
     if (e.target.closest('button.retry')){ reintentarPendientes(true); return; }   // [NUEVO · envío]
