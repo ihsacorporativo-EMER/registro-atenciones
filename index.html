@@ -763,6 +763,10 @@
     .nav-cuenta .nc .cnt{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center}
     .nav-cuenta .nc .cnt:empty{display:none}
     .nav-cuenta .nc.hidden{display:none}
+    .nav-cuenta .sep{height:1px;margin:6px 10px;background:rgba(255,255,255,.22)}
+    .nav-cuenta .sep.hidden{display:none}
+    .nav-cuenta .nc.salir{color:#ffd6cc}
+    .nav-cuenta .nc.salir:hover{background:rgba(255,120,100,.18)}
     .tabs:has(button[data-tab="users"]:not(.hidden)) .tabs-sec{display:block}
     /* cuenta abajo: foto (o iniciales), nombre con flecha y, debajo, el rol */
     .yo{margin:auto 0 0;padding:8px;border-radius:12px;background:rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:stretch;gap:2px;min-width:0;width:100%}
@@ -770,6 +774,8 @@
     .brand .tag{order:1;margin:0 0 0 46px;align-self:flex-start;font-size:10px;padding:2px 8px}
     .perfil-btn{order:0;max-width:100%;width:100%;justify-content:flex-start;background:none;padding:0;font-size:13px;gap:8px;overflow:hidden}
     .perfil-btn #perfil-nombre{flex:1;min-width:0}   /* [CORREGIDO · app PC] el nombre largo se corta con puntos en vez de ensanchar la barra y mostrar un scroll */
+    .perfil-btn{cursor:default}                         /* [CORREGIDO · app PC] la cuenta de abajo es informativa: sin flecha ni lista desplegable (los accesos están en "Mi cuenta") */
+    .perfil-btn .chev{display:none}
     .tabs button{min-width:0;overflow:hidden}
     .brand .titulo b,.brand .titulo .subtitulo{white-space:normal;overflow:visible;line-height:1.2}   /* [CORREGIDO · app PC] "Servicios Corporativos" en dos líneas si hace falta, nunca cortado */
     .mark img{height:24px !important}
@@ -904,6 +910,8 @@
   </div>
   <!-- [NUEVO · app PC] grupo "Mi cuenta" en la barra lateral: los mismos accesos del menú del nombre, a la vista -->
   <div class="tabs-sec cuenta-sec">Mi cuenta</div>
+  <!-- [CORREGIDO · app PC] orden: lo mío (Perfil, Mis solicitudes), lo del equipo (Información adicional), a dónde ir (Cargar, Entrar, Volver)
+       y, separado, Cerrar sesión / Salir. La cuenta de abajo es solo informativa: ya no repite esta lista en un desplegable. -->
   <div class="nav-cuenta" id="nav-cuenta">
     <button type="button" class="nc hidden" data-mi="perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Perfil</span></button>
     <button type="button" class="nc hidden" data-mi="sol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v13H8l-4 4z"/></svg><span>Mis solicitudes</span><b class="cnt" id="nc-sol-n"></b></button>
@@ -911,6 +919,8 @@
     <a class="nc hidden" data-mi="entrar" href="?modo=usuario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg><span>Entrar con mi usuario</span></a>
     <a class="nc hidden" data-mi="cargar" href="?modo=usuario&amp;cargar=1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></svg><span>Cargar un registro</span></a>
     <a class="nc hidden" data-mi="coord" href="?modo=coordinador"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 18v3"/></svg><span id="nc-coord-txt">Volver a coordinación</span></a>
+    <div class="sep hidden" data-mi="sep"></div>
+    <button type="button" class="nc salir hidden" data-mi="salir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg><span id="nc-salir-txt">Cerrar sesión</span></button>
   </div>
 </header>
 
@@ -1403,13 +1413,15 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-22 k';
+  const VERSION = '2026-09-22 m';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-22 m', para: 'todos', texto: 'En computadora, el grupo "Mi cuenta" de la barra lateral reúne todos los accesos (Perfil, Información adicional, Cargar un registro, Entrar con mi usuario, Cerrar sesión). La cuenta de abajo ya no despliega una lista: solo muestra quién está.' },
+    { v: '2026-09-22 l', para: 'coord', texto: 'Conectados: cada dispositivo figura una sola vez. Al entrar con tu usuario ya no aparece al lado "Coordinación (clave)" ni "link genérico" por el mismo celular o PC.' },
     { v: '2026-09-20 n', para: 'todos', texto: 'Móvil y Evento se eligen de una lista que filtra al escribir. Si falta uno, "Solicitar agregar" se lo pide a coordinación y la respuesta llega a la campana.' },
     { v: '2026-09-20 n', para: 'coord', texto: 'Pestaña Catálogo: aceptar o devolver solicitudes y administrar las listas de móviles y eventos.' },
     { v: '2026-09-20 n', para: 'todos', texto: 'Los usuarios que no son médicos tienen el campo "Interviniente" para anotar quién atendió.' },
@@ -3019,7 +3031,7 @@
     const fila = c => { const e = estadoDe(c), nombre = `${c.nombre || ''} ${c.apellido || ''}`.trim();
       return `<div class="urow"><div class="avatar" ${c.tipo === 'usuario' ? `data-foto="${esc(c.id)}"` : ''}>${c.tipo === 'usuario' ? esc(iniciales(c)) : (c.modo === 'coord' ? 'CO' : 'PC')}</div>
         <div class="datos"><b>${esc(nombre)}${c.rol ? ` <span class="pill rol">${esc(c.rol)}</span>` : ''}${c.tipo === 'usuario' ? ` <span class="pill rol">${esc(c.id)}</span>` : ''}</b>
-          <small>${e.k === 'off' ? 'Sin actividad reciente' : (c.modo === 'coord' ? 'En el panel de coordinación' : 'Cargando desde el celular')}</small></div>
+          <small>${c.tipo !== 'usuario' ? 'Sin usuario: ' + (c.modo === 'coord' ? 'entró con la clave compartida' : 'usa el link genérico') : e.k === 'off' ? 'Sin actividad reciente' : (c.modo === 'coord' ? 'En el panel de coordinación' : 'Cargando desde el celular')}</small></div>
         <span class="estado-chip ${e.k}"><span class="estado-dot"></span>${esc(e.txt)}</span></div>`; };
     const sec = (t, arr) => arr.length ? `<div class="usec">${t} (${arr.length})</div>` + arr.map(fila).join('') : '';
     $('#online-lista').innerHTML = (sec('Coordinación', coord) + sec('Personal', resto)) || '<div class="empty">Todavía no hay usuarios activos.</div>';
@@ -3331,11 +3343,16 @@
     if (d){ const a = $('#nav-cuenta [data-mi="coord"]'); a.href = d.href; $('#nc-coord-txt').textContent = d.txt; }
     if (MODO_COORD) $('#nav-cuenta [data-mi="cargar"]').href = hrefCargar();
     $('#nc-sol-n').textContent = MODO_COORD ? '' : String(solNoVistas() || '');
+    // [CORREGIDO · app PC] Cerrar sesión / Salir al final del grupo, con las mismas reglas que el menú del nombre
+    const salir = conSesion || MODO_COORD; v('salir', salir); v('sep', salir);
+    $('#nc-salir-txt').textContent = conSesion ? 'Cerrar sesión' : 'Salir';
   }
   $('#nav-cuenta').addEventListener('click', e => {
     const b = e.target.closest('button.nc'); if (!b) return;
     if (b.dataset.mi === 'perfil') abrirPerfil(); else if (b.dataset.mi === 'sol') abrirSolicitudes(); else if (b.dataset.mi === 'info') abrirInfo();
+    else if (b.dataset.mi === 'salir') $('#my-salir').click();   // mismo cartel y misma lógica que el menú del nombre
   });
+  const conBarraLateral = () => { try { return window.matchMedia('(min-width: 641px)').matches; } catch { return false; } };   // [CORREGIDO · app PC]
   function pintarPerfil(){
     try { pintarNavCuenta(); } catch {}
     const b = $('#perfil-btn'), sm = sesionMenu();
@@ -3510,7 +3527,7 @@
     menu.classList.remove('hidden'); b.setAttribute('aria-expanded', 'true');
   }
   const cerrarMenu = () => { menu.classList.add('hidden'); $('#perfil-btn').setAttribute('aria-expanded', 'false'); };
-  $('#perfil-btn').addEventListener('click', e => { e.stopPropagation(); menu.classList.contains('hidden') ? abrirMenu() : cerrarMenu(); });
+  $('#perfil-btn').addEventListener('click', e => { e.stopPropagation(); if (conBarraLateral()) return; menu.classList.contains('hidden') ? abrirMenu() : cerrarMenu(); });   // [CORREGIDO · app PC] con barra lateral la cuenta es estática
   document.addEventListener('click', e => { if (!menu.classList.contains('hidden') && !menu.contains(e.target)) cerrarMenu(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarMenu(); });
   window.addEventListener('scroll', cerrarMenu, { passive: true });
@@ -3627,6 +3644,9 @@
         $('.tabs button[data-tab="form"]').classList.add('hidden');
         $('.tabs button[data-tab="users"]').classList.remove('hidden');   // [NUEVO · usuarios] panel de usuarios
         $('.tabs button[data-tab="online"]').classList.remove('hidden');  // [NUEVO · conectados]
+        // [CORREGIDO · conectados] si en otra pestaña del mismo navegador alguien entra o sale con su usuario, este panel se
+        // recarga y pasa a usar esa sesión (antes seguía consultando con la clave compartida y figuraba como dos personas)
+        window.addEventListener('storage', e => { if (e.key !== 'sesion_usuario') return; let a = null, b = null; try { a = JSON.parse(e.oldValue || 'null'); b = JSON.parse(e.newValue || 'null'); } catch {} if ((a && a.token) !== (b && b.token)) location.reload(); });
         setInterval(() => { if (!document.hidden && !$('#view-online').classList.contains('hidden')) cargarConectados(); }, 30000);   // [NUEVO · conectados] se refresca sola mientras está a la vista
         $('#view-list .lead').textContent = 'Registros enviados por el equipo de campo. Tocá una tarjeta para ver el detalle; tocá la pestaña para actualizar.';
         $('.tabs button[data-tab="list"]').click();              // dispara cargarCentral (pide la clave la primera vez)
