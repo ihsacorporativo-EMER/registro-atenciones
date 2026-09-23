@@ -559,6 +559,10 @@
   .dm-msgs{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:10px;align-items:flex-start;padding:12px 16px;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--brand) 4%,var(--bg));overscroll-behavior:contain}
   .dm-msgs .msg p{margin:0}
   .dm-hora{font-size:11px;opacity:.7;margin-top:3px;text-align:right}
+  #dm-prev{margin:0}
+  #dm-hilo .comp-fila .adj-btn{margin-bottom:1px}
+  .dm-msgs .msg .adjs{margin-top:4px}
+  .dm-msgs .msg .adjs:first-child{margin-top:0}
   @media (max-width:640px){
     #modal-dm{padding:0;place-items:stretch}
     #modal-dm .box{width:100%;height:100vh;height:100dvh;max-height:none;border-radius:0;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom))}
@@ -1450,7 +1454,8 @@
     <div id="dm-lista"><input class="search" id="dm-q" type="search" placeholder="Buscar persona por nombre, ID o rol" autocomplete="off"><div id="dm-filas"></div></div>
     <div id="dm-hilo" class="hidden">
       <div class="dm-msgs" id="dm-msgs"></div>
-      <div class="comp-fila"><textarea class="resp-txt" id="dm-txt" rows="1" placeholder="Escribir mensaje…"></textarea><button type="button" class="enviar-msg" id="dm-enviar" aria-label="Enviar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></button></div>
+      <div class="adj-prev" id="dm-prev"></div>
+      <div class="comp-fila"><label class="adj-btn" title="Sacar foto" aria-label="Sacar foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2h6l2 2h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg><input type="file" id="dm-cam" accept="image/*" capture="environment"></label><label class="adj-btn" title="Adjuntar foto o PDF" aria-label="Adjuntar foto o PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 11.5-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8l9-9a3.5 3.5 0 0 1 5 5l-9 9a1.5 1.5 0 0 1-2.1-2.1l8-8"/></svg><input type="file" id="dm-adj" accept="image/*,application/pdf" multiple></label><textarea class="resp-txt" id="dm-txt" rows="1" placeholder="Escribir mensaje…"></textarea><button type="button" class="enviar-msg" id="dm-enviar" aria-label="Enviar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></button></div>
     </div>
   </div>
 </div>
@@ -1510,13 +1515,14 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-23 e';
+  const VERSION = '2026-09-23 f';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-23 f', para: 'todos', texto: 'Mensajes privados: ahora podés sacar una foto o adjuntar fotos y PDF desde la galería, y reaccionar a cada mensaje con 👍 ✅ 👀 ❗. Las reacciones del otro también avisan.' },
     { v: '2026-09-23 e', para: 'todos', texto: 'Mensajes privados: escribile a cualquier usuario activo desde el nuevo botón Mensajes (en celular, en la barra de abajo; en computadora, en la tarjeta de tu cuenta). Los mensajes nuevos avisan en la campana.' },
     { v: '2026-09-23 e', para: 'todos', texto: 'En la conversación de un registro, la etiqueta "Nuevo" de los mensajes desaparece después de verlos: ya no vuelve a aparecer al cerrar y abrir la tarjeta.' },
     { v: '2026-09-23 e', para: 'coord', texto: 'En Conectados, cada usuario tiene un botón de mensaje para escribirle en privado.' },
@@ -3193,13 +3199,15 @@
   const dmClave = k => k + '_' + ((sesionDM() || {}).id || '');
   function dmLeerLocal(){ try { dmVistos = JSON.parse(localStorage.getItem(dmClave('dm_vistos')) || '{}') || {}; const c = JSON.parse(localStorage.getItem(dmClave('dm_cache')) || 'null'); if (c && Array.isArray(c.mensajes)){ dm = c; dmCargado = true; } } catch {} }
   function dmGuardarLocal(){ try { localStorage.setItem(dmClave('dm_vistos'), JSON.stringify(dmVistos)); localStorage.setItem(dmClave('dm_cache'), JSON.stringify({ yo: dm.yo, mensajes: dm.mensajes.slice(-300), contactos: dm.contactos })); } catch {} }
-  const dmNoLeidosDe = cid => dm.mensajes.filter(m => m.de === cid && m.para === dm.yo && m.fecha > (dmVistos[cid] || 0)).length;
-  const dmConNoLeidos = () => sesionDM() ? [...new Set(dm.mensajes.filter(m => m.para === dm.yo && m.fecha > (dmVistos[m.de] || 0)).map(m => m.de))] : [];
+  // sin leer: mensajes del otro, y reacciones del otro a mis mensajes, posteriores a la última vez que abrí ese chat
+  const dmReacAjena = (m, cid) => m.de === dm.yo && m.para === cid && m.reacDe === cid && (m.reacFecha || 0) > (dmVistos[cid] || 0);
+  const dmNoLeidosDe = cid => dm.mensajes.filter(m => (m.de === cid && m.para === dm.yo && m.fecha > (dmVistos[cid] || 0)) || dmReacAjena(m, cid)).length;
+  const dmConNoLeidos = () => sesionDM() ? [...new Set(dm.mensajes.filter(m => (m.para === dm.yo && m.fecha > (dmVistos[m.de] || 0)) || (m.de === dm.yo && m.reacDe && m.reacDe !== dm.yo && dmReacAjena(m, m.para))).map(m => m.de === dm.yo ? m.para : m.de))] : [];
   function dmNoLeidos(){ return dmConNoLeidos().reduce((n, c) => n + dmNoLeidosDe(c), 0); }
   const dmContacto = cid => dm.contactos.find(c => c.id === cid) || conectados.find(c => c.tipo === 'usuario' && c.id === cid) || { id: cid, nombre: cid, apellido: '', rol: '' };
   const dmNombre = c => `${c.nombre || ''} ${c.apellido || ''}`.trim() || c.id;
   const dmHora = ts => { const d = new Date(ts), h = new Date(); return d.toDateString() === h.toDateString() ? fmtHora(ts) : fmtFechaHora(ts).slice(0, 5); };
-  function dmMarcarVisto(cid){ const mx = dm.mensajes.filter(m => m.de === cid && m.para === dm.yo).reduce((a, m) => Math.max(a, m.fecha), 0); if (mx > (dmVistos[cid] || 0)){ dmVistos[cid] = mx; dmGuardarLocal(); } }
+  function dmMarcarVisto(cid){ const mx = dm.mensajes.filter(m => (m.de === cid && m.para === dm.yo) || (m.de === dm.yo && m.para === cid && m.reacDe === cid)).reduce((a, m) => Math.max(a, m.de === cid ? m.fecha : 0, m.reacDe === cid ? (m.reacFecha || 0) : 0), 0); if (mx > (dmVistos[cid] || 0)){ dmVistos[cid] = mx; dmGuardarLocal(); } }
   function pintarDM(){
     const n = dmNoLeidos();
     pintarChipMensajes(n);
@@ -3235,11 +3243,12 @@
   }
   function dmCerrar(){ $('#modal-dm').classList.remove('open'); dmCon = null; }
   function dmVerLista(){
-    dmCon = null; $('#dm-atras').classList.add('hidden'); $('#dm-lista').classList.remove('hidden'); $('#dm-hilo').classList.add('hidden');
+    dmCon = null; dmAdjPend = []; dmPintarPrev(); $('#dm-atras').classList.add('hidden'); $('#dm-lista').classList.remove('hidden'); $('#dm-hilo').classList.add('hidden');
     $('#dm-titulo').textContent = 'Mensajes'; $('#dm-sub').textContent = 'Conversaciones privadas';
     dmRender();
   }
   function dmVerHilo(cid){
+    if (dmCon !== cid){ dmAdjPend = []; dmPintarPrev(); }
     dmCon = cid; $('#dm-atras').classList.remove('hidden'); $('#dm-lista').classList.add('hidden'); $('#dm-hilo').classList.remove('hidden');
     dmMarcarVisto(cid); dmRender(); pintarDM();
     if (!esCelular()) setTimeout(() => $('#dm-txt').focus(), 60);
@@ -3255,7 +3264,7 @@
     const conv = Object.keys(ult).map(dmContacto).filter(coincide).sort((a, b) => ult[b.id].fecha - ult[a.id].fecha);
     const resto = dm.contactos.filter(c => !ult[c.id] && coincide(c)).sort((a, b) => dmNombre(a).localeCompare(dmNombre(b), 'es'));
     const fila = c => { const m = ult[c.id], n = dmNoLeidosDe(c.id);
-      return `<button type="button" class="dm-row ${n ? 'nuevo' : ''}" data-id="${esc(c.id)}"><span class="avatar" data-foto="${esc(c.id)}">${esc(iniciales(c))}</span><span class="dm-dat"><b>${esc(dmNombre(c))}</b><small>${m ? esc((m.de === dm.yo ? 'Vos: ' : '') + m.texto) : esc([c.rol, c.id].filter(Boolean).join(' · '))}</small></span>${m ? `<span class="dm-meta"><small>${dmHora(m.fecha)}</small>${n ? `<span class="cnt">${n}</span>` : ''}</span>` : ''}</button>`; };
+      return `<button type="button" class="dm-row ${n ? 'nuevo' : ''}" data-id="${esc(c.id)}"><span class="avatar" data-foto="${esc(c.id)}">${esc(iniciales(c))}</span><span class="dm-dat"><b>${esc(dmNombre(c))}</b><small>${m ? esc((m.de === dm.yo ? 'Vos: ' : '') + dmResumen(m)) : esc([c.rol, c.id].filter(Boolean).join(' · '))}</small></span>${m ? `<span class="dm-meta"><small>${dmHora(m.fecha)}</small>${n ? `<span class="cnt">${n}</span>` : ''}</span>` : ''}</button>`; };
     $('#dm-filas').innerHTML = !dmCargado ? cargandoHTML('Cargando mensajes…')
       : ((conv.length ? '<div class="usec">Conversaciones</div>' + conv.map(fila).join('') : '') + (resto.length ? '<div class="usec">Contactos</div>' + resto.map(fila).join('') : '')) || `<div class="empty">${q ? 'Nadie coincide con esa búsqueda.' : 'Todavía no hay otros usuarios activos.'}</div>`;
     cargarAvataresEn('#dm-filas', id => dm.contactos.find(x => x.id === id));
@@ -3265,26 +3274,98 @@
     $('#dm-titulo').textContent = dmNombre(c); $('#dm-sub').textContent = [c.rol, c.id].filter(Boolean).join(' · ');
     const ms = dm.mensajes.filter(m => (m.de === dmCon && m.para === dm.yo) || (m.de === dm.yo && m.para === dmCon)).concat(dmPend.filter(p => p.para === dmCon)).sort((a, b) => a.fecha - b.fecha);
     const box = $('#dm-msgs');
-    box.innerHTML = ms.length ? ms.map(m => `<div class="msg ${m.de === dm.yo ? 'mio' : ''} ${m.enviando ? 'enviando' : ''}"><p>${esc(m.texto)}</p><div class="dm-hora">${fmtFechaHora(m.fecha)}${m.enviando ? ' · enviando…' : ''}</div></div>`).join('')
+    box.innerHTML = ms.length ? ms.map(m => `<div class="msg ${m.de === dm.yo ? 'mio' : ''} ${m.enviando ? 'enviando' : ''}" data-mid="${esc(m.id)}">${m.texto ? `<p>${esc(m.texto)}</p>` : ''}${dmAdjHTML(m)}<div class="dm-hora">${fmtFechaHora(m.fecha)}${m.enviando ? ' · enviando…' : ''}</div>${dmReacHTML(m)}</div>`).join('')
       : `<div class="hint" style="text-align:center;margin:auto">Todavía no hay mensajes con ${esc(dmNombre(c))}. Escribí el primero.</div>`;
     box.scrollTop = box.scrollHeight;
+    dmCargarAdjuntos();
   }
   async function dmEnviar(){
     const s = sesionDM(); if (!s || !dmCon) return;
-    const ta = $('#dm-txt'), texto = ta.value.trim(); if (!texto) return;
+    const ta = $('#dm-txt'), texto = ta.value.trim(), adj = dmAdjPend.slice(); if (!texto && !adj.length) return;
     const para = dmCon; dm.yo = dm.yo || s.id;
-    const tmp = { id: 'tmp' + Date.now(), de: dm.yo, para, texto, fecha: Date.now(), enviando: true };
-    dmPend.push(tmp); ta.value = ''; ta.style.height = 'auto'; dmRender(); marcarActividad();
+    const tmp = { id: 'tmp' + Date.now(), de: dm.yo, para, texto, fecha: Date.now(), enviando: true, adj: adj.map(a => ({ nombre: a.nombre, img: a.img, data: a.data })) };
+    dmPend.push(tmp); ta.value = ''; ta.style.height = 'auto'; dmAdjPend = []; dmPintarPrev(); dmRender(); marcarActividad();
     try {
-      const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify({ accion: 'dm', token: s.token, para, texto }) });
+      const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify({ accion: 'dm', token: s.token, para, texto, adjuntos: adj.map(a => ({ nombre: a.nombre, tipo: a.tipo, data: a.data })) }) });
       const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script');
+      (res.mensaje.adj || []).forEach((a, i) => { if (a.id && adj[i] && adj[i].data) adjCache.set(a.id, adj[i].data); });   // lo recién subido no se vuelve a bajar
       dmPend = dmPend.filter(p => p !== tmp); dm.mensajes.push(res.mensaje); dmGuardarLocal(); dmRender();
     } catch (e){
       dmPend = dmPend.filter(p => p !== tmp); dmRender();
-      if (dmCon === para && !$('#dm-txt').value) $('#dm-txt').value = texto;
+      if (dmCon === para){ if (!$('#dm-txt').value) $('#dm-txt').value = texto; if (!dmAdjPend.length){ dmAdjPend = adj; dmPintarPrev(); } }
       toast('No se pudo enviar: ' + e.message, 'err');
     }
   }
+  // [NUEVO · mensajes privados] adjuntos (sacar foto o elegir fotos y PDF) y reacciones
+  let dmAdjPend = [];
+  const dmResumen = m => m.texto || ((m.adj || []).length ? (m.adj[0].img ? '📷 Foto' : '📎 ' + m.adj[0].nombre) : '');
+  function dmPintarPrev(){ $('#dm-prev').innerHTML = dmAdjPend.map((a, i) => `<span class="adj-chip">${a.img ? `<img src="${a.data}" alt="">` : SVG_CLIP}<span class="nom">${esc(a.nombre)}</span><button type="button" class="quitar" data-i="${i}" aria-label="Quitar">×</button></span>`).join(''); }
+  async function dmAgregarArchivos(input){
+    for (const f of Array.from(input.files || [])){
+      if (dmAdjPend.length >= ADJ_MAX){ toast(`Hasta ${ADJ_MAX} adjuntos por mensaje`, 'err'); break; }
+      try {
+        if (/^image\//.test(f.type)) dmAdjPend.push({ nombre: (f.name || 'foto').replace(/\.[^.]+$/, '') + '.jpg', tipo: 'image/jpeg', img: true, data: await compress(f) });
+        else if (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)){
+          if (f.size > ADJ_PDF_MAX){ toast(`${f.name}: el PDF supera los 5 MB`, 'err'); continue; }
+          dmAdjPend.push({ nombre: f.name, tipo: 'application/pdf', img: false, data: await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => no(new Error('No se pudo leer')); r.readAsDataURL(f); }) });
+        } else toast(`${f.name}: solo fotos o PDF`, 'err');
+      } catch (err){ toast(err.message, 'err'); }
+    }
+    input.value = ''; dmPintarPrev(); marcarActividad();
+  }
+  $('#dm-cam').addEventListener('change', e => dmAgregarArchivos(e.target));
+  $('#dm-adj').addEventListener('change', e => dmAgregarArchivos(e.target));
+  $('#dm-prev').addEventListener('click', e => { const q = e.target.closest('.quitar'); if (!q) return; dmAdjPend.splice(+q.dataset.i, 1); dmPintarPrev(); });
+  const dmAdjHTML = m => (m.adj || []).length ? `<div class="adjs">${m.adj.map(a => { const d = a.data || (a.id && adjCache.get(a.id)); return a.img
+      ? `<button type="button" class="adj-img ${d ? '' : 'cargando'}" data-aid="${esc(a.id || '')}" data-nombre="${esc(a.nombre)}" aria-label="Ver ${esc(a.nombre)}">${d ? `<img src="${d}" alt="">` : '<img data-src="1" alt="">'}</button>`
+      : `<button type="button" class="adj-file" data-aid="${esc(a.id || '')}" data-nombre="${esc(a.nombre)}">${SVG_CLIP}<span>${esc(a.nombre)}</span></button>`; }).join('')}</div>` : '';
+  async function dmObtenerAdjunto(aid){
+    if (adjCache.has(aid)) return adjCache.get(aid);
+    const s = sesionDM(); if (!s) return '';
+    const u = new URL(FLOW_URL); u.searchParams.set('dmAdjunto', aid); u.searchParams.set('token', s.token);
+    const res = await (await fetchT(u, null, 60000)).json(); if (!res.ok) throw new Error(res.error || 'Error del script');
+    if (res.data) adjCache.set(aid, res.data);
+    return res.data || '';
+  }
+  function dmCargarAdjuntos(){
+    document.querySelectorAll('#dm-msgs .adj-img img[data-src]').forEach(async img => {
+      const b = img.closest('.adj-img'); if (!b.dataset.aid) return;
+      try { const d = await dmObtenerAdjunto(b.dataset.aid); if (d){ img.src = d; img.removeAttribute('data-src'); } } catch {}
+      b.classList.remove('cargando');
+    });
+  }
+  const dmReacHTML = m => {
+    if (m.enviando || !m.id) return '';
+    const chips = Object.entries(m.reac || {}).map(([ic, q]) => `<button type="button" class="reac ${q.includes(dm.yo) ? 'mia' : ''} ${dmReacAjena(m, dmCon) && !q.includes(dm.yo) ? 'nuevo' : ''}" data-ic="${esc(ic)}" data-mid="${esc(m.id)}" title="${esc(q.map(id => id === dm.yo ? 'Vos' : dmNombre(dmContacto(id))).join(', '))}">${esc(ic)}${q.length > 1 ? `<b>${q.length}</b>` : ''}</button>`).join('');
+    return `<div class="reacs">${chips}<button type="button" class="reac add" data-mid="${esc(m.id)}" aria-label="Reaccionar">${SVG_CARA}</button></div><div class="picker hidden">${REACCIONES.map(ic => `<button type="button" class="pick" data-ic="${ic}" data-mid="${esc(m.id)}" aria-label="Reaccionar ${ic}">${ic}</button>`).join('')}</div>`;
+  };
+  let dmReaccionando = false;
+  async function dmReaccionar(mid, icono){
+    const s = sesionDM(); if (!s || dmReaccionando) return;
+    const m = dm.mensajes.find(x => x.id === mid); if (!m) return;
+    const antes = JSON.stringify(m);
+    // al instante: se aplica y se dibuja antes de que el script confirme; si falla, se deshace
+    const reac = { ...(m.reac || {}) }; const lista = (reac[icono] || []).slice(); const i = lista.indexOf(dm.yo);
+    if (i >= 0) lista.splice(i, 1); else lista.push(dm.yo);
+    if (lista.length) reac[icono] = lista; else delete reac[icono];
+    m.reac = reac; dmRender(); marcarActividad(); dmReaccionando = true;
+    try {
+      const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify({ accion: 'dmReaccion', token: s.token, id: mid, icono }) });
+      const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script');
+      const k = dm.mensajes.findIndex(x => x.id === mid); if (k >= 0) dm.mensajes[k] = res.mensaje;
+      dmGuardarLocal(); dmRender();
+    } catch (e){
+      const k = dm.mensajes.findIndex(x => x.id === mid); if (k >= 0) dm.mensajes[k] = JSON.parse(antes);
+      dmRender(); toast('No se pudo reaccionar: ' + e.message, 'err');
+    } finally { dmReaccionando = false; }
+  }
+  $('#dm-msgs').addEventListener('click', e => {
+    const add = e.target.closest('.reac.add'); if (add){ const p = add.closest('.msg').querySelector('.picker'); if (p) p.classList.toggle('hidden'); return; }
+    const pick = e.target.closest('.pick, .reac'); if (pick){ dmReaccionar(pick.dataset.mid, pick.dataset.ic); return; }
+    const img = e.target.closest('.adj-img'); if (img){ const im = img.querySelector('img'); if (im && im.src && !im.dataset.src){ $('#lb img').src = im.src; $('#lb').dataset.nombre = img.dataset.nombre || 'foto.jpg'; $('#lb').classList.add('open'); } return; }
+    const file = e.target.closest('.adj-file');
+    if (file){ (async () => { try { file.disabled = true; const d = await dmObtenerAdjunto(file.dataset.aid); if (d) descargarDataUrl(d, file.dataset.nombre); else toast('No se pudo bajar el archivo', 'err'); } catch (err){ toast('No se pudo bajar el archivo: ' + err.message, 'err'); } finally { file.disabled = false; } })(); }
+  });
   $('#dm-enviar').addEventListener('click', dmEnviar);
   $('#dm-txt').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !esCelular()){ e.preventDefault(); dmEnviar(); } });
   $('#dm-txt').addEventListener('input', e => { const ta = e.target; ta.style.height = 'auto'; ta.style.height = Math.min(120, ta.scrollHeight) + 'px'; });
