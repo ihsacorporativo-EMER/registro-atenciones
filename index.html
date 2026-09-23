@@ -770,20 +770,34 @@
     .nav-cuenta .nc.salir:hover{background:rgba(255,120,100,.18)}
     .tabs:has(button[data-tab="users"]:not(.hidden)) .tabs-sec{display:block}
     /* cuenta abajo: foto (o iniciales), nombre con flecha y, debajo, el rol */
-    .yo{margin:auto 0 0;padding:8px;border-radius:12px;background:rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:stretch;gap:2px;min-width:0;width:100%}
+    /* [NUEVO · tarjeta PC] tarjeta de la cuenta: foto con anillo de conexión, nombre, rol · ID, flecha, y debajo los contadores */
+    .yo{margin:auto 0 0;padding:12px;border-radius:14px;background:rgba(4,18,52,.38);border:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:stretch;gap:10px;min-width:0;width:100%}
+    .yo:not(:has(.perfil-btn:not(.hidden))){display:none}
+    .yo-txt{display:flex;flex-direction:column;flex:1;min-width:0;text-align:left;line-height:1.25}
+    .yo-txt #perfil-nombre{font-size:14px;font-weight:800;color:#fff}
+    #yo-sub{font-size:12px;font-weight:600;color:#b9c8ea;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .yo-chips{display:flex;gap:6px;flex-wrap:wrap}
+    .yo-chip{display:inline-flex;align-items:baseline;gap:4px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);color:#b9c8ea;border-radius:8px;padding:4px 9px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+    .yo-chip:hover{background:rgba(255,255,255,.16)}
+    .yo-chip b{color:#fff;font-weight:800}
+    .yo-chip.hay b{color:#ffcf5c}
+    .yo-chip.hidden{display:none}
     .bell:not(.hidden) + .yo{margin-left:0}
-    .brand .tag{order:1;margin:0 0 0 46px;align-self:flex-start;font-size:10px;padding:2px 8px}
-    .perfil-btn{order:0;max-width:100%;width:100%;justify-content:flex-start;background:none;padding:0;font-size:13px;gap:8px;overflow:hidden}
+    .brand .tag{display:none}   /* [NUEVO · tarjeta PC] el rol va dentro de la tarjeta */
+    .perfil-btn{order:0;max-width:100%;width:100%;justify-content:flex-start;background:none;padding:0;font-size:13px;gap:10px;overflow:hidden;cursor:default}
     .perfil-btn #perfil-nombre{flex:1;min-width:0}   /* [CORREGIDO · app PC] el nombre largo se corta con puntos en vez de ensanchar la barra y mostrar un scroll */
-    .perfil-btn{cursor:default}                         /* [CORREGIDO · app PC] la cuenta de abajo es informativa: sin flecha ni lista desplegable (los accesos están en "Mi cuenta") */
     .perfil-btn .chev{display:none}
+    .perfil-btn.abre{cursor:pointer}                    /* con sesión, la tarjeta abre el perfil (ya no la lista desplegable) */
+    .perfil-btn.abre .chev{display:grid;opacity:.7}
+    .perfil-btn .chev svg{width:16px;height:16px}
     .tabs button{min-width:0;overflow:hidden}
     .brand .titulo b,.brand .titulo .subtitulo{white-space:normal;overflow:visible;line-height:1.2}   /* [CORREGIDO · app PC] "Servicios Corporativos" en dos líneas si hace falta, nunca cortado */
     .mark img{height:24px !important}
     .perfil-btn .chev{margin-left:auto}
-    .yo-av{display:grid;width:36px;height:36px;font-size:13px;background:rgba(255,255,255,.2)}
+    .yo-av{display:grid;width:40px;height:40px;font-size:13px;background:#e6ebf5;color:var(--brand-deep);box-shadow:0 0 0 2px #34d27b;border:2px solid rgba(4,18,52,.9)}
+    .perfil-btn:has(.estado-dot.off) .yo-av{box-shadow:0 0 0 2px #ff4d4f}   /* anillo rojo sin conexión */
     .yo-av img{width:100%;height:100%;object-fit:cover;display:block}
-    .perfil-btn .estado-dot{width:8px;height:8px;margin-left:-14px;margin-top:22px;box-shadow:0 0 0 2px var(--brand-deep)}
+    .perfil-btn .estado-dot{display:none}   /* el anillo de la foto ya dice el estado */
     main,main.wide{margin:0 0 0 var(--sb);max-width:none;padding:24px 84px 40px 28px}   /* [CORREGIDO · app PC] main.wide tenía tope de 1100 px y dejaba el Tablero angosto en monitores grandes */
     /* [CORREGIDO · app PC] sin tope angosto: en pantallas grandes el contenido crece hasta 1600 px */
     main > div{max-width:1600px}
@@ -858,9 +872,9 @@
     .yo{padding:6px;align-items:center}
     .brand .tag{display:none}
     .perfil-btn{justify-content:center;padding:0;gap:0}
-    .perfil-btn #perfil-nombre,.perfil-btn .chev{display:none}
+    .perfil-btn .yo-txt,.perfil-btn .chev,.perfil-btn.abre .chev,.yo-chips{display:none}
     .yo-av{width:34px;height:34px}
-    .perfil-btn .estado-dot{width:10px;height:10px;margin-left:-12px;margin-top:22px}
+    .yo{padding:8px}
     main{padding:24px 84px 40px 20px}
     #view-form{grid-template-columns:minmax(0,1fr)}
     #view-form > section.card:first-of-type,#view-form > section.card:nth-of-type(2),#view-form > .sticky{grid-column:1;grid-row:auto}
@@ -895,7 +909,12 @@
     <!-- [NUEVO · perfil] rol arriba; debajo, punto de conexión + nombre + flecha, que abre "Mi perfil" -->
     <div class="yo">
       <div class="tag">USO INTERNO</div><!-- [NUEVO] se reemplaza por PERSONAL DE CAMPO, el rol, COORDINADOR o ADMINISTRADOR -->
-      <button type="button" class="perfil-btn hidden" id="perfil-btn" aria-label="Menú" aria-haspopup="menu" aria-expanded="false"><span class="avatar yo-av" id="yo-avatar"></span><span class="estado-dot" id="estado-dot"></span><span id="perfil-nombre"></span><span class="chev">▾</span></button><!-- [NUEVO · menú] abre la lista desplegable -->
+      <button type="button" class="perfil-btn hidden" id="perfil-btn" aria-label="Mi perfil"><span class="avatar yo-av" id="yo-avatar"></span><span class="estado-dot" id="estado-dot"></span><span class="yo-txt"><span id="perfil-nombre"></span><small id="yo-sub"></small></span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></span></button>
+      <!-- [NUEVO · tarjeta PC] contadores de la cuenta: usuarios en línea (solo coordinación, abre Conectados) y mensajes (abre el panel de mensajes) -->
+      <div class="yo-chips" id="yo-chips">
+        <button type="button" class="yo-chip hidden" id="yo-activos" title="Usuarios en línea ahora · ver Conectados"><b id="yo-activos-n">0</b> activos</button>
+        <button type="button" class="yo-chip" id="yo-mensajes" title="Mensajes"><b id="yo-mensajes-n">0</b> mensajes</button>
+      </div>
     </div>
   </div>
   <div class="tabs" role="tablist">
@@ -1414,13 +1433,15 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-22 n';
+  const VERSION = '2026-09-23 a';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-23 a', para: 'todos', texto: 'En computadora, la tarjeta de tu cuenta (abajo en la barra lateral) tiene un diseño nuevo: foto con anillo de conexión, nombre, rol e ID, y un acceso a Mensajes. Tocá la tarjeta para abrir tu perfil.' },
+    { v: '2026-09-23 a', para: 'coord', texto: 'La tarjeta de la cuenta muestra cuántos usuarios están en línea; al tocarlo se abre Conectados.' },
     { v: '2026-09-22 n', para: 'todos', texto: 'En computadora, el grupo "Mi cuenta" de la barra lateral reúne todos los accesos (Perfil, Información adicional, Cargar un registro, Entrar con mi usuario, Cerrar sesión). Va todo al fondo de la barra, con la cuenta (foto, nombre y rol) arriba del grupo; la cuenta ya no despliega una lista.' },
     { v: '2026-09-22 l', para: 'coord', texto: 'Conectados: cada dispositivo figura una sola vez. Al entrar con tu usuario ya no aparece al lado "Coordinación (clave)" ni "link genérico" por el mismo celular o PC.' },
     { v: '2026-09-20 n', para: 'todos', texto: 'Móvil y Evento se eligen de una lista que filtra al escribir. Si falta uno, "Solicitar agregar" se lo pide a coordinación y la respuesta llega a la campana.' },
@@ -3027,8 +3048,7 @@
     vis.sort((a, b) => peso(a) - peso(b));
     const esCoordC = c => esRolCoord(c.rol) || c.modo === 'coord';
     const coord = vis.filter(esCoordC), resto = vis.filter(c => !esCoordC(c));
-    const nOn = vis.filter(c => estadoDe(c).k === 'on').length;
-    $('#onlinecount').textContent = nOn ? `(${nOn})` : ''; $('#mas-onlinecount').textContent = nOn ? String(nOn) : '';
+    pintarActivos();
     const fila = c => { const e = estadoDe(c), nombre = `${c.nombre || ''} ${c.apellido || ''}`.trim();
       return `<div class="urow"><div class="avatar" ${c.tipo === 'usuario' ? `data-foto="${esc(c.id)}"` : ''}>${c.tipo === 'usuario' ? esc(iniciales(c)) : (c.modo === 'coord' ? 'CO' : 'PC')}</div>
         <div class="datos"><b>${esc(nombre)}${c.rol ? ` <span class="pill rol">${esc(c.rol)}</span>` : ''}${c.tipo === 'usuario' ? ` <span class="pill rol">${esc(c.id)}</span>` : ''}</b>
@@ -3037,6 +3057,16 @@
     const sec = (t, arr) => arr.length ? `<div class="usec">${t} (${arr.length})</div>` + arr.map(fila).join('') : '';
     $('#online-lista').innerHTML = (sec('Coordinación', coord) + sec('Personal', resto)) || '<div class="empty">Todavía no hay usuarios activos.</div>';
     cargarAvataresEn('#online-lista', id => conectados.find(x => x.tipo === 'usuario' && x.id === id));
+  }
+  // [NUEVO · tarjeta PC] cantidad en línea: pestaña, "Más" y tarjeta de la cuenta
+  function pintarActivos(){
+    const n = conectados.filter(c => estadoDe(c).k === 'on').length;
+    $('#onlinecount').textContent = n ? `(${n})` : ''; $('#mas-onlinecount').textContent = n ? String(n) : ''; $('#yo-activos-n').textContent = String(n);
+  }
+  // consulta liviana cada minuto (no lee la planilla), para que el contador de la tarjeta esté al día sin abrir Conectados
+  async function refrescarActivos(){
+    if (!MODO_COORD || !FLOW_URL || document.hidden || cargandoConectados || !claveGuardada()) return;
+    try { const res = await pedirCentral({ conectados: 1, dispositivo: dispositivoId }); conectados = res.conectados || []; ahoraServidor = res.ahora || Date.now(); if (!$('#view-online').classList.contains('hidden')) renderConectados(); else pintarActivos(); } catch {}
   }
   async function cargarAvataresEn(sel, buscar){                        // fotos de perfil de una lista, con la misma caché que Usuarios
     for (const el of Array.from(document.querySelectorAll(sel + ' .avatar[data-foto]')).slice(0, 40)){
@@ -3353,12 +3383,27 @@
     if (b.dataset.mi === 'perfil') abrirPerfil(); else if (b.dataset.mi === 'sol') abrirSolicitudes(); else if (b.dataset.mi === 'info') abrirInfo();
     else if (b.dataset.mi === 'salir') $('#my-salir').click();   // mismo cartel y misma lógica que el menú del nombre
   });
+  // [NUEVO · tarjeta PC] Mensajes: el panel con los contactos que te escriben llega en la próxima versión. Para conectarlo,
+  // reemplazar abrirMensajes() por la apertura del panel y llamar pintarChipMensajes(n) con la cantidad sin leer.
+  let mensajesSinLeer = 0;
+  function pintarChipMensajes(n){ if (typeof n === 'number') mensajesSinLeer = n; $('#yo-mensajes-n').textContent = String(mensajesSinLeer); $('#yo-mensajes').classList.toggle('hay', mensajesSinLeer > 0); }
+  function abrirMensajes(){ toast('El panel de mensajes llega en la próxima versión'); }
+  $('#yo-mensajes').addEventListener('click', abrirMensajes);
+  $('#yo-activos').addEventListener('click', () => $('.tabs button[data-tab="online"]').click());
   const conBarraLateral = () => { try { return window.matchMedia('(min-width: 641px)').matches; } catch { return false; } };   // [CORREGIDO · app PC]
   function pintarPerfil(){
     try { pintarNavCuenta(); } catch {}
     const b = $('#perfil-btn'), sm = sesionMenu();
     // [NUEVO · menú] sin sesión, el link de coordinación (con clave) también tiene menú: Información adicional y Salir
-    if (!sm){ if (!MODO_COORD && !volverA){ b.classList.add('hidden'); return; } $('#perfil-nombre').textContent = MODO_COORD ? 'Acceso con clave' : 'Menú'; { const av = $('#yo-avatar'); av.dataset.foto = '-'; av.textContent = MODO_ADMIN ? 'AD' : MODO_COORD ? 'CO' : 'PC'; } b.classList.remove('hidden'); pintarEstado(); return; }   // [CORREGIDO · volver al panel] con ?volver también hay menú · [NUEVO · app PC] iniciales genéricas
+    $('#yo-activos').classList.toggle('hidden', !MODO_COORD); pintarChipMensajes();   // [NUEVO · tarjeta PC]
+    b.classList.toggle('abre', !!sm);
+    if (!sm){
+      if (MODO_USUARIO){ b.classList.add('hidden'); return; }   // pantalla de ingreso: todavía no hay cuenta que mostrar
+      $('#perfil-nombre').textContent = MODO_ADMIN ? 'Administración' : MODO_COORD ? 'Coordinación' : 'Personal de campo';
+      $('#yo-sub').textContent = MODO_COORD ? 'Acceso con clave' : 'Link genérico, sin usuario';
+      { const av = $('#yo-avatar'); av.dataset.foto = '-'; av.textContent = MODO_ADMIN ? 'AD' : MODO_COORD ? 'CO' : 'PC'; } b.classList.remove('hidden'); pintarEstado(); return;
+    }
+    $('#yo-sub').textContent = [sm.rol, sm.id].filter(Boolean).join(' · ');   // [CORREGIDO · volver al panel] con ?volver también hay menú · [NUEVO · app PC] iniciales genéricas
     $('#perfil-nombre').textContent = `${sm.nombre} ${sm.apellido}`;
     b.classList.remove('hidden'); pintarEstado();
     // [NUEVO · app PC] foto de perfil (o iniciales) en la cuenta de la barra lateral; se trae una vez por foto
@@ -3528,7 +3573,7 @@
     menu.classList.remove('hidden'); b.setAttribute('aria-expanded', 'true');
   }
   const cerrarMenu = () => { menu.classList.add('hidden'); $('#perfil-btn').setAttribute('aria-expanded', 'false'); };
-  $('#perfil-btn').addEventListener('click', e => { e.stopPropagation(); if (conBarraLateral()) return; menu.classList.contains('hidden') ? abrirMenu() : cerrarMenu(); });   // [CORREGIDO · app PC] con barra lateral la cuenta es estática
+  $('#perfil-btn').addEventListener('click', e => { e.stopPropagation(); if (conBarraLateral()){ if (sesionMenu()) abrirPerfil(); return; } menu.classList.contains('hidden') ? abrirMenu() : cerrarMenu(); });   // [NUEVO · tarjeta PC] con barra lateral, la tarjeta abre el perfil   // [CORREGIDO · app PC] con barra lateral la cuenta es estática
   document.addEventListener('click', e => { if (!menu.classList.contains('hidden') && !menu.contains(e.target)) cerrarMenu(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarMenu(); });
   window.addEventListener('scroll', cerrarMenu, { passive: true });
@@ -3613,7 +3658,7 @@
 
   // ---- conexión con la base ----
   // [CORREGIDO · arranque] listo(): muestra la pantalla una vez decidido el modo. Con red de seguridad a los 6 s por si algo falla.
-  const listo = () => { document.body.classList.remove('cargando'); sincronizarBnav(); try { pintarNavCuenta(); } catch {} };   // [NUEVO · app celular] · [NUEVO · app PC]
+  const listo = () => { document.body.classList.remove('cargando'); sincronizarBnav(); try { pintarPerfil(); } catch {} };   // [NUEVO · tarjeta PC] la tarjeta en todos los modos   // [NUEVO · app celular] · [NUEVO · app PC]
   // [CORREGIDO · ícono] el navegador guarda el ícono por dirección (link genérico, ?modo=usuario, ?modo=coordinador…) y en
   // pestañas viejas seguía mostrando el mundito. Volver a insertar el <link> al arrancar lo obliga a refrescarlo en cada link.
   try { document.querySelectorAll('link[rel="icon"]').forEach(l => { const n = l.cloneNode(); l.remove(); document.head.appendChild(n); }); } catch {}
@@ -3648,7 +3693,8 @@
         // [CORREGIDO · conectados] si en otra pestaña del mismo navegador alguien entra o sale con su usuario, este panel se
         // recarga y pasa a usar esa sesión (antes seguía consultando con la clave compartida y figuraba como dos personas)
         window.addEventListener('storage', e => { if (e.key !== 'sesion_usuario') return; let a = null, b = null; try { a = JSON.parse(e.oldValue || 'null'); b = JSON.parse(e.newValue || 'null'); } catch {} if ((a && a.token) !== (b && b.token)) location.reload(); });
-        setInterval(() => { if (!document.hidden && !$('#view-online').classList.contains('hidden')) cargarConectados(); }, 30000);   // [NUEVO · conectados] se refresca sola mientras está a la vista
+        setInterval(() => { if (!document.hidden && !$('#view-online').classList.contains('hidden')) cargarConectados(); }, 30000);
+        setTimeout(refrescarActivos, 4500); setInterval(refrescarActivos, 60000);   // [NUEVO · tarjeta PC] usuarios en línea en la tarjeta   // [NUEVO · conectados] se refresca sola mientras está a la vista
         $('#view-list .lead').textContent = 'Registros enviados por el equipo de campo. Tocá una tarjeta para ver el detalle; tocá la pestaña para actualizar.';
         $('.tabs button[data-tab="list"]').click();              // dispara cargarCentral (pide la clave la primera vez)
         // [NUEVO · rapidez] Usuarios y Catálogo se traen por detrás apenas hay clave o sesión, así la pestaña abre al instante
