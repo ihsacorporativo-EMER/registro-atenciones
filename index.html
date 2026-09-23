@@ -178,7 +178,7 @@
   .toast{
     position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);
     background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;
-    opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center;z-index:10;
+    opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center;z-index:50;
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .toast.ok{background:var(--ok);color:#fff}
@@ -378,7 +378,7 @@
   .adj-btn:hover{background:color-mix(in srgb,var(--brand) 10%,var(--card));color:var(--brand-txt)}
   .adj-btn input{display:none}
   .adj-btn svg{width:20px;height:20px}
-  .comp-fila .enviar-msg{width:36px;height:36px;border-radius:50%;padding:0;justify-content:center;flex:none;margin:0}
+  .comp-fila .enviar-msg{width:36px;height:36px;border-radius:50%;padding:0;justify-content:center;flex:none;margin:0;display:inline-flex;align-items:center;border:0;background:var(--brand);color:#fff;cursor:pointer}   /* [CORREGIDO] el botón no tenía color propio */
   .comp-fila .enviar-msg svg{width:16px;height:16px;margin:0 0 0 -2px}
   .adj-prev{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
   .adj-prev:empty{display:none}
@@ -530,6 +530,42 @@
   .modal.confirmar .modal-actions{margin-top:18px}
   .modal.confirmar.peligro .primary{background:var(--danger)}
   #cr-thumb .thumb{max-width:110px}
+
+  /* [NUEVO · mensajes privados] panel: lista de conversaciones y chat uno a uno */
+  #modal-dm .box{width:min(560px,100%);height:min(680px,calc(100dvh - 32px));display:flex;flex-direction:column;padding:16px 16px 14px;overflow:hidden}
+  .dm-cab{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .dm-tit{flex:1;min-width:0}
+  .dm-tit h3{margin:0;font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dm-tit small{display:block;color:var(--muted);font-size:12px}
+  .dm-ic{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none;padding:0}
+  .dm-ic svg{width:18px;height:18px}
+  .dm-ic:hover{background:color-mix(in srgb,var(--brand) 9%,var(--card))}
+  .urow .dm-ic{color:var(--brand-txt)}
+  #dm-lista{display:flex;flex-direction:column;flex:1;min-height:0}
+  #dm-lista .search{margin-bottom:6px}
+  #dm-filas{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+  #dm-filas .usec{margin:10px 0 4px}
+  .dm-row{display:flex;align-items:center;gap:12px;width:100%;padding:9px 10px;border:0;border-radius:12px;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+  .dm-row:hover{background:color-mix(in srgb,var(--brand) 8%,var(--card))}
+  .dm-row .avatar{width:40px;height:40px;font-size:13px}
+  .dm-dat{flex:1;min-width:0;display:flex;flex-direction:column}
+  .dm-dat b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dm-dat small{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dm-row.nuevo .dm-dat small{color:var(--ink);font-weight:700}
+  .dm-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+  .dm-meta small{color:var(--muted);font-size:11.5px}
+  .dm-meta .cnt{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center}
+  #dm-hilo{display:flex;flex-direction:column;flex:1;min-height:0;gap:10px}
+  .dm-msgs{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:10px;align-items:flex-start;padding:12px 16px;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--brand) 4%,var(--bg));overscroll-behavior:contain}
+  .dm-msgs .msg p{margin:0}
+  .dm-hora{font-size:11px;opacity:.7;margin-top:3px;text-align:right}
+  @media (max-width:640px){
+    #modal-dm{padding:0;place-items:stretch}
+    #modal-dm .box{width:100%;height:100vh;height:100dvh;max-height:none;border-radius:0;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom))}
+    #dm-txt{font-size:16px}
+    .bnav .bcnt{position:absolute;top:6px;left:calc(50% + 6px);min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center}
+    .bnav .bcnt:empty{display:none}
+  }
 
   /* Lightbox */
   .lb{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;place-items:center;z-index:40;cursor:zoom-out}   /* por encima de los modales */
@@ -729,7 +765,7 @@
     body.en-login main,body.en-login main.wide{margin:0 auto !important;max-width:480px !important;padding:56px 20px 40px !important}
     body.en-login .pie{margin:28px auto 0 !important;max-width:480px;padding:18px 20px 28px !important}
     body.en-login .login-marca{display:flex;align-items:center;gap:14px;margin:0 0 26px}
-    .login-marca .mark{padding:6px 9px;border-radius:12px;background:#fff;animation:none;line-height:0}
+    .login-marca .mark{padding:6px 9px;border-radius:0;background:#fff;animation:none;line-height:0}
     .login-marca .mark img{height:34px;width:auto;display:block}
     .login-marca b{display:block;font-size:17px;font-weight:800}
     .login-marca span{display:block;font-size:13px;color:var(--muted)}
@@ -751,21 +787,22 @@
     .yo{order:2}
     .brand b{font-size:13px;line-height:1.2}
     .brand .subtitulo{font-size:11px;line-height:1.2;opacity:.85}
-    .mark{padding:4px 7px}
+    .mark{padding:4px 7px;border-radius:0}   /* [CORREGIDO · barra PC] logo con esquinas rectas */
     .mark img{height:26px !important}
     .bell{position:fixed;top:16px;right:24px;margin:0;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);order:0}
     .bell .badge{top:-5px;right:-5px}
     .tema-btn{position:fixed;top:16px;right:76px;margin:0;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);order:0}   /* [NUEVO · tema] al lado de la campana */
     .bell.hidden + .tema-btn{right:24px}
-    .tabs{max-width:none;margin:12px 0 0;flex-direction:column;gap:4px;background:none;padding:0;border-radius:0;flex:none}
-    .tabs button{display:flex;align-items:center;gap:12px;justify-content:flex-start;height:44px;padding:0 12px;border-radius:10px;font-size:14px;color:#e3eaff;text-align:left;transform:none}
-    .tabs button svg{display:block;width:20px;height:20px;flex:none}
+    .tabs{max-width:none;margin:18px 0 0;flex-direction:column;gap:6px;background:none;padding:0;border-radius:0;flex:none}
+    .tabs button{display:flex;align-items:center;gap:14px;justify-content:flex-start;flex:none;height:clamp(46px,6.4vh,56px);padding:0 14px;border-radius:12px;font-size:16px;font-weight:700;color:#e3eaff;text-align:left;transform:none}   /* [CORREGIDO · barra PC] más grandes y parejas */
+    .tabs button:not([aria-selected="true"]):hover{background:rgba(255,255,255,.1)}
+    .tabs button svg{display:block;width:24px;height:24px;flex:none}
     .tabs button[aria-selected="true"]{background:#fff;color:var(--brand);box-shadow:none}
-    .tabs button > span{margin-left:auto;font-size:12px;font-weight:800}
+    .tabs button > span{margin-left:auto;font-size:13px;font-weight:800}
     .tabs button .tabdot{margin-left:auto;width:8px;height:8px}
     .tabs button span:empty{display:none}
     .tabs button.hidden{display:none}
-    .tabs-sec{padding:14px 12px 4px;font-size:11px;font-weight:800;color:#c3d2f5;letter-spacing:.6px;text-transform:uppercase}
+    .tabs-sec{padding:18px 14px 6px;font-size:12px;font-weight:800;color:#c3d2f5;letter-spacing:.7px;text-transform:uppercase}
     /* [CORREGIDO · app PC] al fondo de la barra, en este orden: la cuenta (foto, nombre, rol), el título "Mi cuenta" y sus accesos */
     .cuenta-sec{display:block;order:3;padding-top:10px}
     .nav-cuenta{display:flex;flex-direction:column;gap:4px;order:4}
@@ -863,6 +900,15 @@
     .catlista{max-height:88px}   /* unas 3 filas a la vista; el resto con scroll. Dos cuadros compactos ≈ la altura de Resueltas */
     /* Configuración: archivar, importar y mails en una sola fila */
     #config{grid-template-columns:repeat(3,minmax(0,1fr))}
+  }
+  /* [CORREGIDO · barra PC] pantallas bajas (notebooks): todo más compacto para que la barra entre sin desplazarse */
+  @media (min-width:641px) and (max-height:780px){
+    .tabs{margin-top:12px;gap:4px}
+    .tabs button{height:42px}
+    .tabs-sec{padding:12px 14px 4px}
+    .nav-cuenta{gap:2px}
+    .nav-cuenta .nc{height:34px}
+    .yo{padding:10px;gap:8px}
   }
   /* tablet (641–1023 px): la barra lateral queda solo con íconos */
   @media (min-width:641px) and (max-width:1023px){
@@ -1269,6 +1315,7 @@
   <button type="button" data-go="form"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>Nuevo</button>
   <button type="button" data-go="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>Tablero</button>
 <!-- [CORREGIDO · app celular] Catálogo ya no va en la barra: está dentro de "Más" (con Usuarios y Configuración) -->
+  <button type="button" data-go="msj"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Mensajes<span class="bcnt" id="bnav-dmn"></span></button><!-- [NUEVO · mensajes privados] abre el panel, no es una pestaña -->
   <button type="button" data-go="mas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>Más<span class="bdot" id="bnav-masdot"></span></button>
 </nav>
 <!-- [NUEVO · pie] -->
@@ -1392,6 +1439,22 @@
   </div>
 </div>
 
+<!-- [NUEVO · mensajes privados] lista de conversaciones y chat uno a uno -->
+<div class="modal" id="modal-dm" role="dialog" aria-modal="true" aria-labelledby="dm-titulo">
+  <div class="box">
+    <div class="dm-cab">
+      <button type="button" class="dm-ic hidden" id="dm-atras" aria-label="Volver a la lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>
+      <div class="dm-tit"><h3 id="dm-titulo">Mensajes</h3><small id="dm-sub"></small></div>
+      <button type="button" class="dm-ic" id="dm-cerrar" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg></button>
+    </div>
+    <div id="dm-lista"><input class="search" id="dm-q" type="search" placeholder="Buscar persona por nombre, ID o rol" autocomplete="off"><div id="dm-filas"></div></div>
+    <div id="dm-hilo" class="hidden">
+      <div class="dm-msgs" id="dm-msgs"></div>
+      <div class="comp-fila"><textarea class="resp-txt" id="dm-txt" rows="1" placeholder="Escribir mensaje…"></textarea><button type="button" class="enviar-msg" id="dm-enviar" aria-label="Enviar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></button></div>
+    </div>
+  </div>
+</div>
+
 <!-- [NUEVO · confirmar] cartel de confirmación propio (función confirmar) -->
 <div class="modal confirmar" id="modal-confirm" role="alertdialog" aria-modal="true" aria-describedby="cf-texto">
   <div class="box">
@@ -1447,13 +1510,17 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-23 c';
+  const VERSION = '2026-09-23 e';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-23 e', para: 'todos', texto: 'Mensajes privados: escribile a cualquier usuario activo desde el nuevo botón Mensajes (en celular, en la barra de abajo; en computadora, en la tarjeta de tu cuenta). Los mensajes nuevos avisan en la campana.' },
+    { v: '2026-09-23 e', para: 'todos', texto: 'En la conversación de un registro, la etiqueta "Nuevo" de los mensajes desaparece después de verlos: ya no vuelve a aparecer al cerrar y abrir la tarjeta.' },
+    { v: '2026-09-23 e', para: 'coord', texto: 'En Conectados, cada usuario tiene un botón de mensaje para escribirle en privado.' },
+    { v: '2026-09-23 d', para: 'todos', texto: 'En computadora, la barra lateral tiene el logo con esquinas rectas y las secciones más grandes y parejas, más fáciles de tocar.' },
     { v: '2026-09-23 c', para: 'todos', texto: 'El aviso de actualización muestra solo lo último que cambió, no todas las novedades anteriores juntas.' },
     { v: '2026-09-23 b', para: 'todos', texto: 'Al cerrar sesión se vuelve directo a la pantalla de ingreso, sin que aparezca el pedido de clave. En computadora, la pantalla de ingreso se ve limpia, sin la barra lateral.' },
     { v: '2026-09-23 a', para: 'todos', texto: 'En computadora, la tarjeta de tu cuenta (abajo en la barra lateral) tiene un diseño nuevo: foto con anillo de conexión, nombre, rol e ID, y un acceso a Mensajes. Tocá la tarjeta para abrir tu perfil.' },
@@ -2230,6 +2297,9 @@
   // [CORREGIDO · espera] más un desfase al azar de hasta 5 s, para que varios dispositivos no consulten en el mismo segundo
   const periodoSondeo = () => ((!document.hidden && Date.now() - ultimaActividad < 120000) ? 15000 : 30000) + Math.floor(Math.random() * 5000);
   function sondeoAdaptativo(fn){ (async function ciclo(){ try { await fn(); } catch {} setTimeout(ciclo, periodoSondeo()); })(); }
+  // [CORREGIDO · visto] Las burbujas "Nuevo" se dibujaban con la marca vieja y quedaban así al cerrar y volver a abrir la
+  // tarjeta. Ahora el hilo se redibuja con la marca actual (el registro ya se dio por visto al abrirlo).
+  function refrescarHiloVisto(art){ const reg = registros.find(x => x.id === art.dataset.id); if (reg && art.querySelector('.hilo') && !enviandoIds.has(reg.id)) redibujarHilo(art, reg); }
   // vuelve a dibujar el hilo de una tarjeta sin perder el cuadro de respuesta abierto ni lo que se estaba escribiendo
   function redibujarHilo(art, reg){
     const texto = art.querySelector('.resp-txt')?.value || '', foco = !!art.querySelector('.resp-txt:focus');
@@ -2375,10 +2445,11 @@
     usuariosPend = MODO_COORD ? (s || 0) : 0; pedidosPend = MODO_COORD ? (pedidos || 0) : 0; solicitudesPend = usuariosPend + pedidosPend;
     $('#ucount').textContent = usuariosPend ? `(${usuariosPend})` : ''; $('#catcount').textContent = pedidosPend ? `(${pedidosPend})` : '';
   };
+  const dmNoLeidosSeguro = () => { try { return dmNoLeidos(); } catch { return 0; } };   // [NUEVO · mensajes privados] antes de iniciarse, 0
   function pintarNoVistos(n){
     // [NUEVO · novedades] versión nueva, [NUEVO · usuarios / catálogo] solicitudes (coordinación) y respuestas a mis
     // solicitudes (campo) cuentan en la campana, no en la pestaña Registros
-    const total = n + (novedadPendiente ? 1 : 0) + solicitudesPend + (MODO_COORD ? 0 : solNoVistas());
+    const total = n + (novedadPendiente ? 1 : 0) + solicitudesPend + (MODO_COORD ? 0 : solNoVistas()) + dmNoLeidosSeguro();   // [NUEVO · mensajes privados]
     // [CORREGIDO · campana] con cero, el texto queda vacío y el círculo desaparece (ver .badge:empty)
     $('#bell-n').textContent = total > 0 ? (total > 99 ? '99+' : String(total)) : ''; $('#bell-n').classList.toggle('on', total > 0);
     $('#count').textContent = n ? `(${n})` : ''; $('#tabdot').classList.toggle('on', n > 0);
@@ -2475,6 +2546,7 @@
     if (MODO_COORD && usuariosPend) it(NI.users, true, `${usuariosPend} usuario${usuariosPend > 1 ? 's' : ''} pendiente${usuariosPend > 1 ? 's' : ''}`, 'Aprobar, rechazar o restablecer PIN', () => $('.tabs button[data-tab="users"]').click());
     if (MODO_COORD && pedidosPend) it(NI.cat, true, `${pedidosPend} pedido${pedidosPend > 1 ? 's' : ''} de catálogo`, 'Móviles, eventos o importaciones por resolver', () => $('.tabs button[data-tab="cat"]').click());
     if (!MODO_COORD && solNoVistas()) it(NI.cat, true, `${solNoVistas()} respuesta${solNoVistas() > 1 ? 's' : ''} a tus solicitudes`, 'Coordinación respondió', abrirSolicitudes);
+    dmConNoLeidos().slice(0, 10).forEach(cid => { const k = dmNoLeidosDe(cid); it(NI.reg, true, `Mensaje de ${dmNombre(dmContacto(cid))}`, `${k} sin leer · tocá para responder`, () => abrirMensajes(cid)); });   // [NUEVO · mensajes privados]
     registros.filter(pendienteDe).slice(0, 40).forEach(r => {
       const v = vistoDe(r), n = noVistosDe(r);
       const que = MODO_COORD && r.createdAt > v ? 'Registro nuevo' : MODO_COORD && (r.actualizadoEn || 0) > v ? 'Registro actualizado' : `${n} novedad${n > 1 ? 'es' : ''} en la conversación`;
@@ -2559,12 +2631,13 @@
       if (art.classList.contains('open')){
         // [NUEVO · acordeón] solo en celular: una tarjeta abierta a la vez; en computadora pueden quedar varias
         if (esCelular()){
-          document.querySelectorAll('#list .rec.compact.open').forEach(o => { if (o !== art){ o.classList.remove('open'); abiertos.delete(o.dataset.id); } });
+          document.querySelectorAll('#list .rec.compact.open').forEach(o => { if (o !== art){ o.classList.remove('open'); abiertos.delete(o.dataset.id); refrescarHiloVisto(o); } });
           setTimeout(() => art.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
         }
         abiertos.add(art.dataset.id); bajarHilos(art);
-        marcarVistoRegistro(art.dataset.id);                   // [CORREGIDO · vistos por registro] recién ahora desaparece la etiqueta
-      } else abiertos.delete(art.dataset.id);
+        marcarVistoRegistro(art.dataset.id);
+        setTimeout(() => { if (art.isConnected && art.classList.contains('open')) refrescarHiloVisto(art); }, 5000);   // [CORREGIDO · visto] a los 5 s se apaga el "Nuevo" de las burbujas                   // [CORREGIDO · vistos por registro] recién ahora desaparece la etiqueta
+      } else { abiertos.delete(art.dataset.id); refrescarHiloVisto(art); }   // [CORREGIDO · visto] al cerrar ya no queda "Nuevo"
     }
   });
   $('#lb').addEventListener('click', () => $('#lb').classList.remove('open'));
@@ -2843,6 +2916,7 @@
     pintarCatalogo(); cargarCatalogo(); setInterval(cargarCatalogo, 300000);
     renderMisSolicitudes(); cargarMisSolicitudes(); setInterval(cargarMisSolicitudes, 60000); document.addEventListener('visibilitychange', cargarMisSolicitudes);
     cargarInfo();                                                      // [NUEVO · info adicional]
+    iniciarDM();                                                       // [NUEVO · mensajes privados]
     listo();                                                           // [CORREGIDO · arranque] recién ahora se muestra la pantalla
   }
 
@@ -3086,7 +3160,8 @@
       return `<div class="urow"><div class="avatar" ${c.tipo === 'usuario' ? `data-foto="${esc(c.id)}"` : ''}>${c.tipo === 'usuario' ? esc(iniciales(c)) : (c.modo === 'coord' ? 'CO' : 'PC')}</div>
         <div class="datos"><b>${esc(nombre)}${c.rol ? ` <span class="pill rol">${esc(c.rol)}</span>` : ''}${c.tipo === 'usuario' ? ` <span class="pill rol">${esc(c.id)}</span>` : ''}</b>
           <small>${c.tipo !== 'usuario' ? 'Sin usuario: ' + (c.modo === 'coord' ? 'entró con la clave compartida' : 'usa el link genérico') : e.k === 'off' ? 'Sin actividad reciente' : (c.modo === 'coord' ? 'En el panel de coordinación' : 'Cargando desde el celular')}</small></div>
-        <span class="estado-chip ${e.k}"><span class="estado-dot"></span>${esc(e.txt)}</span></div>`; };
+        ${c.tipo === 'usuario' && c.id !== (sesionDM() || {}).id ? `<button type="button" class="dm-ic con-dm" data-dm="${esc(c.id)}" title="Mandar un mensaje privado" aria-label="Mandar un mensaje a ${esc(nombre)}">${I.msg}</button>` : ''}
+        <span class="estado-chip ${e.k}"><span class="estado-dot"></span>${esc(e.txt)}</span></div>`; };   // [NUEVO · mensajes privados] botón de mensaje
     const sec = (t, arr) => arr.length ? `<div class="usec">${t} (${arr.length})</div>` + arr.map(fila).join('') : '';
     $('#online-lista').innerHTML = (sec('Coordinación', coord) + sec('Personal', resto)) || '<div class="empty">Todavía no hay usuarios activos.</div>';
     cargarAvataresEn('#online-lista', id => conectados.find(x => x.tipo === 'usuario' && x.id === id));
@@ -3108,6 +3183,118 @@
       if (avatarCache[id] && el.isConnected) el.innerHTML = `<img src="${avatarCache[id]}" alt="">`;
     }
   }
+
+  // ---- [NUEVO · mensajes privados] conversaciones uno a uno entre usuarios con sesión ----
+  // Viven en la hoja "Mensajes privados" del script. Cada dispositivo con sesión consulta cada 15-30 s mandando la última
+  // versión de datos (si no cambió nada, la respuesta es instantánea); esa consulta también deja la señal de "en línea".
+  // Lo leído se guarda en el dispositivo (dm_vistos_<ID>): cuenta como leído todo lo recibido hasta que se abrió ese chat.
+  let dm = { yo: '', mensajes: [], contactos: [] }, dmPend = [], verDM = '', dmCon = null, dmIniciado = false, dmCargado = false, dmVistos = {};
+  const sesionDM = () => { const s = sesionMenu(); return (s && s.token && s.estado === 'activo') ? s : null; };
+  const dmClave = k => k + '_' + ((sesionDM() || {}).id || '');
+  function dmLeerLocal(){ try { dmVistos = JSON.parse(localStorage.getItem(dmClave('dm_vistos')) || '{}') || {}; const c = JSON.parse(localStorage.getItem(dmClave('dm_cache')) || 'null'); if (c && Array.isArray(c.mensajes)){ dm = c; dmCargado = true; } } catch {} }
+  function dmGuardarLocal(){ try { localStorage.setItem(dmClave('dm_vistos'), JSON.stringify(dmVistos)); localStorage.setItem(dmClave('dm_cache'), JSON.stringify({ yo: dm.yo, mensajes: dm.mensajes.slice(-300), contactos: dm.contactos })); } catch {} }
+  const dmNoLeidosDe = cid => dm.mensajes.filter(m => m.de === cid && m.para === dm.yo && m.fecha > (dmVistos[cid] || 0)).length;
+  const dmConNoLeidos = () => sesionDM() ? [...new Set(dm.mensajes.filter(m => m.para === dm.yo && m.fecha > (dmVistos[m.de] || 0)).map(m => m.de))] : [];
+  function dmNoLeidos(){ return dmConNoLeidos().reduce((n, c) => n + dmNoLeidosDe(c), 0); }
+  const dmContacto = cid => dm.contactos.find(c => c.id === cid) || conectados.find(c => c.tipo === 'usuario' && c.id === cid) || { id: cid, nombre: cid, apellido: '', rol: '' };
+  const dmNombre = c => `${c.nombre || ''} ${c.apellido || ''}`.trim() || c.id;
+  const dmHora = ts => { const d = new Date(ts), h = new Date(); return d.toDateString() === h.toDateString() ? fmtHora(ts) : fmtFechaHora(ts).slice(0, 5); };
+  function dmMarcarVisto(cid){ const mx = dm.mensajes.filter(m => m.de === cid && m.para === dm.yo).reduce((a, m) => Math.max(a, m.fecha), 0); if (mx > (dmVistos[cid] || 0)){ dmVistos[cid] = mx; dmGuardarLocal(); } }
+  function pintarDM(){
+    const n = dmNoLeidos();
+    pintarChipMensajes(n);
+    $('#bnav-dmn').textContent = n ? (n > 99 ? '99+' : String(n)) : '';
+    pintarNoVistos(nuevosPrev);
+  }
+  function iniciarDM(){
+    if (dmIniciado || !sesionDM() || !FLOW_URL || db) return;
+    dmIniciado = true; dmLeerLocal(); pintarDM();
+    sondeoAdaptativo(() => sondearDM());
+    document.addEventListener('visibilitychange', () => sondearDM());
+  }
+  async function sondearDM(forzar){
+    const s = sesionDM(); if (!s || !FLOW_URL || db || (document.hidden && !forzar)) return;
+    try {
+      const u = new URL(FLOW_URL); u.searchParams.set('dm', '1'); u.searchParams.set('token', s.token); if (verDM && !forzar) u.searchParams.set('ver', verDM);
+      u.searchParams.set('dispositivo', dispositivoId); u.searchParams.set('modo', MODO_COORD ? 'coord' : 'campo');
+      const res = await (await fetchT(u)).json(); if (!res.ok || res.sinCambios) return;
+      verDM = res.ver || '';
+      const antes = dmNoLeidos();
+      dm = { yo: res.yo || s.id, mensajes: res.mensajes || [], contactos: res.contactos || [] }; dmCargado = true;
+      if (dmCon && $('#modal-dm').classList.contains('open')) dmMarcarVisto(dmCon);
+      dmGuardarLocal(); dmRender(); pintarDM();
+      if (dmNoLeidos() > antes){ const ult = dm.mensajes.filter(m => m.para === dm.yo).sort((a, b) => b.fecha - a.fecha)[0]; if (ult) toast('Mensaje nuevo de ' + dmNombre(dmContacto(ult.de)), 'ok'); }
+    } catch {}
+  }
+  function abrirMensajes(cid){
+    if (!sesionDM()){ toast(MODO_COORD ? 'Para usar mensajes entrá con tu usuario (Mi cuenta · Entrar con mi usuario)' : 'Para usar mensajes entrá con tu usuario', 'err'); return; }
+    iniciarDM();
+    $('#modal-dm').classList.add('open');
+    if (cid) dmVerHilo(cid); else dmVerLista();
+    sondearDM(true);
+  }
+  function dmCerrar(){ $('#modal-dm').classList.remove('open'); dmCon = null; }
+  function dmVerLista(){
+    dmCon = null; $('#dm-atras').classList.add('hidden'); $('#dm-lista').classList.remove('hidden'); $('#dm-hilo').classList.add('hidden');
+    $('#dm-titulo').textContent = 'Mensajes'; $('#dm-sub').textContent = 'Conversaciones privadas';
+    dmRender();
+  }
+  function dmVerHilo(cid){
+    dmCon = cid; $('#dm-atras').classList.remove('hidden'); $('#dm-lista').classList.add('hidden'); $('#dm-hilo').classList.remove('hidden');
+    dmMarcarVisto(cid); dmRender(); pintarDM();
+    if (!esCelular()) setTimeout(() => $('#dm-txt').focus(), 60);
+  }
+  function dmRender(){
+    if (!$('#modal-dm').classList.contains('open')) return;
+    if (dmCon) dmRenderHilo(); else dmRenderLista();
+  }
+  function dmRenderLista(){
+    const q = ($('#dm-q').value || '').trim().toLowerCase();
+    const ult = {}; dm.mensajes.forEach(m => { const c = m.de === dm.yo ? m.para : m.de; if (!ult[c] || m.fecha > ult[c].fecha) ult[c] = m; });
+    const coincide = c => !q || [c.nombre, c.apellido, c.id, c.rol].some(x => String(x || '').toLowerCase().includes(q));
+    const conv = Object.keys(ult).map(dmContacto).filter(coincide).sort((a, b) => ult[b.id].fecha - ult[a.id].fecha);
+    const resto = dm.contactos.filter(c => !ult[c.id] && coincide(c)).sort((a, b) => dmNombre(a).localeCompare(dmNombre(b), 'es'));
+    const fila = c => { const m = ult[c.id], n = dmNoLeidosDe(c.id);
+      return `<button type="button" class="dm-row ${n ? 'nuevo' : ''}" data-id="${esc(c.id)}"><span class="avatar" data-foto="${esc(c.id)}">${esc(iniciales(c))}</span><span class="dm-dat"><b>${esc(dmNombre(c))}</b><small>${m ? esc((m.de === dm.yo ? 'Vos: ' : '') + m.texto) : esc([c.rol, c.id].filter(Boolean).join(' · '))}</small></span>${m ? `<span class="dm-meta"><small>${dmHora(m.fecha)}</small>${n ? `<span class="cnt">${n}</span>` : ''}</span>` : ''}</button>`; };
+    $('#dm-filas').innerHTML = !dmCargado ? cargandoHTML('Cargando mensajes…')
+      : ((conv.length ? '<div class="usec">Conversaciones</div>' + conv.map(fila).join('') : '') + (resto.length ? '<div class="usec">Contactos</div>' + resto.map(fila).join('') : '')) || `<div class="empty">${q ? 'Nadie coincide con esa búsqueda.' : 'Todavía no hay otros usuarios activos.'}</div>`;
+    cargarAvataresEn('#dm-filas', id => dm.contactos.find(x => x.id === id));
+  }
+  function dmRenderHilo(){
+    const c = dmContacto(dmCon);
+    $('#dm-titulo').textContent = dmNombre(c); $('#dm-sub').textContent = [c.rol, c.id].filter(Boolean).join(' · ');
+    const ms = dm.mensajes.filter(m => (m.de === dmCon && m.para === dm.yo) || (m.de === dm.yo && m.para === dmCon)).concat(dmPend.filter(p => p.para === dmCon)).sort((a, b) => a.fecha - b.fecha);
+    const box = $('#dm-msgs');
+    box.innerHTML = ms.length ? ms.map(m => `<div class="msg ${m.de === dm.yo ? 'mio' : ''} ${m.enviando ? 'enviando' : ''}"><p>${esc(m.texto)}</p><div class="dm-hora">${fmtFechaHora(m.fecha)}${m.enviando ? ' · enviando…' : ''}</div></div>`).join('')
+      : `<div class="hint" style="text-align:center;margin:auto">Todavía no hay mensajes con ${esc(dmNombre(c))}. Escribí el primero.</div>`;
+    box.scrollTop = box.scrollHeight;
+  }
+  async function dmEnviar(){
+    const s = sesionDM(); if (!s || !dmCon) return;
+    const ta = $('#dm-txt'), texto = ta.value.trim(); if (!texto) return;
+    const para = dmCon; dm.yo = dm.yo || s.id;
+    const tmp = { id: 'tmp' + Date.now(), de: dm.yo, para, texto, fecha: Date.now(), enviando: true };
+    dmPend.push(tmp); ta.value = ''; ta.style.height = 'auto'; dmRender(); marcarActividad();
+    try {
+      const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify({ accion: 'dm', token: s.token, para, texto }) });
+      const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script');
+      dmPend = dmPend.filter(p => p !== tmp); dm.mensajes.push(res.mensaje); dmGuardarLocal(); dmRender();
+    } catch (e){
+      dmPend = dmPend.filter(p => p !== tmp); dmRender();
+      if (dmCon === para && !$('#dm-txt').value) $('#dm-txt').value = texto;
+      toast('No se pudo enviar: ' + e.message, 'err');
+    }
+  }
+  $('#dm-enviar').addEventListener('click', dmEnviar);
+  $('#dm-txt').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !esCelular()){ e.preventDefault(); dmEnviar(); } });
+  $('#dm-txt').addEventListener('input', e => { const ta = e.target; ta.style.height = 'auto'; ta.style.height = Math.min(120, ta.scrollHeight) + 'px'; });
+  $('#dm-atras').addEventListener('click', dmVerLista);
+  $('#dm-cerrar').addEventListener('click', dmCerrar);
+  $('#modal-dm').addEventListener('click', e => { if (e.target === $('#modal-dm')) dmCerrar(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#modal-dm').classList.contains('open')) dmCerrar(); });
+  $('#dm-q').addEventListener('input', dmRenderLista);
+  $('#dm-filas').addEventListener('click', e => { const b = e.target.closest('.dm-row'); if (b) dmVerHilo(b.dataset.id); });
+  $('#online-lista').addEventListener('click', e => { const b = e.target.closest('.con-dm'); if (b) abrirMensajes(b.dataset.dm); });
 
   // ---- [NUEVO · catálogo] listas de móviles y eventos en el formulario, y solicitudes para agregar (campo) ----
   let catalogo = { moviles: [], eventos: [] };
@@ -3416,12 +3603,10 @@
     if (b.dataset.mi === 'perfil') abrirPerfil(); else if (b.dataset.mi === 'sol') abrirSolicitudes(); else if (b.dataset.mi === 'info') abrirInfo();
     else if (b.dataset.mi === 'salir') $('#my-salir').click();   // mismo cartel y misma lógica que el menú del nombre
   });
-  // [NUEVO · tarjeta PC] Mensajes: el panel con los contactos que te escriben llega en la próxima versión. Para conectarlo,
-  // reemplazar abrirMensajes() por la apertura del panel y llamar pintarChipMensajes(n) con la cantidad sin leer.
+  // [NUEVO · tarjeta PC] contador de mensajes privados sin leer; al tocarlo abre el panel de mensajes
   let mensajesSinLeer = 0;
   function pintarChipMensajes(n){ if (typeof n === 'number') mensajesSinLeer = n; $('#yo-mensajes-n').textContent = String(mensajesSinLeer); $('#yo-mensajes').classList.toggle('hay', mensajesSinLeer > 0); }
-  function abrirMensajes(){ toast('El panel de mensajes llega en la próxima versión'); }
-  $('#yo-mensajes').addEventListener('click', abrirMensajes);
+  $('#yo-mensajes').addEventListener('click', () => abrirMensajes());
   $('#yo-activos').addEventListener('click', () => $('.tabs button[data-tab="online"]').click());
   const conBarraLateral = () => { try { return window.matchMedia('(min-width: 641px)').matches; } catch { return false; } };   // [CORREGIDO · app PC]
   function pintarPerfil(){
@@ -3505,7 +3690,7 @@
     bnav.querySelectorAll('button[data-go]').forEach(b => {
       const go = b.dataset.go;
       const t = document.querySelector('.tabs button[data-tab="' + go + '"]');
-      b.classList.toggle('hidden', go !== 'mas' && (!t || t.classList.contains('hidden')));
+      b.classList.toggle('hidden', go !== 'mas' && go !== 'msj' && (!t || t.classList.contains('hidden')));
       b.setAttribute('aria-selected', go === 'mas' ? enMas : activa === go);
     });
     $('#bnav-dot').classList.toggle('on', $('#tabdot').classList.contains('on'));
@@ -3520,6 +3705,7 @@
   } catch {}
   $('#bnav').addEventListener('click', e => {
     const b = e.target.closest('button[data-go]'); if (!b) return;
+    if (b.dataset.go === 'msj'){ abrirMensajes(); return; }   // [NUEVO · mensajes privados]
     const t = document.querySelector('.tabs button[data-tab="' + b.dataset.go + '"]'); if (!t) return;
     t.click(); window.scrollTo({ top: 0 });
   });
@@ -3735,6 +3921,7 @@
         setTimeout(() => { if (claveGuardada()) cargarSolicitudes(); }, 3000);
         listo();                                                 // [CORREGIDO · arranque]
         sondeoAdaptativo(sondearNuevos);                         // [NUEVO · rapidez] cada 5 s con actividad, 15 s en reposo
+        iniciarDM();                                             // [NUEVO · mensajes privados]
         document.addEventListener('visibilitychange', sondearNuevos);
         return;
       }
