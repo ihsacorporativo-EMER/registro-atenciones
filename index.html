@@ -722,6 +722,18 @@
   .tabs-sec{display:none}
   .tabs button svg{display:none}
   .nav-cuenta{display:none}   /* [NUEVO · app PC] solo en la barra lateral */
+  .login-marca{display:none}
+  /* [NUEVO · ingreso PC] pantalla de ingreso: sin barra lateral, el formulario centrado con el logo arriba */
+  @media (min-width:641px){
+    body.en-login header{display:none}
+    body.en-login main,body.en-login main.wide{margin:0 auto !important;max-width:480px !important;padding:56px 20px 40px !important}
+    body.en-login .pie{margin:28px auto 0 !important;max-width:480px;padding:18px 20px 28px !important}
+    body.en-login .login-marca{display:flex;align-items:center;gap:14px;margin:0 0 26px}
+    .login-marca .mark{padding:6px 9px;border-radius:12px;background:#fff;animation:none;line-height:0}
+    .login-marca .mark img{height:34px;width:auto;display:block}
+    .login-marca b{display:block;font-size:17px;font-weight:800}
+    .login-marca span{display:block;font-size:13px;color:var(--muted)}
+  }
   /* ===== [NUEVO · app PC] PC y tablet (desde 641 px): barra lateral azul con logo, navegación vertical con íconos, grupo
      "Administración" y la cuenta abajo. La campana queda fija arriba a la derecha del contenido. Nada de esto toca el
      celular (≤640 px), que sigue con la barra de abajo. ===== */
@@ -952,6 +964,8 @@
 
   <!-- ===== [NUEVO · usuarios] INGRESO (link ?modo=usuario) ===== -->
   <div id="view-login" class="hidden">
+    <!-- [NUEVO · ingreso PC] en computadora la barra lateral no se muestra al ingresar: el logo va arriba del formulario -->
+    <div class="login-marca"><span class="mark"><img id="login-logo" alt="Grupo IHSA"></span><div><b>Servicios Corporativos</b><span>Registro de atenciones</span></div></div>
     <h1>Ingresar</h1>
     <p class="lead">Entrá con tu ID y PIN. Si es tu primera vez, creá tu usuario.</p>
     <div class="seg3">
@@ -1433,13 +1447,15 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-23 a';
+  const VERSION = '2026-09-23 c';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-23 c', para: 'todos', texto: 'El aviso de actualización muestra solo lo último que cambió, no todas las novedades anteriores juntas.' },
+    { v: '2026-09-23 b', para: 'todos', texto: 'Al cerrar sesión se vuelve directo a la pantalla de ingreso, sin que aparezca el pedido de clave. En computadora, la pantalla de ingreso se ve limpia, sin la barra lateral.' },
     { v: '2026-09-23 a', para: 'todos', texto: 'En computadora, la tarjeta de tu cuenta (abajo en la barra lateral) tiene un diseño nuevo: foto con anillo de conexión, nombre, rol e ID, y un acceso a Mensajes. Tocá la tarjeta para abrir tu perfil.' },
     { v: '2026-09-23 a', para: 'coord', texto: 'La tarjeta de la cuenta muestra cuántos usuarios están en línea; al tocarlo se abre Conectados.' },
     { v: '2026-09-22 n', para: 'todos', texto: 'En computadora, el grupo "Mi cuenta" de la barra lateral reúne todos los accesos (Perfil, Información adicional, Cargar un registro, Entrar con mi usuario, Cerrar sesión). Va todo al fondo de la barra, con la cuenta (foto, nombre y rol) arriba del grupo; la cuenta ya no despliega una lista.' },
@@ -1802,8 +1818,13 @@
   }
 
   // [NUEVO · envío] Modo coordinador: lectura de la planilla central a través del script.
+  // [CORREGIDO · salir] mientras se sale del panel no se pide la clave: antes, una consulta en segundo plano (Conectados,
+  // sondeo) llegaba sin sesión justo entre el cierre y el cambio de página y abría el cuadro "Clave de coordinador".
+  let saliendo = false;
+  function irAlIngreso(){ saliendo = true; location.replace(location.pathname + '?modo=usuario'); }
   function claveCoord(){
     let c = ''; try { c = localStorage.getItem('coord_clave') || ''; } catch {}
+    if (!c && saliendo) return '';
     if (!c){
       c = (prompt('Clave de coordinador') || '').trim();
       if (c) try { localStorage.setItem('coord_clave', c); } catch {}
@@ -1813,6 +1834,7 @@
   // [NUEVO · admin] clave de administrador, guardada en el celular como la de coordinador
   function claveAdmin(){
     let c = ''; try { c = localStorage.getItem('admin_clave') || ''; } catch {}
+    if (!c && saliendo) return '';
     if (!c){ c = (prompt('Contraseña de administrador') || '').trim(); if (c) try { localStorage.setItem('admin_clave', c); } catch {} }
     return c;
   }
@@ -1827,7 +1849,7 @@
   function credAceptada(){ if (credOk) return; credOk = true; refrescarNovedades(); }
   function credRechazada(){                                 // el script no aceptó la credencial
     credOk = false;
-    if ((MODO_ADMIN && sesionAdmin()) || (!MODO_ADMIN && sesionCoord())){ guardarSesion(null); toast('Tu sesión ya no es válida. Volvé a entrar.', 'err'); setTimeout(() => location.replace(location.pathname + '?modo=usuario'), 1500); }
+    if ((MODO_ADMIN && sesionAdmin()) || (!MODO_ADMIN && sesionCoord())){ saliendo = true; guardarSesion(null); toast('Tu sesión ya no es válida. Volvé a entrar.', 'err'); setTimeout(irAlIngreso, 1500); }
     else { try { localStorage.removeItem(MODO_ADMIN ? 'admin_clave' : 'coord_clave'); } catch {} }   // la vuelve a pedir
   }
   // [CORREGIDO · carga] tope de espera para cualquier pedido al script: si no responde en 25 s, se corta y se avisa
@@ -2378,7 +2400,16 @@
   };
   // [CORREGIDO · novedades] solo lo posterior a la última versión vista en este dispositivo (sin marca: todo)
   const versionVista = () => { try { return localStorage.getItem('version_vista') || ''; } catch { return ''; } };
-  const novedadesVisibles = () => { const vista = versionVista(); return NOVEDADES.filter(n => (n.para === 'todos' || puedeVerCoord()) && (!vista || (n.v || VERSION) > vista)); };
+  // [CORREGIDO · novedades] solo la última actualización: de lo que corresponde a este rol y todavía no se vio, se muestra
+  // únicamente la versión más reciente. Antes, sin marca de vista (dispositivo nuevo, o cartel cerrado tocando afuera) salían
+  // todas las novedades acumuladas juntas.
+  const novedadesVisibles = () => {
+    const vista = versionVista();
+    const mias = NOVEDADES.filter(n => (n.para === 'todos' || puedeVerCoord()) && (!vista || (n.v || VERSION) > vista));
+    if (!mias.length) return [];
+    const ultima = mias.map(n => n.v || VERSION).sort().pop();
+    return mias.filter(n => (n.v || VERSION) === ultima);
+  };
   // ¿esta persona ya vio la versión actual? Se recalcula al arrancar y cuando el script acepta la credencial
   function refrescarNovedades(){
     if (!FLOW_URL) return;
@@ -2386,7 +2417,7 @@
     pintarNoVistos(nuevosPrev);
   }
   function abrirNovedades(){
-    $('#nv-version').textContent = 'Versión ' + VERSION;
+    $('#nv-version').textContent = 'Versión ' + ((novedadesVisibles()[0] || {}).v || VERSION);
     // [CORREGIDO · novedades] si la persona se salteó versiones, las ve agrupadas por versión, una sola vez
     const vis = novedadesVisibles(), vers = [...new Set(vis.map(n => n.v || VERSION))].sort().reverse();
     $('#nv-lista').innerHTML = vers.length > 1
@@ -2398,7 +2429,7 @@
     try { localStorage.setItem('version_vista', VERSION); } catch {}
     novedadPendiente = false; $('#modal-novedades').classList.remove('open'); pintarNoVistos(nuevosPrev);
   });
-  $('#modal-novedades').addEventListener('click', e => { if (e.target === $('#modal-novedades')) $('#modal-novedades').classList.remove('open'); });
+  $('#modal-novedades').addEventListener('click', e => { if (e.target === $('#modal-novedades')) $('#nv-ok').click(); });   // [CORREGIDO · novedades] cerrar tocando afuera también la da por vista
   async function sondearNuevos(){
     if (!MODO_COORD || !FLOW_URL || db || document.hidden || !claveGuardada()) return;
     try {
@@ -2778,7 +2809,7 @@
   // ---- Modo campo (link genérico y link de usuarios con sesión activa) ----
   // [NUEVO · usuarios] Antes era parte del arranque; ahora es una función porque en modo usuario corre después del ingreso.
   async function iniciarCampo(){
-    clearInterval(sondeoAprobacion);
+    clearInterval(sondeoAprobacion); document.body.classList.remove('en-login');   // [NUEVO · ingreso PC]
     $('.tabs').classList.remove('hidden'); $('#view-login').classList.add('hidden');
     $('.tabs button[data-tab="form"]').click();
     if (FLOW_URL){
@@ -2837,7 +2868,7 @@
     }
     await iniciarCampo();
   }
-  $('#sc-salir').addEventListener('click', async () => { if (await confirmar('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.', { ok: 'Cerrar sesión', peligro: true })){ guardarSesion(null); limpiarCopiasCoord(); location.replace(location.pathname + '?modo=usuario'); } });
+  $('#sc-salir').addEventListener('click', async () => { if (await confirmar('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.', { ok: 'Cerrar sesión', peligro: true })){ saliendo = true; guardarSesion(null); limpiarCopiasCoord(); irAlIngreso(); } });
 
   // ---- [NUEVO · usuarios] ingreso, registro, espera de aprobación y PIN (modo usuario) ----
   const guardarSesion = s => { sesion = s; try { if (s) localStorage.setItem('sesion_usuario', JSON.stringify(s)); else localStorage.removeItem('sesion_usuario'); } catch {} };
@@ -2846,6 +2877,8 @@
     const res = await r.json(); if (!res.ok) throw new Error(res.error || 'Error del script'); return res;
   };
   function mostrarLogin(seccion){
+    document.body.classList.add('en-login');                          // [NUEVO · ingreso PC] sin barra lateral
+    try { if (!$('#login-logo').src) $('#login-logo').src = $('.brand .mark img').src; } catch {}
     $('.tabs').classList.add('hidden');
     ['form','list','board','users','mas','online'].forEach(n => $('#view-'+n).classList.add('hidden'));
     $('#view-login').classList.remove('hidden');
@@ -3035,7 +3068,7 @@
   const EN_LINEA_MS = 120000, RECIENTE_MS = 30 * 60000;
   const estadoDe = c => { const d = ahoraServidor - (c.visto || 0); if (c.visto && d < EN_LINEA_MS) return { k: 'on', txt: 'En línea' }; if (c.visto && d < RECIENTE_MS) return { k: 'hace', txt: `Hace ${Math.max(1, Math.round(d / 60000))} min` }; return { k: 'off', txt: c.visto ? 'Desconectado · ' + fmtFechaHora(c.visto) : 'Desconectado' }; };
   async function cargarConectados(){
-    if (!MODO_COORD || !FLOW_URL || cargandoConectados) return;
+    if (!MODO_COORD || !FLOW_URL || cargandoConectados || !claveGuardada()) return;   // [CORREGIDO · salir] sin sesión ni clave no consulta
     cargandoConectados = true;
     if (conectados.length) sync('online', 'Actualizando…'); else $('#online-lista').innerHTML = cargandoHTML('Cargando…');
     try { const res = await pedirCentral({ conectados: 1, dispositivo: dispositivoId }, 60000); conectados = res.conectados || []; ahoraServidor = res.ahora || Date.now(); renderConectados(); }
@@ -3584,8 +3617,8 @@
   $('#my-salir').addEventListener('click', async () => {
     cerrarMenu();
     if (sesionMenu()){                                        // [CORREGIDO · menú] con clave no se toca la sesión del usuario de campo
-      if (await confirmar('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.', { ok: 'Cerrar sesión', peligro: true })){ guardarSesion(null); if (MODO_COORD) limpiarCopiasCoord(); location.replace(location.pathname + '?modo=usuario'); }
-    } else if (await confirmar('¿Salir? Se borra la clave guardada en este dispositivo.', { ok: 'Salir', peligro: true })){ try { localStorage.removeItem(MODO_ADMIN ? 'admin_clave' : 'coord_clave'); } catch {} limpiarCopiasCoord(); location.reload(); }   // [NUEVO · rapidez] y las copias locales
+      if (await confirmar('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.', { ok: 'Cerrar sesión', peligro: true })){ saliendo = true; guardarSesion(null); if (MODO_COORD) limpiarCopiasCoord(); irAlIngreso(); }
+    } else if (await confirmar('¿Salir? Se borra la clave guardada en este dispositivo.', { ok: 'Salir', peligro: true })){ saliendo = true; try { localStorage.removeItem(MODO_ADMIN ? 'admin_clave' : 'coord_clave'); } catch {} limpiarCopiasCoord(); irAlIngreso(); }   // [NUEVO · rapidez] y las copias locales
   });
 
   // ---- [NUEVO · info adicional] contactos y observaciones de coordinación ----
@@ -3692,7 +3725,7 @@
         $('.tabs button[data-tab="online"]').classList.remove('hidden');  // [NUEVO · conectados]
         // [CORREGIDO · conectados] si en otra pestaña del mismo navegador alguien entra o sale con su usuario, este panel se
         // recarga y pasa a usar esa sesión (antes seguía consultando con la clave compartida y figuraba como dos personas)
-        window.addEventListener('storage', e => { if (e.key !== 'sesion_usuario') return; let a = null, b = null; try { a = JSON.parse(e.oldValue || 'null'); b = JSON.parse(e.newValue || 'null'); } catch {} if ((a && a.token) !== (b && b.token)) location.reload(); });
+        window.addEventListener('storage', e => { if (e.key !== 'sesion_usuario') return; let a = null, b = null; try { a = JSON.parse(e.oldValue || 'null'); b = JSON.parse(e.newValue || 'null'); } catch {} if ((a && a.token) !== (b && b.token)){ if (!(b && b.token)) irAlIngreso(); else location.reload(); } });
         setInterval(() => { if (!document.hidden && !$('#view-online').classList.contains('hidden')) cargarConectados(); }, 30000);
         setTimeout(refrescarActivos, 4500); setInterval(refrescarActivos, 60000);   // [NUEVO · tarjeta PC] usuarios en línea en la tarjeta   // [NUEVO · conectados] se refresca sola mientras está a la vista
         $('#view-list .lead').textContent = 'Registros enviados por el equipo de campo. Tocá una tarjeta para ver el detalle; tocá la pestaña para actualizar.';
