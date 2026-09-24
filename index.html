@@ -828,7 +828,8 @@
     .yo:not(:has(.perfil-btn:not(.hidden))){display:none}
     .yo-txt{display:flex;flex-direction:column;flex:1;min-width:0;text-align:left;line-height:1.25}
     .yo-txt #perfil-nombre{font-size:14px;font-weight:800;color:#fff}
-    #yo-sub{font-size:12px;font-weight:600;color:#b9c8ea;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #yo-sub{font-size:12px;font-weight:600;color:#b9c8ea;white-space:normal;overflow-wrap:anywhere}
+    .yo-txt #perfil-nombre{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}   /* [CORREGIDO · tarjeta PC] nombre y rol completos, en dos líneas si hace falta */
     .yo-chips{display:flex;gap:6px;flex-wrap:wrap}
     .yo-chip{display:inline-flex;align-items:baseline;gap:4px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);color:#b9c8ea;border-radius:8px;padding:4px 9px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
     .yo-chip:hover{background:rgba(255,255,255,.16)}
@@ -841,7 +842,7 @@
     .perfil-btn #perfil-nombre{flex:1;min-width:0}   /* [CORREGIDO · app PC] el nombre largo se corta con puntos en vez de ensanchar la barra y mostrar un scroll */
     .perfil-btn .chev{display:none}
     .perfil-btn.abre{cursor:pointer}                    /* con sesión, la tarjeta abre el perfil (ya no la lista desplegable) */
-    .perfil-btn.abre .chev{display:grid;opacity:.7}
+    .perfil-btn.abre .chev{display:none}   /* [CORREGIDO · tarjeta PC] sin flecha: tocar la tarjeta igual abre el perfil */
     .perfil-btn .chev svg{width:16px;height:16px}
     .tabs button{min-width:0;overflow:hidden}
     .brand .titulo b,.brand .titulo .subtitulo{white-space:normal;overflow:visible;line-height:1.2}   /* [CORREGIDO · app PC] "Servicios Corporativos" en dos líneas si hace falta, nunca cortado */
@@ -1109,6 +1110,16 @@
         <button type="button" class="link-btn solicitar hidden" id="sol-evento" data-tipo="evento">No está en la lista · Solicitar agregar</button><span class="solenv hidden" id="solenv-evento" role="status"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span>Solicitud enviada <small>· en espera de coordinación</small></span></span>
       </div>
 
+      <!-- [NUEVO · lugar] lugar de atención: lista que filtra al escribir; si no está, se solicita agregarlo -->
+      <div class="field">
+        <label for="lugar">Lugar de atención</label>
+        <div class="autoc">
+          <input id="lugar" type="text" placeholder="Ej.: Puesto sanitario 2, Campo, Tribuna norte" required autocomplete="off">
+          <div class="sugerencias hidden" id="sug-lugar"></div>
+        </div>
+        <button type="button" class="link-btn solicitar hidden" id="sol-lugar" data-tipo="lugar">No está en la lista · Solicitar agregar</button><span class="solenv hidden" id="solenv-lugar" role="status"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span>Solicitud enviada <small>· en espera de coordinación</small></span></span>
+      </div>
+
       <div class="row">
         <div class="field">
           <label for="paciente">Nombre del paciente</label>
@@ -1176,7 +1187,7 @@
     <h1>Registros</h1>
     <p class="lead">Últimos registros cargados por el equipo.</p>
     <div class="sync" id="sync-list" role="status"><span class="spin"></span><span></span></div><!-- [NUEVO · cargando] -->
-    <input class="search" id="q" type="search" placeholder="Buscar por evento, móvil, paciente o médico">
+    <input class="search" id="q" type="search" placeholder="Buscar por evento, lugar, móvil, paciente o médico">
     <div id="list"></div>
   </div>
 
@@ -1305,7 +1316,7 @@
     <div id="pager-tabla-top"></div><!-- [NUEVO · paginado] barra de páginas de la tabla -->
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Fecha</th><th>Hora</th><th>Evento</th><th>Móvil</th><th>Paciente</th><th>Edad</th><th>Médico / interviniente</th><th>Motivo</th><th>Traslada</th><th>Observaciones</th><th>Fotos</th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Hora</th><th>Evento</th><th>Lugar</th><th>Móvil</th><th>Paciente</th><th>Edad</th><th>Médico / interviniente</th><th>Motivo</th><th>Traslada</th><th>Observaciones</th><th>Fotos</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
@@ -1515,13 +1526,16 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-23 f';
+  const VERSION = '2026-09-24 a';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-24 a', para: 'todos', texto: 'Campo nuevo en el formulario: "Lugar de atención". Se elige de una lista que filtra al escribir; si el lugar no está, "Solicitar agregar" se lo pide a coordinación.' },
+    { v: '2026-09-24 a', para: 'coord', texto: 'Lugar de atención: aparece en el detalle de cada registro, en la tabla del Tablero y en el Excel (con la hoja "Por lugar"). En Catálogo hay una lista nueva de lugares para administrar y aceptar solicitudes.' },
+    { v: '2026-09-23 g', para: 'todos', texto: 'En computadora, la tarjeta de tu cuenta muestra el nombre, el rol y el ID completos, sin cortarlos, y ya no tiene la flecha.' },
     { v: '2026-09-23 f', para: 'todos', texto: 'Mensajes privados: ahora podés sacar una foto o adjuntar fotos y PDF desde la galería, y reaccionar a cada mensaje con 👍 ✅ 👀 ❗. Las reacciones del otro también avisan.' },
     { v: '2026-09-23 e', para: 'todos', texto: 'Mensajes privados: escribile a cualquier usuario activo desde el nuevo botón Mensajes (en celular, en la barra de abajo; en computadora, en la tarjeta de tu cuenta). Los mensajes nuevos avisan en la campana.' },
     { v: '2026-09-23 e', para: 'todos', texto: 'En la conversación de un registro, la etiqueta "Nuevo" de los mensajes desaparece después de verlos: ya no vuelve a aparecer al cerrar y abrir la tarjeta.' },
@@ -1758,7 +1772,7 @@
   function leer(){
     const v = id => $('#'+id).value.trim();
     const data = {
-      fecha: v('fecha'), movil: v('movil'), evento: v('evento'), paciente: v('paciente'), edad: v('edad'), medico: v('medico'),
+      fecha: v('fecha'), movil: v('movil'), evento: v('evento'), lugar: v('lugar'), paciente: v('paciente'), edad: v('edad'), medico: v('medico'),
       motivo: v('motivo'), traslada, obs: v('obs'),
     };
     // [NUEVO · interviniente] Si el usuario logueado es Médico, él es el interviniente y no se pide. Cualquier otro rol
@@ -1766,7 +1780,7 @@
     const esMedico = MODO_USUARIO && sesion && sesion.rol === 'Médico';
     if (esMedico) data.medico = `${sesion.nombre} ${sesion.apellido}`;
     let ok = true;
-    for (const id of ['fecha','movil','evento','paciente','edad', ...(esMedico ? [] : ['medico']), 'motivo']){
+    for (const id of ['fecha','movil','evento','lugar','paciente','edad', ...(esMedico ? [] : ['medico']), 'motivo']){
       const bad = !data[id]; $('#'+id).closest('.field').classList.toggle('invalid', bad); if (bad) ok = false;
     }
     if (!traslada){ ok = false; document.querySelectorAll('.seg button').forEach(b=> b.style.borderColor='var(--danger)'); }
@@ -1785,14 +1799,14 @@
   document.querySelectorAll('#view-form .field input, #view-form .field textarea').forEach(i => i.addEventListener('input', () => i.closest('.field').classList.remove('invalid')));
   function resumen(d){
     return [
-      `Fecha: ${fmtFecha(d.fecha)}`, `Evento: ${d.evento}`, `Móvil: ${d.movil}`, `Paciente: ${d.paciente} (${d.edad} años)`,
+      `Fecha: ${fmtFecha(d.fecha)}`, `Evento: ${d.evento}`, d.lugar ? `Lugar de atención: ${d.lugar}` : null, `Móvil: ${d.movil}`, `Paciente: ${d.paciente} (${d.edad} años)`,
       `Médico/interviniente: ${d.medico}`, `Motivo de consulta: ${d.motivo}`,
       `Traslada: ${d.traslada==='si'?'Sí':'No'}`, d.obs ? `Observaciones: ${d.obs}` : null,
       fotos.length ? `Fotos: ${fotos.length}` : null,
     ].filter(Boolean).join('\n');
   }
   function limpiar(){
-    ['movil','evento','paciente','edad','medico','motivo','obs'].forEach(id => $('#'+id).value='');
+    ['movil','evento','lugar','paciente','edad','medico','motivo','obs'].forEach(id => $('#'+id).value='');
     $('#fecha').value = todayISO(); traslada = null; fotos = []; renderThumbs();
     document.querySelectorAll('.seg button').forEach(b => { b.setAttribute('aria-pressed','false'); b.style.borderColor=''; });
     document.querySelectorAll('.field.invalid').forEach(f => f.classList.remove('invalid'));
@@ -2173,6 +2187,7 @@
         <div class="detalle">
         <dl>
           ${/^\d{9}$/.test(r.id) ? `<dt>N.º</dt><dd>${esc(r.id)}</dd>` : ''}
+          ${r.lugar ? `<dt>Lugar</dt><dd>${esc(r.lugar)}</dd>` : ''}
           <dt>Motivo</dt><dd>${esc(r.motivo)}</dd>
           ${r.obs ? `<dt>Obs.</dt><dd>${esc(r.obs)}</dd>` : ''}
         </dl>
@@ -2215,6 +2230,7 @@
           <dl>
             ${/^\d{9}$/.test(r.id) ? `<dt>N.º</dt><dd>${esc(r.id)}</dd>` : ''}
             <dt>Cargado por</dt><dd>${esc(r.usuarioNombre || 'Personal de campo (genérico)')}${r.rol ? ` <span class="pill rol">${esc(r.rol)}</span>` : ''}</dd>
+            ${r.lugar ? `<dt>Lugar</dt><dd>${esc(r.lugar)}</dd>` : ''}
             <dt>Médico</dt><dd>${esc(r.medico)}</dd>
             <dt>Motivo</dt><dd>${esc(r.motivo)}</dd>
             ${r.obs ? `<dt>Obs.</dt><dd>${esc(r.obs)}</dd>` : ''}
@@ -2231,7 +2247,7 @@
     const r = registros.find(x => x.id === id); if (!r) return;
     editandoId = id;
     $('#fecha').value = r.fecha || todayISO();
-    ['movil','evento','paciente','edad','medico','motivo','obs'].forEach(k => { $('#'+k).value = r[k] || ''; });
+    ['movil','evento','lugar','paciente','edad','medico','motivo','obs'].forEach(k => { $('#'+k).value = r[k] || ''; });
     traslada = r.traslada || null;
     document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.val === traslada));
     fotos = (await leerFotos(id)).slice(); renderThumbs();
@@ -2242,7 +2258,7 @@
 
   function renderList(){
     const q = $('#q').value.trim().toLowerCase();
-    const rows = registros.filter(r => !q || [r.evento, r.movil, r.medico, r.paciente].some(x => String(x||'').toLowerCase().includes(q)));
+    const rows = registros.filter(r => !q || [r.evento, r.lugar, r.movil, r.medico, r.paciente].some(x => String(x||'').toLowerCase().includes(q)));
     // [CORREGIDO · campana] con script configurado, el contador de la pestaña es "sin ver" (lo pinta pintarNoVistos);
     // sin script, sigue siendo el total como antes
     if (!(FLOW_URL && !db)) $('#count').textContent = registros.length ? `(${registros.length})` : '';
@@ -2688,10 +2704,10 @@
     const visibles = rows.slice(paginaTabla * por, (paginaTabla + 1) * por);
     $('#tbody').innerHTML = visibles.length ? visibles.map(r => `<tr>
       <td class="num">${fmtFecha(r.fecha)}</td><td class="num">${fmtHora(r.createdAt)}</td>
-      <td>${esc(r.evento)}</td><td class="num">${esc(r.movil)}</td><td>${esc(r.paciente||'')}</td><td class="num">${esc(r.edad||'')}</td><td>${esc(r.medico)}</td>
+      <td>${esc(r.evento)}</td><td>${esc(r.lugar || '')}</td><td class="num">${esc(r.movil)}</td><td>${esc(r.paciente||'')}</td><td class="num">${esc(r.edad||'')}</td><td>${esc(r.medico)}</td>
       <td>${esc(r.motivo)}</td><td><span class="pill ${r.traslada==='si'?'si':'no'}">${r.traslada==='si'?'Sí':'No'}</span></td>
       <td>${esc(r.obs)}</td><td class="num">${r.nFotos||0}</td></tr>`).join('')
-      : `<tr><td colspan="11" class="empty">No hay registros en ese rango.</td></tr>`;
+      : `<tr><td colspan="12" class="empty">No hay registros en ese rango.</td></tr>`;
     const navTabla = total > por ? pagerHTML('tabla', paginaTabla, total, por) : '';
     $('#pager-tabla-top').innerHTML = navTabla; $('#pager-tabla-bottom').innerHTML = navTabla;
     barras($('#by-movil'), agrupar(rows,'movil'), rows.length);
@@ -2715,7 +2731,8 @@
     const p = n => String(n).padStart(2,'0'); const d = new Date(r.createdAt);
     return {
       'ID': r.id, 'Fecha': fmtFecha(r.fecha), 'Hora': fmtHora(r.createdAt),
-      'Evento': r.evento, 'Móvil': r.movil, 'Paciente': r.paciente||'', 'Edad': edadNum(r.edad), 'Médico / interviniente': r.medico,   // [CORREGIDO] ver edadNum arriba
+      'Evento': r.evento, 'Lugar de atención': r.lugar || '', 'Móvil': r.movil,   // [NUEVO · lugar]
+      'Paciente': r.paciente||'', 'Edad': edadNum(r.edad), 'Médico / interviniente': r.medico,   // [CORREGIDO] ver edadNum arriba
       'Cargado por': r.usuarioNombre || 'Personal de campo (genérico)', 'Rol': r.rol || '',                                          // [NUEVO · usuarios]
       'Motivo de consulta': r.motivo, 'Traslada': r.traslada==='si'?'Sí':'No', 'Traslada (1/0)': r.traslada==='si'?1:0,
       'Observaciones': r.obs||'', 'Carpeta de fotos': r.nFotos ? `fotos/${carpetaDe(r)}` : '',
@@ -2726,8 +2743,8 @@
     const datos = rows.map(filaExcel);
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(datos);
-    ws['!cols'] = [8,11,7,26,8,24,6,24,24,12,36,9,12,36,40,18].map(w=>({wch:w}));   // [CORREGIDO · excel] 16 columnas
-    ws['!autofilter'] = { ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:datos.length, c:15}}) };
+    ws['!cols'] = [8,11,7,26,22,8,24,6,24,24,12,36,9,12,36,40,18].map(w=>({wch:w}));   // [NUEVO · lugar] 17 columnas
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:datos.length, c:16}}) };
     XLSX.utils.book_append_sheet(wb, ws, 'Registros');
     const res = (key, nombre) => {
       const m = {}; rows.forEach(r => { const k = r[key]||'—'; m[k] = m[k]||{n:0,t:0}; m[k].n++; if(r.traslada==='si') m[k].t++; });
@@ -2737,6 +2754,7 @@
     };
     XLSX.utils.book_append_sheet(wb, res('movil','Móvil'), 'Por móvil');
     XLSX.utils.book_append_sheet(wb, res('evento','Evento'), 'Por evento');
+    XLSX.utils.book_append_sheet(wb, res('lugar','Lugar de atención'), 'Por lugar');   // [NUEVO · lugar]
     XLSX.utils.book_append_sheet(wb, res('fecha','Fecha'), 'Por día');
     XLSX.utils.book_append_sheet(wb, res('medico','Médico'), 'Por médico');
     // [NUEVO · migración] en modo coordinador los registros traen su conversación: va en una hoja aparte
@@ -3378,7 +3396,10 @@
   $('#online-lista').addEventListener('click', e => { const b = e.target.closest('.con-dm'); if (b) abrirMensajes(b.dataset.dm); });
 
   // ---- [NUEVO · catálogo] listas de móviles y eventos en el formulario, y solicitudes para agregar (campo) ----
-  let catalogo = { moviles: [], eventos: [] };
+  let catalogo = { moviles: [], eventos: [], lugares: [] };
+  // [NUEVO · lugar] la lista de cada campo del formulario y cómo se nombra
+  const listaCat = (cat, tipo) => (tipo === 'movil' ? cat.moviles : tipo === 'evento' ? cat.eventos : cat.lugares) || [];
+  const nombreCampo = { movil: 'móvil', evento: 'evento', lugar: 'lugar de atención' };
   try { catalogo = JSON.parse(localStorage.getItem('catalogo') || 'null') || catalogo; } catch {}
   // [NUEVO · seguridad] llave del celular: secreto aleatorio de 256 bits que viaja en cada envío y lectura de hilos. El script
   // ata cada registro cargado sin usuario a esta llave (guarda su hash) y después solo responde a este celular sobre esos registros.
@@ -3389,7 +3410,7 @@
   } catch {}
   let dispositivoId = '';                                       // identifica el celular del link genérico para que le vuelvan las respuestas
   try { dispositivoId = localStorage.getItem('dispositivo_id') || ''; if (!dispositivoId){ dispositivoId = 'd' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); localStorage.setItem('dispositivo_id', dispositivoId); } } catch {}
-  function pintarCatalogo(){ verificarCatalogo('movil'); verificarCatalogo('evento'); }
+  function pintarCatalogo(){ verificarCatalogo('movil'); verificarCatalogo('evento'); verificarCatalogo('lugar'); }
   // Desplegable propio: filtra al escribir (contiene, sin distinguir mayúsculas), resalta lo tipeado, hasta 8 opciones.
   // Se elige tocando, o con flechas y Enter. Al enfocar el campo vacío muestra las primeras opciones.
   function armarSugerencias(tipo){
@@ -3398,7 +3419,7 @@
     const cerrar = () => { caja.classList.add('hidden'); caja.innerHTML = ''; idx = -1; };
     const pintar = () => {
       const q = inp.value.trim().toLowerCase();
-      const lista = tipo === 'movil' ? catalogo.moviles : catalogo.eventos;
+      const lista = listaCat(catalogo, tipo);
       items = (q ? lista.filter(v => v.toLowerCase().includes(q)) : lista).slice(0, 8);
       if (!items.length || (items.length === 1 && items[0].toLowerCase() === q)){ cerrar(); return; }
       caja.innerHTML = items.map((v, i) => {
@@ -3421,13 +3442,13 @@
     caja.addEventListener('mousedown', e => { const d = e.target.closest('[data-v]'); if (d){ e.preventDefault(); elegir(d.dataset.v); } });
     inp.addEventListener('blur', () => setTimeout(cerrar, 150));
   }
-  armarSugerencias('movil'); armarSugerencias('evento');
+  armarSugerencias('movil'); armarSugerencias('evento'); armarSugerencias('lugar');
   async function cargarCatalogo(){
     if (!FLOW_URL) return;
     try {
       const u = new URL(FLOW_URL); u.searchParams.set('catalogo', '1');
       const res = await (await fetch(u)).json();
-      if (res.ok){ catalogo = { moviles: res.moviles || [], eventos: res.eventos || [] }; try { localStorage.setItem('catalogo', JSON.stringify(catalogo)); } catch {} pintarCatalogo(); }
+      if (res.ok){ catalogo = { moviles: res.moviles || [], eventos: res.eventos || [], lugares: res.lugares || [] }; try { localStorage.setItem('catalogo', JSON.stringify(catalogo)); } catch {} pintarCatalogo(); }
     } catch {}
   }
   // Si lo escrito no está en la lista, aparece "Solicitar agregar" debajo del campo. Guardar igual está permitido.
@@ -3436,7 +3457,7 @@
   const yaSolicitado = (tipo, v) => misSolicitudes.some(s => s.tipo === tipo && s.estado === 'pendiente' && String(s.valor || '').toLowerCase() === v.toLowerCase());
   function verificarCatalogo(tipo){
     const v = $('#' + tipo).value.trim();
-    const lista = tipo === 'movil' ? catalogo.moviles : catalogo.eventos;
+    const lista = listaCat(catalogo, tipo);
     const falta = !!v && !lista.some(x => x.toLowerCase() === v.toLowerCase());
     const enviado = falta && yaSolicitado(tipo, v);
     $('#sol-' + tipo).classList.toggle('hidden', !(falta && FLOW_URL && !db) || enviado);
@@ -3444,11 +3465,12 @@
   }
   $('#movil').addEventListener('input', () => verificarCatalogo('movil'));
   $('#evento').addEventListener('input', () => verificarCatalogo('evento'));
+  $('#lugar').addEventListener('input', () => verificarCatalogo('lugar'));
   let misSolicitudes = [], solVistas = new Set();
   try { misSolicitudes = JSON.parse(localStorage.getItem('mis_solicitudes') || '[]'); solVistas = new Set(JSON.parse(localStorage.getItem('sol_vistas') || '[]')); } catch {}
   const solNoVistas = () => misSolicitudes.filter(s => s.estado !== 'pendiente' && !solVistas.has(s.id)).length;
   const persistirSolicitudes = () => { try { localStorage.setItem('mis_solicitudes', JSON.stringify(misSolicitudes.slice(0, 50))); localStorage.setItem('sol_vistas', JSON.stringify([...solVistas].slice(-200))); } catch {} };
-  const nombreTipo = { movil: 'Móvil', evento: 'Evento', importar: 'Importación', otro: 'Pedido' };
+  const nombreTipo = { movil: 'Móvil', evento: 'Evento', lugar: 'Lugar de atención', importar: 'Importación', otro: 'Pedido' };
   async function solicitar(tipo, valor, detalle){
     try {
       const r = await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify({ accion: 'solicitar', tipo, valor, detalle, dispositivo: dispositivoId, token: sesion?.token }) });
@@ -3461,7 +3483,7 @@
   document.querySelectorAll('.solicitar').forEach(b => b.addEventListener('click', async () => {
     const tipo = b.dataset.tipo, valor = $('#' + tipo).value.trim(); if (!valor) return;
     b.disabled = true;
-    if (await solicitar(tipo, valor, '')){ toast(`Solicitud enviada: ${tipo === 'movil' ? 'móvil' : 'evento'} "${valor}". Podés seguir cargando.`, 'ok'); verificarCatalogo(tipo); }   // [NUEVO · solicitud enviada] muestra el tilde
+    if (await solicitar(tipo, valor, '')){ toast(`Solicitud enviada: ${nombreCampo[tipo] || tipo} "${valor}". Podés seguir cargando.`, 'ok'); verificarCatalogo(tipo); }   // [NUEVO · solicitud enviada] muestra el tilde
     b.disabled = false;
   }));
   // [NUEVO · menú] las solicitudes viven en un modal que abre el menú del nombre (o la campana); el ítem del menú
@@ -3496,7 +3518,7 @@
   }
 
   // ---- [NUEVO · catálogo] pestaña Catálogo (coordinador y administrador): solicitudes y listas ----
-  let solicitudesTodas = [], catalogoAdmin = { moviles: [], eventos: [] }, cargandoSolicitudes = false, catalogoCargado = false;
+  let solicitudesTodas = [], catalogoAdmin = { moviles: [], eventos: [], lugares: [] }, cargandoSolicitudes = false, catalogoCargado = false;
   // [NUEVO · rapidez] igual que Usuarios: copia local al instante, actualización por detrás con indicador
   async function cargarSolicitudes(){
     if (!MODO_COORD || !FLOW_URL || cargandoSolicitudes) return;
@@ -3514,13 +3536,13 @@
     const pend = solicitudesTodas.filter(s => s.estado === 'pendiente'), resueltas = solicitudesTodas.filter(s => s.estado !== 'pendiente').slice(0, 30);
     const fila = s => `<div class="solrow ${s.estado === 'pendiente' ? 'pend' : ''}" data-id="${esc(s.id)}"><div><b>${nombreTipo[s.tipo] || 'Pedido'}: ${esc(s.valor || '')}</b>${s.detalle ? ` <small>${esc(s.detalle)}</small>` : ''}<br><small>${esc(s.quien)} · ${fmtFechaHora(s.creado)}${s.estado !== 'pendiente' ? ` · <b>${s.estado}</b>${s.respuesta ? ': ' + esc(s.respuesta) : ''}` : ''}</small></div>
       ${s.estado === 'pendiente' ? `<div class="acciones"><button type="button" class="primary chico" data-que="aceptar">Aceptar</button><button type="button" class="link-btn" data-que="devolver">Devolver</button></div>` : ''}</div>`;
-    const lista = (tipo, arr) => `<div class="box"><h3>${tipo === 'movil' ? 'Móviles' : 'Eventos'} (${arr.filter(x => x.estado === 'activo').length} activos)</h3>
-      <div class="filters" style="grid-template-columns:1fr auto;margin:0 0 8px"><div><input class="search" style="margin:0" type="text" placeholder="Agregar ${tipo === 'movil' ? 'móvil' : 'evento'}" data-tipo="${tipo}" ${tipo === 'movil' ? 'inputmode="numeric"' : ''}></div><button type="button" class="primary cat-add" data-tipo="${tipo}" style="background:var(--brand)">Agregar</button></div>
+    const lista = (tipo, arr) => `<div class="box"><h3>${{ movil: 'Móviles', evento: 'Eventos', lugar: 'Lugares de atención' }[tipo]} (${arr.filter(x => x.estado === 'activo').length} activos)</h3>
+      <div class="filters" style="grid-template-columns:1fr auto;margin:0 0 8px"><div><input class="search" style="margin:0" type="text" placeholder="Agregar ${nombreCampo[tipo]}" data-tipo="${tipo}" ${tipo === 'movil' ? 'inputmode="numeric"' : ''}></div><button type="button" class="primary cat-add" data-tipo="${tipo}" style="background:var(--brand)">Agregar</button></div>
       <div class="catlista">${arr.length ? arr.map(x => `<div class="catrow ${x.estado}" data-tipo="${tipo}" data-valor="${esc(x.valor)}"><b>${esc(x.valor)}</b><span class="acc">${x.estado === 'activo' ? '<button type="button" class="link-btn" data-que="baja">Dar de baja</button>' : '<button type="button" class="link-btn" data-que="reactivar">Reactivar</button>'}${esAdminActual() ? '<button type="button" class="link-btn peligro" data-que="quitar">Quitar</button>' : ''}</span></div>`).join('') : '<span class="hint">Sin valores todavía. Agregá los primeros o esperá las solicitudes del personal.</span>'}</div></div>`;
     // [CORREGIDO · catálogo compacto] cada bloque va en un cuadro con scroll propio (pendientes más alto que resueltas)
     $('#cat-sol').innerHTML = (pend.length ? `<div class="usec">Solicitudes pendientes (${pend.length})</div><div class="scrollbox pend">` + pend.map(fila).join('') + '</div>' : '<p class="hint" style="margin:0 0 8px">No hay solicitudes pendientes.</p>')
       + (resueltas.length ? `<div class="usec">Resueltas recientes (${resueltas.length})</div><div class="scrollbox">` + resueltas.map(fila).join('') + '</div>' : '');
-    $('#cat-listas').innerHTML = lista('movil', catalogoAdmin.moviles) + lista('evento', catalogoAdmin.eventos);
+    $('#cat-listas').innerHTML = lista('movil', catalogoAdmin.moviles || []) + lista('evento', catalogoAdmin.eventos || []) + lista('lugar', catalogoAdmin.lugares || []);   // [NUEVO · lugar]
   }
   $('#cat-sol').addEventListener('click', async e => {
     const b = e.target.closest('button[data-que]'); if (!b) return;
@@ -3646,7 +3668,7 @@
       const id = String(r['ID']), fecha = aISO(r['Fecha']);
       const cargado = String(r['Cargado por'] || ''), generico = !cargado || /genérico/i.test(cargado);
       const createdAt = aMs(r['Registrado el']) || new Date(`${fecha}T${String(r['Hora'] || '00:00')}`).getTime() || Date.now();
-      return { id, fecha, movil: String(r['Móvil'] || ''), evento: String(r['Evento'] || ''), paciente: String(r['Paciente'] || ''), edad: String(r['Edad'] || ''),
+      return { id, fecha, movil: String(r['Móvil'] || ''), evento: String(r['Evento'] || ''), lugar: String(r['Lugar de atención'] || ''), paciente: String(r['Paciente'] || ''), edad: String(r['Edad'] || ''),
         medico: String(r['Médico / interviniente'] || ''), motivo: String(r['Motivo de consulta'] || ''), traslada: /^s/i.test(String(r['Traslada'] || '')) ? 'si' : 'no',
         obs: String(r['Observaciones'] || ''), nFotos: 0, createdAt, ...(generico ? {} : { usuarioNombre: cargado, rol: String(r['Rol'] || '') }), mensajes: msgs[id] || [] };
     });
