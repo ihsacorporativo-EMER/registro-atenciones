@@ -1084,7 +1084,8 @@
     </section>
     <section class="card hidden" id="login-pinnuevo">
       <h2>Elegí un PIN nuevo</h2>
-      <p class="hint">El coordinador te habilitó para cambiarlo.</p>
+      <p class="hint" style="margin:4px 0 14px">Coordinación te habilitó para cambiarlo y te pasó un código de 6 dígitos. Vale 15 minutos.</p>
+      <div class="field"><label for="pn-codigo">Código de coordinación</label><input id="pn-codigo" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 dígitos"></div>
       <div class="row">
         <div class="field"><label for="pn-pin">PIN nuevo</label><input id="pn-pin" type="password" inputmode="numeric" autocomplete="new-password" placeholder="4 a 6 dígitos"></div>
         <div class="field"><label for="pn-pin2">Repetir</label><input id="pn-pin2" type="password" inputmode="numeric" autocomplete="new-password"></div>
@@ -1559,13 +1560,16 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-26 b';
+  const VERSION = '2026-09-26 c';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-26 c', para: 'todos', texto: 'Seguridad: para elegir un PIN nuevo ahora hace falta el código de 6 dígitos que te da coordinación. Sin ese código, nadie puede cambiarte el PIN aunque sepa tu ID.' },
+    { v: '2026-09-26 c', para: 'todos', texto: 'Seguridad: el ingreso con ID y PIN dura 30 días. Pasado ese tiempo, la app te pide que vuelvas a entrar.' },
+    { v: '2026-09-26 c', para: 'coord', texto: 'Restablecer PIN dejando que la persona lo elija ahora muestra un código de 6 dígitos: pasáselo, vale 15 minutos y se ve una sola vez. Además, la clave compartida se bloquea 15 minutos si alguien se equivoca 20 veces seguidas (con tu usuario seguís entrando).' },
     { v: '2026-09-26 b', para: 'todos', texto: 'En Registros, debajo del buscador, podés filtrar por fecha con "Desde" y "Hasta". Se combina con la búsqueda; "Quitar fechas" vuelve a mostrar todo.' },
     { v: '2026-09-26 b', para: 'coord', texto: 'Eliminar registros: al desplegar una tarjeta, abajo está "Eliminar registro". Pide confirmación, lo saca de la app y lo guarda en la hoja "Eliminados" de la planilla con quién lo eliminó y cuándo, por si hay que recuperarlo.' },
     { v: '2026-09-26 a', para: 'coord', texto: 'Registros agrupados por evento: el panel muestra un cuadro por evento (River Plate, Tecnópolis…) con la cantidad de registros, traslados y novedades. Tocá uno para ver solo sus registros y "‹ Todos los eventos" para volver. El buscador sigue buscando en todos.' },
@@ -1723,7 +1727,9 @@
   const fmtFecha = iso => { if(!iso) return ''; if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return esc(iso); const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; };   // [CORREGIDO · seguridad] la fecha se pinta en HTML: fuera de formato se escapa
   const fmtHora = ts => { const d = new Date(ts); const p=n=>String(n).padStart(2,'0'); return `${p(d.getHours())}:${p(d.getMinutes())}`; };
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  // versión de un registro, siempre como número (1 si no tiene): se pinta en HTML
+  const versionDe = r => Math.max(1, parseInt(r && r.version, 10) || 1);
   // cantidad de fotos de un registro, siempre como número: el dato viene de la planilla y se pinta en HTML sin escapar
   const nFotosDe = r => Math.max(0, parseInt(r && r.nFotos, 10) || 0);
   // [NUEVO · cargando] indicador por pantalla (sync('list', 'Actualizando…'); sync('list', '') lo apaga) y bloque de espera
@@ -2139,7 +2145,7 @@
               : `<span class="pill pend">Pendiente de envío</span><button type="button" class="link retry">Reintentar</button>`;
   // [NUEVO · edición] línea de estado en campo: envío, versión si se editó, y el botón Editar
   const lineaEstado = r => MODO_COORD ? '' :
-    `<div class="estado">${estadoEnvio(r)}${r.version > 1 ? `<span class="pill resp">Editado · v${r.version}</span>` : ''}<button type="button" class="link editar">Editar</button></div>`;
+    `<div class="estado">${estadoEnvio(r)}${versionDe(r) > 1 ? `<span class="pill resp">Editado · v${versionDe(r)}</span>` : ''}<button type="button" class="link editar">Editar</button></div>`;
   const botonFotos = r => { const n = nFotosDe(r); return n ? `<button type="button" class="link fotos-btn">Ver ${n} foto${n>1?'s':''}</button>` : `<span class="hint">Sin fotos</span>`; };
 
   // [NUEVO · mensajes] Hilo anidado bajo el registro, con scroll propio. Los mensajes ajenos posteriores a la última
@@ -2154,10 +2160,10 @@
   const SVG_CARA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/><path d="M19 3v4"/><path d="M17 5h4"/></svg>';
   const reaccionesHTML = (m, puede, desde) => {
     const nuevaR = reacAjenaNueva(m, desde || 0);
-    const chips = Object.entries(m.reac || {}).map(([ic, q]) => `<button type="button" class="reac ${q.includes(YO) ? 'mia' : ''} ${nuevaR && !q.includes(YO) ? 'nuevo' : ''}" data-ic="${ic}" data-fecha="${m.fecha}" title="${q.map(nombreDe).join(', ')}">${ic}${q.length > 1 ? `<b>${q.length}</b>` : ''}</button>`).join('');
+    const chips = Object.entries(m.reac || {}).map(([ic, q]) => `<button type="button" class="reac ${q.includes(YO) ? 'mia' : ''} ${nuevaR && !q.includes(YO) ? 'nuevo' : ''}" data-ic="${ic}" data-fecha="${esc(m.fecha)}" title="${q.map(nombreDe).join(', ')}">${ic}${q.length > 1 ? `<b>${q.length}</b>` : ''}</button>`).join('');
     if (!chips && !puede) return '';
-    return `<div class="reacs">${chips}${puede ? `<button type="button" class="reac add" data-fecha="${m.fecha}" aria-label="Reaccionar">${SVG_CARA}</button>` : ''}</div>
-        ${puede ? `<div class="picker hidden">${REACCIONES.map(ic => `<button type="button" class="pick" data-ic="${ic}" data-fecha="${m.fecha}" aria-label="Reaccionar ${ic}">${ic}</button>`).join('')}</div>` : ''}`;
+    return `<div class="reacs">${chips}${puede ? `<button type="button" class="reac add" data-fecha="${esc(m.fecha)}" aria-label="Reaccionar">${SVG_CARA}</button>` : ''}</div>
+        ${puede ? `<div class="picker hidden">${REACCIONES.map(ic => `<button type="button" class="pick" data-ic="${ic}" data-fecha="${esc(m.fecha)}" aria-label="Reaccionar ${ic}">${ic}</button>`).join('')}</div>` : ''}`;
   };
   // [NUEVO · adjuntos] Adjuntos pendientes por registro (antes de enviar) y caché de los ya guardados en Drive.
   // Imágenes: se comprimen como las fotos del registro. PDF: hasta 5 MB. Máximo 4 por mensaje.
@@ -2195,7 +2201,7 @@
     const items = ms.map(m => {
       if (m.de === 'sistema') return `<div class="msg sistema">${esc(m.texto)} · ${fmtFechaHora(m.fecha)}</div>`;
       const nuevo = esAjeno(m) && m.fecha > desde; return `
-        <div class="msg ${m.de} ${m.de === YO ? 'mio' : ''} ${nuevo ? 'nuevo' : ''} ${m.enviando ? 'enviando' : ''}">
+        <div class="msg ${esc(m.de)} ${m.de === YO ? 'mio' : ''} ${nuevo ? 'nuevo' : ''} ${m.enviando ? 'enviando' : ''}">
           <div class="quien">${esc(m.autor || nombreDe(m.de))}<small>${fmtFechaHora(m.fecha)}</small>${nuevo ? '<span class="pill nuevo">Nuevo</span>' : ''}${m.enviando ? '<small class="env">enviando…</small>' : ''}</div>
           ${m.texto ? `<p>${esc(m.texto)}</p>` : ''}
           ${adjuntosHTML(m, r)}
@@ -2220,7 +2226,7 @@
   // La etiqueta del título avisa lo importante sin abrirla: respuesta nueva, pendiente de envío, editado, con mensajes.
   const etiquetaCampo = r => noVistosDe(r) ? ' <span class="pill nuevo">Respuesta nueva</span>'
     : (FLOW_URL && !db && !r.enviado) ? ' <span class="pill pend">Pendiente de envío</span>'
-    : r.version > 1 ? ` <span class="pill resp">Editado · v${r.version}</span>` : '';   // [CORREGIDO · tarjetas] sin "Con mensajes"
+    : versionDe(r) > 1 ? ` <span class="pill resp">Editado · v${versionDe(r)}</span>` : '';   // [CORREGIDO · tarjetas] sin "Con mensajes"
   const tarjetaCampo = r => `
       <article class="rec compact ${abiertos.has(r.id) ? 'open' : ''}" data-id="${esc(r.id)}">
         <div class="top"><b>${esc(r.evento)}${etiquetaCampo(r)}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
@@ -2262,7 +2268,7 @@
   const etiquetaTop = r => r.createdAt > vistoDe(r) ? ' <span class="pill nuevo">Nuevo</span>'
     : (r.actualizadoEn || 0) > vistoDe(r) ? ' <span class="pill nuevo">Actualizado</span>'
     : noVistosDe(r) ? ' <span class="pill nuevo">Respuesta nueva</span>'
-    : r.version > 1 ? ` <span class="pill resp">Editado · v${r.version}</span>` : '';   // [CORREGIDO · tarjetas] sin "Con mensajes": el globo con el número ya lo dice
+    : versionDe(r) > 1 ? ` <span class="pill resp">Editado · v${versionDe(r)}</span>` : '';   // [CORREGIDO · tarjetas] sin "Con mensajes": el globo con el número ya lo dice
   const tarjetaCompacta = r => `
       <article class="rec compact ${abiertos.has(r.id) ? 'open' : ''}" data-id="${esc(r.id)}">
         <div class="top"><b>${esc(r.evento)}${etiquetaTop(r)}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
@@ -2275,7 +2281,7 @@
             <dt>Médico</dt><dd>${esc(r.medico)}</dd>
             <dt>Motivo</dt><dd>${esc(r.motivo)}</dd>
             ${r.obs ? `<dt>Obs.</dt><dd>${esc(r.obs)}</dd>` : ''}
-            ${r.version > 1 ? `<dt>Actualizado</dt><dd>${fmtFechaHora(r.actualizadoEn)} · versión ${r.version}</dd>` : ''}
+            ${versionDe(r) > 1 ? `<dt>Actualizado</dt><dd>${fmtFechaHora(r.actualizadoEn)} · versión ${versionDe(r)}</dd>` : ''}
           </dl>
           <div class="fotos">${botonFotos(r)}</div>
           ${hiloHTML(r)}
@@ -3170,12 +3176,13 @@
     finally { btn.disabled = false; btn.textContent = 'Enviar solicitud'; }
   }
   async function guardarPinNuevo(){
-    const p1 = $('#pn-pin').value.trim(), p2 = $('#pn-pin2').value.trim();
+    const codigo = $('#pn-codigo').value.replace(/\D/g, ''), p1 = $('#pn-pin').value.trim(), p2 = $('#pn-pin2').value.trim();
+    if (codigo.length !== 6){ toast('Escribí el código de 6 dígitos que te dio coordinación', 'err'); return; }
     if (!/^\d{4,6}$/.test(p1)){ toast('El PIN debe tener entre 4 y 6 dígitos', 'err'); return; }
     if (p1 !== p2){ toast('Los PIN no coinciden', 'err'); return; }
     try {
-      const res = await postUsuario({ accion: 'pinNuevo', id: pinNuevoDe, pin: p1 });
-      guardarSesion({ ...res.usuario, token: res.token }); $('#pn-pin').value = $('#pn-pin2').value = '';
+      const res = await postUsuario({ accion: 'pinNuevo', id: pinNuevoDe, pin: p1, codigo });
+      guardarSesion({ ...res.usuario, token: res.token }); $('#pn-codigo').value = $('#pn-pin').value = $('#pn-pin2').value = '';
       toast('PIN guardado', 'ok');
       if (res.usuario.estado === 'activo') await entrarSegunRol(); else esperarAprobacion();
     } catch (e){ toast(e.message, 'err'); }
@@ -3272,7 +3279,7 @@
       const i = usuarios.findIndex(u => u.id === id);
       if (res.eliminado){ if (i >= 0) usuarios.splice(i, 1); }          // [NUEVO · usuarios] eliminado: sale de la lista
       else if (i >= 0) usuarios[i] = res.usuario;
-      renderUsuarios(); sondearNuevos(); return true;
+      renderUsuarios(); sondearNuevos(); return res;                   // la respuesta, por si trae algo (ej. el código de PIN)
     } catch (e){ toast('No se pudo: ' + e.message, 'err'); return false; }
   }
   $('#uq').addEventListener('input', renderUsuarios);
@@ -3294,7 +3301,14 @@
       const op = prompt(`Restablecer PIN de ${quien}.\n\nEscribí un PIN nuevo de 4 a 6 dígitos para asignárselo,\no dejá vacío y aceptá para que lo elija la persona la próxima vez que entre.`, '');
       if (op === null) return;
       const v = op.trim();
-      if (v === ''){ if (await accionUsuario(id, 'permitirCambioPin')) toast('Habilitado: al entrar con su ID va a elegir un PIN nuevo', 'ok'); }
+      if (v === ''){
+        const res = await accionUsuario(id, 'permitirCambioPin');
+        if (res && res.codigo) await confirmar(`Código para ${quien}:
+
+${res.codigo.slice(0, 3)} ${res.codigo.slice(3)}
+
+Pasáselo a la persona. Al entrar con su ID lo va a tener que escribir para elegir su PIN nuevo. Vale 15 minutos y se muestra una sola vez: si se pierde, volvé a tocar "Restablecer PIN".`, { ok: 'Listo, ya lo anoté', soloAceptar: true });
+      }
       else if (!/^\d{4,6}$/.test(v)) toast('El PIN debe tener entre 4 y 6 dígitos', 'err');
       else if (await accionUsuario(id, 'resetPin', { pin: v })) toast('PIN asignado. Pasáselo a la persona; sus sesiones abiertas se cerraron.', 'ok');
     }
@@ -3999,10 +4013,12 @@
 
   // ---- [NUEVO · confirmar] confirmar(texto, { ok, peligro }) → Promise<boolean>. Reemplaza al confirm() del navegador,
   // que salía con el dominio arriba y sin estilo. Enter/botón acepta; Esc, Cancelar o tocar afuera cancela.
+  // { soloAceptar: true } lo usa como aviso: sin botón Cancelar (ej. mostrar el código para cambiar el PIN).
   function confirmar(texto, opts){
     const o = Object.assign({ ok: 'Aceptar', cancelar: 'Cancelar', peligro: false }, opts || {});
     const m = $('#modal-confirm');
     $('#cf-texto').textContent = texto; $('#cf-si').textContent = o.ok; $('#cf-no').textContent = o.cancelar;
+    $('#cf-no').classList.toggle('hidden', !!o.soloAceptar);
     m.classList.toggle('peligro', !!o.peligro); m.classList.add('open');
     return new Promise(res => {
       const fin = v => { m.classList.remove('open'); $('#cf-si').onclick = $('#cf-no').onclick = m.onclick = null; document.removeEventListener('keydown', tecla); res(v); };
