@@ -1559,15 +1559,15 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-26 a';
+  const VERSION = '2026-09-26 b';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
-    { v: '2026-09-26 a', para: 'todos', texto: 'En Registros, debajo del buscador, podés filtrar por fecha con "Desde" y "Hasta". Se combina con la búsqueda; "Quitar fechas" vuelve a mostrar todo.' },
-    { v: '2026-09-26 a', para: 'coord', texto: 'Eliminar registros: al desplegar una tarjeta, abajo está "Eliminar registro". Pide confirmación, lo saca de la app y lo guarda en la hoja "Eliminados" de la planilla con quién lo eliminó y cuándo, por si hay que recuperarlo.' },
+    { v: '2026-09-26 b', para: 'todos', texto: 'En Registros, debajo del buscador, podés filtrar por fecha con "Desde" y "Hasta". Se combina con la búsqueda; "Quitar fechas" vuelve a mostrar todo.' },
+    { v: '2026-09-26 b', para: 'coord', texto: 'Eliminar registros: al desplegar una tarjeta, abajo está "Eliminar registro". Pide confirmación, lo saca de la app y lo guarda en la hoja "Eliminados" de la planilla con quién lo eliminó y cuándo, por si hay que recuperarlo.' },
     { v: '2026-09-26 a', para: 'coord', texto: 'Registros agrupados por evento: el panel muestra un cuadro por evento (River Plate, Tecnópolis…) con la cantidad de registros, traslados y novedades. Tocá uno para ver solo sus registros y "‹ Todos los eventos" para volver. El buscador sigue buscando en todos.' },
     { v: '2026-09-26 a', para: 'coord', texto: 'Seguridad: solo administración puede dar el rol Administrador o modificar a un administrador (rol, PIN, baja). En el panel de Usuarios, coordinación ya no ve esas opciones.' },
     { v: '2026-09-24 b', para: 'todos', texto: 'Seguridad: si se escribe mal el PIN 5 veces seguidas, el ingreso con ese ID se bloquea 15 minutos. Al equivocarte, la app te dice cuántos intentos te quedan. Si te bloqueaste, coordinación puede restablecer tu PIN.' },
