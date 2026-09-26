@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b3d91">
@@ -211,6 +212,13 @@
   .empty svg{width:40px;height:40px;color:var(--line);display:block;margin:0 auto 8px}
   .search{width:100%;background:var(--field);border:1.5px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:12px}
   .search:focus{outline:none;border-color:var(--brand)}
+  /* filtro por fecha debajo del buscador de Registros */
+  .filtro-fechas{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 12px;margin:-4px 0 12px}
+  .filtro-fechas label{display:flex;flex-direction:column;gap:4px;flex:1 1 140px;max-width:220px;font-size:12.5px;font-weight:700;color:var(--muted)}
+  .filtro-fechas input{background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;min-height:40px;color:var(--ink)}
+  .filtro-fechas input:focus{outline:none;border-color:var(--brand)}
+  .filtro-fechas .link-btn{font-size:13px;padding-bottom:10px}
+  .rango-activo{margin:0 0 10px}
 
   /* Tablero */
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
@@ -330,6 +338,9 @@
   .pager{display:flex;justify-content:center;align-items:center;gap:14px;margin:4px 0 12px;font-size:13px;color:var(--muted)}
   .pager button{width:38px;height:38px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--brand);font-size:20px;cursor:pointer}
   .pager button:disabled{opacity:.35;cursor:default}
+  /* "Eliminar registro" al pie del detalle desplegado (solo panel de coordinación) */
+  .reg-acciones{display:flex;justify-content:flex-end;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+  .reg-acciones .link-btn{font-size:13px}
   /* Panel de coordinación agrupado por evento: un cuadro por evento; adentro, cabecera con "‹ Todos los eventos" */
   .eventos{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:10px}
   .evento{display:flex;flex-direction:column;align-items:stretch;gap:6px;width:100%;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;text-align:left;cursor:pointer;box-shadow:var(--shadow);transition:transform .2s,border-color .2s}
@@ -687,7 +698,7 @@
   select{background-image:url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'><path d=\'M1 1l5 5 5-5\' fill=\'none\' stroke=\'%235b6478\' stroke-width=\'2\' stroke-linecap=\'round\'/></svg>");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px !important}
   input,textarea,select,button{-webkit-tap-highlight-color:transparent}
   @media (max-width:640px){
-    .field input,.field textarea,.search,.ed-contacto input,.resp-box textarea,.urow select,.modal input,.modal textarea{font-size:16px}
+    .field input,.field textarea,.search,.filtro-fechas input,.ed-contacto input,.resp-box textarea,.urow select,.modal input,.modal textarea{font-size:16px}
   }
   @supports not (background:color-mix(in srgb,red 10%,white)){
     .pill.si,.rec .fila .tras{background:rgba(31,138,76,.15)} .rec .fila .tras.no{background:var(--line)}
@@ -1204,6 +1215,12 @@
     <p class="lead">Últimos registros cargados por el equipo.</p>
     <div class="sync" id="sync-list" role="status"><span class="spin"></span><span></span></div><!-- [NUEVO · cargando] -->
     <input class="search" id="q" type="search" placeholder="Buscar por evento, lugar, móvil, paciente o médico">
+    <!-- filtro por fecha de atención: se combina con la búsqueda y con el evento abierto -->
+    <div class="filtro-fechas">
+      <label>Desde <input type="date" id="q-desde"></label>
+      <label>Hasta <input type="date" id="q-hasta"></label>
+      <button type="button" class="link-btn hidden" id="q-limpiar">Quitar fechas</button>
+    </div>
     <div id="list"></div>
   </div>
 
@@ -1549,6 +1566,8 @@
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-26 a', para: 'todos', texto: 'En Registros, debajo del buscador, podés filtrar por fecha con "Desde" y "Hasta". Se combina con la búsqueda; "Quitar fechas" vuelve a mostrar todo.' },
+    { v: '2026-09-26 a', para: 'coord', texto: 'Eliminar registros: al desplegar una tarjeta, abajo está "Eliminar registro". Pide confirmación, lo saca de la app y lo guarda en la hoja "Eliminados" de la planilla con quién lo eliminó y cuándo, por si hay que recuperarlo.' },
     { v: '2026-09-26 a', para: 'coord', texto: 'Registros agrupados por evento: el panel muestra un cuadro por evento (River Plate, Tecnópolis…) con la cantidad de registros, traslados y novedades. Tocá uno para ver solo sus registros y "‹ Todos los eventos" para volver. El buscador sigue buscando en todos.' },
     { v: '2026-09-26 a', para: 'coord', texto: 'Seguridad: solo administración puede dar el rol Administrador o modificar a un administrador (rol, PIN, baja). En el panel de Usuarios, coordinación ya no ve esas opciones.' },
     { v: '2026-09-24 b', para: 'todos', texto: 'Seguridad: si se escribe mal el PIN 5 veces seguidas, el ingreso con ese ID se bloquea 15 minutos. Al equivocarte, la app te dice cuántos intentos te quedan. Si te bloqueaste, coordinación puede restablecer tu PIN.' },
@@ -2260,6 +2279,7 @@
           </dl>
           <div class="fotos">${botonFotos(r)}</div>
           ${hiloHTML(r)}
+          <div class="reg-acciones"><button type="button" class="link-btn peligro eliminar-reg">Eliminar registro</button></div>
         </div>
       </article>`;
 
@@ -2289,11 +2309,13 @@
   let paginaEventos = 0;
   const porPaginaEventos = () => esCelular() ? 8 : 12;
   const actividadDe = r => Math.max(r.createdAt || 0, r.actualizadoEn || 0);
+  // nombre que se muestra de un evento: como lo escribió el registro más nuevo de todos (no solo de los filtrados)
+  const nombreEvento = k => { const r = registros.find(x => claveEvento(x) === k); return (r && String(r.evento || '').trim()) || 'Sin evento'; };
   function gruposDeEventos(rows){
     const porClave = new Map();
-    rows.forEach(r => {                              // rows viene del más nuevo al más viejo: el nombre es el del último registro
+    rows.forEach(r => {
       const k = claveEvento(r);
-      if (!porClave.has(k)) porClave.set(k, { clave: k, nombre: String(r.evento || '').trim() || 'Sin evento', regs: [] });
+      if (!porClave.has(k)) porClave.set(k, { clave: k, nombre: nombreEvento(k), regs: [] });
       porClave.get(k).regs.push(r);
     });
     return [...porClave.values()].map(g => ({ ...g,
@@ -2310,14 +2332,20 @@
         <span class="ev-dat">${plural(g.regs.length, 'registro', 'registros')} · ${plural(g.traslados, 'traslado', 'traslados')}</span>
         <small>Último registro: ${fmtFecha(g.ultFecha)}</small>
       </button>`;
-  function renderEventos(rows){
+  function renderEventos(rows, cab){
     const grupos = gruposDeEventos(rows), total = grupos.length, por = porPaginaEventos();
     paginaEventos = acotar(paginaEventos, total, por);
     const visibles = grupos.slice(paginaEventos * por, (paginaEventos + 1) * por);
     const nav = total > por ? pagerHTML('eventos', paginaEventos, total, por) : '';
-    $('#list').innerHTML = nav + `<div class="eventos">${visibles.map(tarjetaEvento).join('')}</div>` + nav;
+    $('#list').innerHTML = (cab || '') + nav + `<div class="eventos">${visibles.map(tarjetaEvento).join('')}</div>` + nav;
   }
-  const cabeceraEvento = regs => `<div class="ev-cab"><button type="button" class="ev-volver">‹ Todos los eventos</button><b>${esc(String(regs[0].evento || '').trim() || 'Sin evento')}</b><small>${plural(regs.length, 'registro', 'registros')}</small></div>`;
+  // cabecera de un evento abierto; n es cuántos registros se ven (con fechas, solo los del período)
+  const cabeceraEvento = (regs, n) => `<div class="ev-cab"><button type="button" class="ev-volver">‹ Todos los eventos</button><b>${esc(nombreEvento(claveEvento(regs[0])))}</b><small>${plural(n, 'registro', 'registros')}</small></div>`;
+  // Filtro por fecha de atención (Desde / Hasta, debajo del buscador). Las fechas son AAAA-MM-DD y se comparan como texto.
+  // Se combina con la búsqueda y con el evento abierto; en los cuadros de eventos, las cantidades son las del período.
+  const rangoFechas = () => ({ desde: $('#q-desde').value, hasta: $('#q-hasta').value });
+  const enRango = (r, { desde, hasta }) => (!desde || String(r.fecha || '') >= desde) && (!hasta || String(r.fecha || '') <= hasta);
+  const textoRango = ({ desde, hasta }) => desde && hasta ? `del ${fmtFecha(desde)} al ${fmtFecha(hasta)}` : desde ? `desde el ${fmtFecha(desde)}` : `hasta el ${fmtFecha(hasta)}`;
   function abrirEvento(clave){
     eventoAbierto = clave; pagina = 0; $('#q').value = '';
     if (esCelular()) abiertos.clear();
@@ -2333,20 +2361,27 @@
     // [CORREGIDO · campana] con script configurado, el contador de la pestaña es "sin ver" (lo pinta pintarNoVistos);
     // sin script, sigue siendo el total como antes
     if (!(FLOW_URL && !db)) $('#count').textContent = registros.length ? `(${registros.length})` : '';
+    const rango = rangoFechas(), hayFechas = !!(rango.desde || rango.hasta);
+    $('#q-limpiar').classList.toggle('hidden', !hayFechas);
     // dentro de un evento, solo sus registros; si el evento se quedó sin registros (se archivó), se vuelve a los cuadros
-    let base = registros, cab = '';
+    let base = registros, cab = '', delEvento = null;
     if (agrupaEventos() && eventoAbierto !== null){
-      const delEvento = registros.filter(r => claveEvento(r) === eventoAbierto);
-      if (delEvento.length){ base = delEvento; cab = cabeceraEvento(delEvento); }
-      else if (registros.length) eventoAbierto = null;
-      else base = [];
+      delEvento = registros.filter(r => claveEvento(r) === eventoAbierto);
+      if (delEvento.length) base = delEvento;
+      else { if (registros.length) eventoAbierto = null; else base = []; delEvento = null; }
     }
-    const rows = base.filter(r => !q || [r.evento, r.lugar, r.movil, r.medico, r.paciente].some(x => String(x||'').toLowerCase().includes(q)));
-    if (!rows.length && !q && MODO_COORD && !db && cargandoCentral){ $('#list').innerHTML = cargandoHTML('Cargando registros…'); return; }   // [NUEVO · cargando]
-    if (agrupaEventos() && eventoAbierto === null && !q && rows.length){ renderEventos(rows); return; }
-    if (agrupaEventos() && eventoAbierto === null && q) cab = '<p class="hint" style="margin:0 0 10px">Resultados en todos los eventos. Borrá la búsqueda para volver a los eventos.</p>';
+    const rows = base.filter(r => enRango(r, rango) && (!q || [r.evento, r.lugar, r.movil, r.medico, r.paciente].some(x => String(x||'').toLowerCase().includes(q))));
+    if (delEvento) cab = cabeceraEvento(delEvento, rows.length);
+    if (hayFechas) cab += `<p class="hint rango-activo">Registros con fecha ${textoRango(rango)}.</p>`;
+    if (!rows.length && !q && !hayFechas && MODO_COORD && !db && cargandoCentral){ $('#list').innerHTML = cargandoHTML('Cargando registros…'); return; }   // [NUEVO · cargando]
+    if (agrupaEventos() && eventoAbierto === null && !q && rows.length){ renderEventos(rows, cab); return; }
+    if (agrupaEventos() && eventoAbierto === null && q) cab += '<p class="hint" style="margin:0 0 10px">Resultados en todos los eventos. Borrá la búsqueda para volver a los eventos.</p>';
     if (!rows.length){
-      const vacio = q ? 'Sin resultados para esa búsqueda.' : (MODO_COORD && !db ? 'Todavía no hay registros enviados por el equipo.' : 'Todavía no hay registros cargados.');
+      const vacio = hayFechas && rango.desde && rango.hasta && rango.desde > rango.hasta ? 'La fecha "Desde" es posterior a "Hasta".'
+        : q && hayFechas ? 'Sin resultados para esa búsqueda en esas fechas.'
+        : q ? 'Sin resultados para esa búsqueda.'
+        : hayFechas ? 'No hay registros en esas fechas.'
+        : (MODO_COORD && !db ? 'Todavía no hay registros enviados por el equipo.' : 'Todavía no hay registros cargados.');
       $('#list').innerHTML = cab + `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg>${vacio}</div>`;
       return;
     }
@@ -2361,6 +2396,8 @@
     restaurarBorrador(borrador);                                            // [CORREGIDO · chat]
   }
   $('#q').addEventListener('input', () => { pagina = 0; paginaEventos = 0; renderList(); });
+  ['#q-desde', '#q-hasta'].forEach(s => $(s).addEventListener('change', () => { pagina = 0; paginaEventos = 0; renderList(); }));
+  $('#q-limpiar').addEventListener('click', () => { $('#q-desde').value = ''; $('#q-hasta').value = ''; pagina = 0; paginaEventos = 0; renderList(); });
 
   // [NUEVO · mensajes] Envía un mensaje al hilo (coordinador con clave, campo sin clave). Al confirmar, el cuadro se
   // cierra y el mensaje queda como burbuja; solo se vuelve a dibujar el hilo, así la tarjeta no se pliega.
@@ -2668,7 +2705,7 @@
   // desplegado y marcado como visto
   function irARegistro(id){
     $('.tabs button[data-tab="list"]').click();
-    $('#q').value = '';
+    $('#q').value = ''; $('#q-desde').value = ''; $('#q-hasta').value = '';   // sin búsqueda ni fechas: el registro siempre se ve
     const reg = registros.find(r => r.id === id); if (!reg) return;
     if (agrupaEventos()) eventoAbierto = claveEvento(reg);
     const lista = agrupaEventos() ? registros.filter(r => claveEvento(r) === eventoAbierto) : registros;
@@ -2715,6 +2752,8 @@
     const pick = e.target.closest('button.pick, button.reac');
     if (pick){ reaccionar(pick.closest('.rec'), pick.dataset.fecha, pick.dataset.ic); return; }
     if (e.target.closest('.hilo')) return;                                            // tocar dentro del hilo no pliega la tarjeta
+    const elim = e.target.closest('button.eliminar-reg');                           // coordinación elimina un registro
+    if (elim){ eliminarRegistro(elim.closest('.rec').dataset.id, elim); return; }
     const b = e.target.closest('button.fotos-btn');
     if (b){
       const art = b.closest('.rec'); const id = art.dataset.id;
@@ -2751,6 +2790,21 @@
       } else { abiertos.delete(art.dataset.id); refrescarHiloVisto(art); }   // [CORREGIDO · visto] al cerrar ya no queda "Nuevo"
     }
   });
+  // Coordinación elimina un registro: pide confirmación con los datos a la vista, lo manda al script (que lo pasa a la hoja
+  // Eliminados) y lo saca de la lista, del tablero y de la copia local.
+  async function eliminarRegistro(id, btn){
+    const r = registros.find(x => x.id === id); if (!r) return;
+    const ok = await confirmar(`¿Eliminar el registro${/^\d{9}$/.test(id) ? ' N.º ' + id : ''}?\n${r.evento || 'Sin evento'} · ${fmtFecha(r.fecha)} · Móvil ${r.movil || '—'} · ${r.paciente || 'sin paciente'}\n\nDeja de verse en la app y en la hoja Registros. Queda guardado en la hoja "Eliminados" de la planilla, con tu nombre y la fecha.`, { ok: 'Eliminar', peligro: true });
+    if (!ok) return;
+    btn.disabled = true; btn.textContent = 'Eliminando…';
+    try {
+      await postCoord({ accion: 'eliminarRegistro', id });
+      registros = registros.filter(x => x.id !== id); abiertos.delete(id);
+      try { const c = copiaLocalCoord(); if (c) localStorage.setItem('coord_copia', JSON.stringify({ ...c, registros: c.registros.filter(x => x.id !== id) })); } catch {}
+      renderList(); renderBoard(); pintarNoVistos(contarPendientes());
+      toast('Registro eliminado', 'ok');
+    } catch (err){ btn.disabled = false; btn.textContent = 'Eliminar registro'; toast('No se pudo eliminar: ' + err.message, 'err'); }
+  }
   $('#lb').addEventListener('click', () => $('#lb').classList.remove('open'));
   // [NUEVO · foto] descarga la foto ampliada. Se pasa a Blob porque varios navegadores ignoran "download" en dataURLs largas.
   $('#lb-dl').addEventListener('click', e => {
