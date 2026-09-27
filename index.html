@@ -16,9 +16,8 @@
 <script>try{var t=localStorage.getItem('tema');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- [NUEVO · migración] compresor para "Descargar paquete" (Excel + fotos en un ZIP) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<!-- Las librerías de Excel (SheetJS) y ZIP (JSZip) ya no se bajan al abrir: las carga cargarLibs() recién cuando se
+     descarga o importa algo (ver 03-utilidades.js). El personal de campo nunca las usa y abre la app mucho más liviana. -->
 <style>
   /* ===== Colores de marca (cambiá acá si querés ajustar al manual de IHSA) ===== */
   :root{
@@ -1560,13 +1559,16 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-26 c';
+  const VERSION = '2026-09-27 a';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-27 a', para: 'todos', texto: 'La app abre más rápido y consume menos datos. Y ahora abre aunque no haya señal: usa la última versión guardada en tu celular, y tus registros se envían solos cuando vuelve la conexión.' },
+    { v: '2026-09-27 a', para: 'todos', texto: 'Los registros con fotos llegan más rápido a coordinación, aunque varios se envíen al mismo tiempo.' },
+    { v: '2026-09-27 a', para: 'coord', texto: 'El panel consulta menos al servidor y responde más rápido con mucha gente conectada. Las fotos de un registro se abren todas juntas, y el Excel se prepara al tocar Descargar.' },
     { v: '2026-09-26 c', para: 'todos', texto: 'Seguridad: para elegir un PIN nuevo ahora hace falta el código de 6 dígitos que te da coordinación. Sin ese código, nadie puede cambiarte el PIN aunque sepa tu ID.' },
     { v: '2026-09-26 c', para: 'todos', texto: 'Seguridad: el ingreso con ID y PIN dura 30 días. Pasado ese tiempo, la app te pide que vuelvas a entrar.' },
     { v: '2026-09-26 c', para: 'coord', texto: 'Restablecer PIN dejando que la persona lo elija ahora muestra un código de 6 dígitos: pasáselo, vale 15 minutos y se ve una sola vez. Además, la clave compartida se bloquea 15 minutos si alguien se equivoca 20 veces seguidas (con tu usuario seguís entrando).' },
@@ -1736,6 +1738,24 @@
   // para una lista todavía vacía
   function sync(tab, texto){ const el = $('#sync-' + tab); if (!el) return; el.classList.toggle('on', !!texto); el.lastElementChild.textContent = texto || ''; }
   const cargandoHTML = texto => `<div class="cargando-lista"><span class="spin"></span><span>${esc(texto)}</span></div>`;
+
+  // Librerías que solo hacen falta para descargar o importar (Excel y ZIP): se bajan la primera vez que se usan, no al
+  // abrir la app. cargarLibs('XLSX', 'JSZip') devuelve una promesa que se cumple cuando están listas.
+  const LIBS = {
+    XLSX:  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+    JSZip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+  };
+  const libsCargando = {};
+  function cargarLib(nombre){
+    if (window[nombre]) return Promise.resolve(window[nombre]);
+    return libsCargando[nombre] || (libsCargando[nombre] = new Promise((ok, no) => {
+      const s = document.createElement('script'); s.src = LIBS[nombre]; s.async = true;
+      s.onload = () => window[nombre] ? ok(window[nombre]) : no(new Error('No se pudo cargar ' + nombre));
+      s.onerror = () => { delete libsCargando[nombre]; s.remove(); no(new Error('No se pudo bajar lo necesario para esto. Revisá la conexión y probá de nuevo.')); };
+      document.head.appendChild(s);
+    }));
+  }
+  const cargarLibs = (...nombres) => Promise.all(nombres.map(cargarLib));
 
   // [CORREGIDO] Edad: antes se convertía con "+" y cualquier texto (ej. "45 años") salía como NaN en el Excel.
   // Ahora se toma el primer número que aparezca; si no hay ninguno, la celda queda vacía.
@@ -2518,7 +2538,7 @@
     }
   }
 
-  // [NUEVO · mensajes] El celular de campo pregunta cada 60 s por los hilos de sus registros enviados
+  // [NUEVO · mensajes] Los hilos de los registros enviados llegan con la consulta periódica (sondearCampo, más abajo)
   // [NUEVO · seguridad] Los registros cargados antes de la versión con llave no tienen dueño en la planilla. Una sola vez por
   // celular (y por usuario) se manda la lista de IDs enviados y el script se los asigna a este celular o usuario.
   async function adoptarRegistros(){
@@ -2532,21 +2552,12 @@
       const res = await r.json(); if (res.ok){ try { localStorage.setItem(marca, '1'); } catch {} }
     } catch {}
   }
-  async function sondearMensajes(){
-    if (MODO_COORD || !FLOW_URL || db || document.hidden) return;
-    const ids = registros.filter(r => r.enviado).map(r => r.id).slice(0, 200);
-    if (!ids.length) return;
-    try {
-      const u = new URL(FLOW_URL); u.searchParams.set('devoluciones', ids.join(',')); u.searchParams.set('ver', verServidor); u.searchParams.set('dispositivo', dispositivoId);   // [CORREGIDO · carga] · [NUEVO · conectados]
-      if (sesion?.token) u.searchParams.set('token', sesion.token); if (llaveDispositivo) u.searchParams.set('llave', llaveDispositivo);   // [NUEVO · seguridad]
-      const res = await (await fetchT(u)).json(); if (!res.ok) return;
-      marcarConexion(true);                                        // [NUEVO · perfil]
-      if (res.sinCambios) return;                                  // [CORREGIDO · carga] nada nuevo: consulta barata
-      guardarVer(res.ver);
+  // Los hilos que devolvió el script (por ID de registro): actualiza los que cambiaron, avisa y redibuja
+  function aplicarHilos(devoluciones){
       let cambios = 0, antes = registros.reduce((n, r) => n + noVistosDe(r), 0);
       for (const r of registros){
         if (enviandoIds.has(r.id)) continue;                        // [NUEVO · rapidez] hay un mensaje en camino: no pisar
-        const d = res.devoluciones?.[r.id]; if (!d || !Array.isArray(d.mensajes)) continue;
+        const d = devoluciones[r.id]; if (!d || !Array.isArray(d.mensajes)) continue;
         const loc = mensajesDe(r);
         const ultLoc = loc[loc.length - 1], ultSrv = d.mensajes[d.mensajes.length - 1];
         if (d.mensajes.length !== loc.length || (ultSrv && ultLoc && ultSrv.fecha !== ultLoc.fecha) || JSON.stringify(d.mensajes) !== JSON.stringify(loc)){ r.mensajes = d.mensajes; cambios++; }   // [NUEVO · reacciones] también si cambió una reacción
@@ -2560,7 +2571,29 @@
       const ahora = registros.reduce((n, r) => n + noVistosDe(r), 0);
       if (ahora > antes) toast('Coordinación respondió o reaccionó en uno de tus registros', 'ok');   // [CORREGIDO · reacciones]
       pintarNoVistos(ahora);
-    } catch { marcarConexion(false); }                             // [NUEVO · perfil] sin respuesta del script: punto rojo
+  }
+  // La consulta periódica del celular (campo): en un solo pedido trae los hilos de sus registros, sus mensajes privados
+  // (con sesión) y sus solicitudes. Antes eran tres consultas por separado. La primera va sin marca de versión, para
+  // traer todo aunque no haya cambiado nada desde la última vez que se abrió la app.
+  let primeraNovedad = true;
+  async function sondearCampo(){
+    if (MODO_COORD || !FLOW_URL || db || document.hidden) return;
+    const ids = registros.filter(r => r.enviado).map(r => r.id).slice(0, 200);
+    try {
+      const u = new URL(FLOW_URL); u.searchParams.set('novedades', '1'); u.searchParams.set('misSolicitudes', '1');
+      if (!primeraNovedad) u.searchParams.set('ver', verServidor);
+      u.searchParams.set('dispositivo', dispositivoId); u.searchParams.set('modo', 'campo');
+      if (ids.length) u.searchParams.set('devoluciones', ids.join(','));
+      if (sesionDM()) u.searchParams.set('dm', '1');
+      if (sesion?.token) u.searchParams.set('token', sesion.token); if (llaveDispositivo) u.searchParams.set('llave', llaveDispositivo);
+      const res = await (await fetchT(u)).json(); if (!res.ok) return;
+      marcarConexion(true); primeraNovedad = false;
+      if (res.sinCambios) return;
+      guardarVer(res.ver);
+      if (res.hilos && res.hilos.ok) aplicarHilos(res.hilos.devoluciones || {});
+      if (res.dm && res.dm.ok) aplicarDM(res.dm);
+      if (Array.isArray(res.solicitudes)) aplicarMisSolicitudes(res.solicitudes);
+    } catch { marcarConexion(false); }
   }
 
   // [NUEVO · campana] Contador de "sin ver": campana, pestaña Registros "(n) •" y título de la pestaña del navegador.
@@ -2649,13 +2682,16 @@
     novedadPendiente = false; $('#modal-novedades').classList.remove('open'); pintarNoVistos(nuevosPrev);
   });
   $('#modal-novedades').addEventListener('click', e => { if (e.target === $('#modal-novedades')) $('#nv-ok').click(); });   // [CORREGIDO · novedades] cerrar tocando afuera también la da por vista
+  let primerConteo = true;
   async function sondearNuevos(){
     if (!MODO_COORD || !FLOW_URL || db || document.hidden || !claveGuardada()) return;
     try {
-      const res = await pedirCentral({ desde: vistoHasta, solo: 'conteo', ver: verServidor, dispositivo: dispositivoId });   // [NUEVO · conectados] dispositivo: señal de vida para "Conectados"
-      marcarConexion(true);
+      // con sesión propia, el mismo pedido trae los mensajes privados (dm); el primero va sin marca de versión para traer todo
+      const res = await pedirCentral({ desde: vistoHasta, solo: 'conteo', ver: primerConteo ? '' : verServidor, dispositivo: dispositivoId, modo: 'coord', conDM: sesionDM() ? 1 : '' });   // [NUEVO · conectados] dispositivo: señal de vida para "Conectados"
+      marcarConexion(true); primerConteo = false;
       if (res.sinCambios){ return; }                              // [CORREGIDO · carga] nada nuevo desde la última vez: consulta barata
       guardarVer(res.ver);
+      if (res.dm && res.dm.ok) aplicarDM(res.dm);
       const n = res.nuevos || 0, subio = n > servidorPrev; servidorPrev = n;   // [CORREGIDO · vistos por registro]
       actualizarSolicitudes(res.solicitudes, res.pedidos);     // [NUEVO · usuarios / catálogo]
       if (subio && $('#view-list').classList.contains('hidden')) await cargarCentral();   // la lista no está a la vista: se recarga igual para contar por registro
@@ -2768,9 +2804,10 @@
         let list;
         if (db){ const snap = await db.collection('fotos').where('registroId','==',id).get(); list = snap.docs.map(d => d.data()).sort((a,b)=>a.orden-b.orden); }
         else if (MODO_COORD){
-          // [NUEVO · envío] coordinador: las fotos están en Drive y llegan a través del script, sin compartir la carpeta
-          const rec = registros.find(x => x.id === id);
-          list = await Promise.all((rec?.fotoIds || []).map(async (fid, orden) => ({ data: (await pedirCentral({ foto: fid })).data, orden })));
+          // [NUEVO · envío] coordinador: las fotos están en Drive y llegan a través del script, sin compartir la carpeta.
+          // Todas las del registro en un solo pedido (antes, una consulta al script por cada foto, todas a la vez).
+          const res = await pedirCentral({ fotosDe: id }, 60000);
+          list = ((res.fotos && res.fotos[id]) || []).map((data, orden) => ({ data, orden }));
         }
         else list = (await leerFotos(id)).map((data,orden)=>({data,orden}));   // [CORREGIDO · fotos] desde IndexedDB
         if (!list.length){ b.disabled=false; b.textContent='No se encontraron las fotos de este registro'; return; }
@@ -2919,6 +2956,7 @@
     const rows = filtrados(); if (!rows.length){ toast('No hay registros en ese rango', 'err'); return; }
     const btn = $('#xlsx'); btn.disabled = true; btn.textContent = 'Armando…';
     try {
+      await cargarLibs('XLSX');                             // la librería de Excel se baja recién ahora (la primera vez)
       const buf = armarExcel(rows);
       const f = `registros-emergencias-${$('#desde').value || 'inicio'}_${$('#hasta').value || todayISO()}.xlsx`;   // el nombre dice el período
       if (downloads){ await downloads.save({ filename: f, data: buf }); toast('Excel descargado', 'ok'); }
@@ -3003,7 +3041,7 @@
   // Paquete: Excel + fotos en carpetas, en un ZIP. Las fotos se piden al script de a 5 registros por llamada.
   async function descargarPaquete(){
     const rows = filtrados(); if (!rows.length){ toast('No hay registros en ese rango', 'err'); return; }
-    if (!window.JSZip){ toast('No se cargó el compresor. Revisá la conexión y recargá la página.', 'err'); return; }
+    try { await cargarLibs('XLSX', 'JSZip'); } catch (e){ toast(e.message, 'err'); return; }
     const btn = $('#paquete'); btn.disabled = true;
     try {
       const zip = new JSZip();
@@ -3083,13 +3121,13 @@
     reintentarPendientes();                                            // [NUEVO · envío] lo que quedó sin señal
     window.addEventListener('online', () => reintentarPendientes());   // [NUEVO · envío] y al volver la conexión
     adoptarRegistros();                                                // [NUEVO · seguridad] una vez: ata los registros viejos a este celular/usuario
-    sondeoAdaptativo(sondearMensajes);                                 // [NUEVO · rapidez] al abrir, cada 5 s con actividad, 15 s en reposo
-    document.addEventListener('visibilitychange', sondearMensajes);
+    iniciarDM();                                                       // mensajes privados guardados (antes de la primera consulta)
+    sondeoAdaptativo(sondearCampo);                                    // una sola consulta periódica: hilos, mensajes privados y solicitudes                                 // [NUEVO · rapidez] al abrir, cada 5 s con actividad, 15 s en reposo
+    document.addEventListener('visibilitychange', sondearCampo);
     // [NUEVO · catálogo] listas del formulario (desde caché primero, después del script) y mis solicitudes
     pintarCatalogo(); cargarCatalogo(); setInterval(cargarCatalogo, 300000);
-    renderMisSolicitudes(); cargarMisSolicitudes(); setInterval(cargarMisSolicitudes, 60000); document.addEventListener('visibilitychange', cargarMisSolicitudes);
+    renderMisSolicitudes();   // las solicitudes llegan con la consulta periódica (sondearCampo)
     cargarInfo();                                                      // [NUEVO · info adicional]
-    iniciarDM();                                                       // [NUEVO · mensajes privados]
     listo();                                                           // [CORREGIDO · arranque] recién ahora se muestra la pantalla
   }
 
@@ -3392,11 +3430,11 @@ Pasáselo a la persona. Al entrar con su ID lo va a tener que escribir para eleg
     $('#bnav-dmn').textContent = n ? (n > 99 ? '99+' : String(n)) : '';
     pintarNoVistos(nuevosPrev);
   }
+  // Sin consulta propia: los mensajes privados llegan con la consulta periódica de cada modo (sondearCampo en el
+  // celular, sondearNuevos en el panel). Acá solo se carga lo guardado en el dispositivo.
   function iniciarDM(){
     if (dmIniciado || !sesionDM() || !FLOW_URL || db) return;
     dmIniciado = true; dmLeerLocal(); pintarDM();
-    sondeoAdaptativo(() => sondearDM());
-    document.addEventListener('visibilitychange', () => sondearDM());
   }
   async function sondearDM(forzar){
     const s = sesionDM(); if (!s || !FLOW_URL || db || (document.hidden && !forzar)) return;
@@ -3404,6 +3442,14 @@ Pasáselo a la persona. Al entrar con su ID lo va a tener que escribir para eleg
       const u = new URL(FLOW_URL); u.searchParams.set('dm', '1'); u.searchParams.set('token', s.token); if (verDM && !forzar) u.searchParams.set('ver', verDM);
       u.searchParams.set('dispositivo', dispositivoId); u.searchParams.set('modo', MODO_COORD ? 'coord' : 'campo');
       const res = await (await fetchT(u)).json(); if (!res.ok || res.sinCambios) return;
+      aplicarDM(res);
+    } catch {}
+  }
+  // Mensajes privados que devolvió el script (por su consulta propia, la de novedades o la del conteo del panel)
+  function aplicarDM(res){
+    const s = sesionDM(); if (!s) return;
+    iniciarDM();                                         // primero lo guardado en el dispositivo (qué ya se leyó)
+    try {
       verDM = res.ver || '';
       const antes = dmNoLeidos();
       dm = { yo: res.yo || s.id, mensajes: res.mensajes || [], contactos: res.contactos || [] }; dmCargado = true;
@@ -3664,17 +3710,12 @@ Pasáselo a la persona. Al entrar con su ID lo va a tener que escribir para eleg
     const b = e.target.closest('.sol-ok'); if (!b) return;
     solVistas.add(b.closest('.solrow').dataset.id); persistirSolicitudes(); renderMisSolicitudes(); pintarNoVistos(nuevosPrev);
   });
-  // Cada 60 s: ¿coordinación respondió alguna? Si aceptó un móvil o evento, se refresca la lista del formulario.
-  async function cargarMisSolicitudes(){
-    if (!FLOW_URL || MODO_COORD || db || document.hidden) return;
-    try {
-      const u = new URL(FLOW_URL); u.searchParams.set('misSolicitudes', '1'); u.searchParams.set('dispositivo', dispositivoId); if (sesion?.token) u.searchParams.set('token', sesion.token);
-      const res = await (await fetch(u)).json(); if (!res.ok) return;
+  // Mis solicitudes que devolvió el script (llegan con la consulta periódica, sondearCampo)
+  async function aplicarMisSolicitudes(lista){
       const antes = solNoVistas();
-      misSolicitudes = res.solicitudes || []; persistirSolicitudes(); renderMisSolicitudes(); pintarCatalogo();   // [NUEVO · solicitud enviada] el tilde sigue la solicitud (si se resolvió, vuelve el link o desaparece)
+      misSolicitudes = lista; persistirSolicitudes(); renderMisSolicitudes(); pintarCatalogo();   // [NUEVO · solicitud enviada] el tilde sigue la solicitud (si se resolvió, vuelve el link o desaparece)
       if (solNoVistas() > antes){ toast('Coordinación respondió una solicitud tuya', 'ok'); await cargarCatalogo(); }
       pintarNoVistos(nuevosPrev);
-    } catch {}
   }
 
   // ---- [NUEVO · catálogo] pestaña Catálogo (coordinador y administrador): solicitudes y listas ----
@@ -3780,7 +3821,7 @@ Pasáselo a la persona. Al entrar con su ID lo va a tener que escribir para eleg
   $('#imp-ok').addEventListener('click', importarPaquete);
   async function importarPaquete(){
     const f = $('#imp-zip').files[0]; if (!f) return;
-    if (!window.JSZip || !window.XLSX){ toast('No se cargaron las librerías. Revisá la conexión y recargá.', 'err'); return; }
+    try { await cargarLibs('XLSX', 'JSZip'); } catch (e){ toast(e.message, 'err'); return; }
     const btn = $('#imp-ok'); btn.disabled = true; btn.textContent = 'Leyendo…';
     try {
       const zip = await JSZip.loadAsync(f);
@@ -4147,6 +4188,9 @@ Pasáselo a la persona. Al entrar con su ID lo va a tener que escribir para eleg
   // pestañas viejas seguía mostrando el mundito. Volver a insertar el <link> al arrancar lo obliga a refrescarlo en cada link.
   try { document.querySelectorAll('link[rel="icon"]').forEach(l => { const n = l.cloneNode(); l.remove(); document.head.appendChild(n); }); } catch {}
   setTimeout(listo, 6000);
+  // La app queda guardada en el celular (sw.js, publicado al lado de index.html): abre rápido y también sin señal.
+  // Solo en la página publicada (https) o probando en la propia compu (localhost); abierta como archivo no aplica.
+  try { if ('serviceWorker' in navigator && (location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) navigator.serviceWorker.register('sw.js').catch(() => {}); } catch {}
   (async () => {
     try { db = await (window.claude?.use ? window.claude.use('db') : Promise.resolve(null)); } catch { db = null; }
     try { downloads = await (window.claude?.use ? window.claude.use('downloads') : Promise.resolve(null)); } catch { downloads = null; }
@@ -4185,6 +4229,7 @@ Pasáselo a la persona. Al entrar con su ID lo va a tener que escribir para eleg
         setTimeout(() => { if (claveGuardada()) cargarUsuarios(); }, 1500);
         setTimeout(() => { if (claveGuardada()) cargarSolicitudes(); }, 3000);
         listo();                                                 // [CORREGIDO · arranque]
+        setTimeout(() => cargarLibs('XLSX', 'JSZip').catch(() => {}), 8000);   // el panel las precarga por detrás: Descargar Excel sigue siendo instantáneo
         sondeoAdaptativo(sondearNuevos);                         // [NUEVO · rapidez] cada 5 s con actividad, 15 s en reposo
         iniciarDM();                                             // [NUEVO · mensajes privados]
         document.addEventListener('visibilitychange', sondearNuevos);
