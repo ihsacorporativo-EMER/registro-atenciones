@@ -1559,13 +1559,14 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-27 b';
+  const VERSION = '2026-09-27 c';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-27 c', para: 'coord', texto: 'Arreglado: con más de 300 registros en la planilla, al actualizar el panel se veían solo los últimos 300. Ahora se ven todos.' },
     { v: '2026-09-27 b', para: 'todos', texto: 'Los registros se guardan más rápido cuando muchos cargan al mismo tiempo. Y si alguno no llega a enviarse, la app lo vuelve a intentar sola cada minuto: ya no hace falta tocar Reintentar.' },
     { v: '2026-09-27 a', para: 'todos', texto: 'La app abre más rápido y consume menos datos. Y ahora abre aunque no haya señal: usa la última versión guardada en tu celular, y tus registros se envían solos cuando vuelve la conexión.' },
     { v: '2026-09-27 a', para: 'todos', texto: 'Los registros con fotos llegan más rápido a coordinación, aunque varios se envíen al mismo tiempo.' },
@@ -2027,6 +2028,10 @@
   // instante y se pide la actualización por detrás; si el script tarda o falla, se reintenta 3 veces (3, 6 y 9 s) antes
   // de avisar, y mientras tanto la copia sigue a la vista.
   let cargandoCentral = false, verRegistros = '';   // [NUEVO · rapidez] verRegistros: versión de datos de la lista que está en pantalla
+  // La copia local guarda como mucho COPIA_MAX registros (el almacenamiento del navegador es chico). Una copia recortada
+  // no puede presentarse con su versión: el script respondía "sin cambios" y el panel se quedaba con 300 registros aunque
+  // la planilla tuviera más (visto con la prueba de 1.000 del 2026-09-27). Recortada, se pide siempre la lista entera.
+  const COPIA_MAX = 300;
   // la copia local guarda también la versión; se acepta el formato anterior (solo la lista)
   function copiaLocalCoord(){ try { const c = JSON.parse(localStorage.getItem('coord_copia') || 'null'); if (Array.isArray(c)) return { ver: '', registros: c }; return (c && Array.isArray(c.registros)) ? c : null; } catch { return null; } }
   // [NUEVO · rapidez] al salir del panel se borran las copias locales (registros, usuarios, catálogo, marcas)
@@ -2034,7 +2039,7 @@
   async function cargarCentral(){
     if (!FLOW_URL){ toast('Falta configurar FLOW_URL en el HTML', 'err'); return; }
     if (cargandoCentral) return; cargandoCentral = true;
-    if (!registros.length){ const c = copiaLocalCoord(); if (c && c.registros.length){ registros = c.registros; verRegistros = c.ver || ''; renderList(); renderBoard(); } }
+    if (!registros.length){ const c = copiaLocalCoord(); if (c && c.registros.length){ registros = c.registros; verRegistros = c.registros.length >= COPIA_MAX ? '' : (c.ver || ''); renderList(); renderBoard(); } }
     sync('list', registros.length ? 'Actualizando…' : 'Cargando…'); sync('board', registros.length ? 'Actualizando…' : 'Cargando…');   // [NUEVO · cargando]
     if (!registros.length) renderList();                       // muestra el bloque "Cargando registros…"
     try {
@@ -2048,7 +2053,7 @@
       }
       if (!res) throw err;
       marcarConexion(true);
-      if (!res.sinCambios){ verRegistros = res.ver || ''; guardarVer(res.ver); try { localStorage.setItem('coord_copia', JSON.stringify({ ver: verRegistros, registros: (res.registros || []).slice(0, 300) })); } catch {} }
+      if (!res.sinCambios){ verRegistros = res.ver || ''; guardarVer(res.ver); const lista = res.registros || []; try { localStorage.setItem('coord_copia', JSON.stringify({ ver: lista.length > COPIA_MAX ? '' : verRegistros, registros: lista.slice(0, COPIA_MAX) })); } catch {} }
       else res = { ...res, registros };                         // [NUEVO · rapidez] sin cambios: sigue lo que ya está en pantalla
       // [CORREGIDO · vistos por registro] base fija: lo anterior a la primera vez que se usó esta versión no cuenta como nuevo
       if (nuevoDesde === Infinity){ let base = 0; try { base = +(localStorage.getItem('coord_base') || 0); } catch {} if (!base){ base = vistoHasta || Date.now(); try { localStorage.setItem('coord_base', String(base)); } catch {} } nuevoDesde = base; }
