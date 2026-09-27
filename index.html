@@ -1559,13 +1559,14 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-27 a';
+  const VERSION = '2026-09-27 b';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-27 b', para: 'todos', texto: 'Los registros se guardan más rápido cuando muchos cargan al mismo tiempo. Y si alguno no llega a enviarse, la app lo vuelve a intentar sola cada minuto: ya no hace falta tocar Reintentar.' },
     { v: '2026-09-27 a', para: 'todos', texto: 'La app abre más rápido y consume menos datos. Y ahora abre aunque no haya señal: usa la última versión guardada en tu celular, y tus registros se envían solos cuando vuelve la conexión.' },
     { v: '2026-09-27 a', para: 'todos', texto: 'Los registros con fotos llegan más rápido a coordinación, aunque varios se envíen al mismo tiempo.' },
     { v: '2026-09-27 a', para: 'coord', texto: 'El panel consulta menos al servidor y responde más rápido con mucha gente conectada. Las fotos de un registro se abren todas juntas, y el Excel se prepara al tocar Descargar.' },
@@ -3120,6 +3121,11 @@
     if (FLOW_URL) pintarNoVistos(registros.reduce((n, r) => n + noVistosDe(r), 0));   // [NUEVO · campana] lo que quedó sin leer de la sesión anterior
     reintentarPendientes();                                            // [NUEVO · envío] lo que quedó sin señal
     window.addEventListener('online', () => reintentarPendientes());   // [NUEVO · envío] y al volver la conexión
+    // y solo, sin que nadie toque Reintentar: cada minuto (más unos segundos al azar, para que los celulares rechazados
+    // en el mismo momento no vuelvan todos juntos) y al volver a la app. Antes un registro que el script rechazaba por
+    // estar ocupado quedaba pendiente hasta reabrir la app (prueba de carga del 2026-09-27).
+    (function cadaMinuto(){ setTimeout(() => { if (!document.hidden) reintentarPendientes(); cadaMinuto(); }, 60000 + Math.floor(Math.random() * 15000)); })();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) reintentarPendientes(); });
     adoptarRegistros();                                                // [NUEVO · seguridad] una vez: ata los registros viejos a este celular/usuario
     iniciarDM();                                                       // mensajes privados guardados (antes de la primera consulta)
     sondeoAdaptativo(sondearCampo);                                    // una sola consulta periódica: hilos, mensajes privados y solicitudes                                 // [NUEVO · rapidez] al abrir, cada 5 s con actividad, 15 s en reposo
