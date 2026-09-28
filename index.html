@@ -355,6 +355,19 @@
   .evento .ev-dat{font-size:13px;font-weight:700;color:var(--brand-txt)}
   .evento small{font-size:12.5px;color:var(--muted)}
   .ev-cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+  /* selección para eliminar varios (administrador) */
+  .sel-bar{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;margin:0 0 12px;font-size:13px}
+  .sel-bar.activa{position:sticky;top:8px;z-index:5;background:var(--card);border:1.5px solid color-mix(in srgb,var(--danger) 45%,var(--line));border-radius:14px;padding:10px 12px;box-shadow:var(--shadow)}
+  .sel-bar b{color:var(--ink)}
+  .sel-bar .sel-der{margin-left:auto;display:inline-flex;align-items:center;gap:12px}
+  .sel-bar .sel-eliminar{background:var(--danger);padding:8px 14px;font-size:13px;width:auto}
+  .sel-bar .sel-eliminar:disabled{opacity:.45;cursor:default}
+  .rec.compact.sel-modo{cursor:pointer}
+  .rec.compact.sel-modo .top{align-items:center}
+  .rec.compact.sel-si{border-color:var(--danger);box-shadow:0 0 0 1.5px var(--danger) inset}
+  .sel-caja{width:20px;height:20px;box-sizing:border-box;border:2px solid var(--muted);border-radius:6px;margin-right:10px;display:inline-grid;place-items:center;vertical-align:-1px}
+  .rec.sel-si .sel-caja{background:var(--danger);border-color:var(--danger)}
+  .rec.sel-si .sel-caja::after{content:"";width:10px;height:5px;border:2.5px solid #fff;border-top:0;border-right:0;transform:translateY(-1px) rotate(-45deg)}
   .ev-cab .ev-volver{border:1.5px solid var(--line);background:var(--card);color:var(--brand-txt);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
   .ev-cab .ev-volver:hover{border-color:var(--brand-txt)}
   .ev-cab b{font-size:17px;overflow-wrap:anywhere}
@@ -528,6 +541,13 @@
   .urow select{background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;color:var(--ink);font:inherit}
   .urow .primary{width:auto;min-height:38px;padding:7px 14px;font-size:14px;border-radius:10px}
   .usec{font-size:13px;font-weight:800;margin:16px 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .u-crear{margin:0 0 12px}
+  .u-crear #uc-abrir{width:auto;padding:10px 16px}
+  .u-crear .card{margin:0}
+  .u-crear select{width:100%;background-color:var(--field);border:1.5px solid var(--line);border-radius:11px;padding:12px 13px;min-height:46px;color:var(--ink)}
+  .u-crear select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(11,61,145,.15)}
+  .u-crear .uc-botones{display:flex;justify-content:flex-end;align-items:center;gap:16px}
+  .u-crear .uc-botones .primary{width:auto;padding:10px 22px}
   .pill.rol{background:color-mix(in srgb,var(--brand) 12%,var(--card));color:var(--brand)}
   .pill.reset{background:color-mix(in srgb,var(--accent) 15%,var(--card));color:var(--accent-deep)}
   .link-btn.peligro{color:var(--danger)}
@@ -700,7 +720,7 @@
   select{background-image:url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'><path d=\'M1 1l5 5 5-5\' fill=\'none\' stroke=\'%235b6478\' stroke-width=\'2\' stroke-linecap=\'round\'/></svg>");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px !important}
   input,textarea,select,button{-webkit-tap-highlight-color:transparent}
   @media (max-width:640px){
-    .field input,.field textarea,.search,.filtro-fechas input,.ed-contacto input,.resp-box textarea,.urow select,.modal input,.modal textarea{font-size:16px}
+    .field input,.field textarea,.search,.filtro-fechas input,.ed-contacto input,.resp-box textarea,.urow select,.u-crear select,.modal input,.modal textarea{font-size:16px}
   }
   @supports not (background:color-mix(in srgb,red 10%,white)){
     .pill.si,.rec .fila .tras{background:rgba(31,138,76,.15)} .rec .fila .tras.no{background:var(--line)}
@@ -904,7 +924,7 @@
   @media (min-width:1200px){
     #list{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
     #list .rec{margin-bottom:0}
-    #list > .pager,#list > .hint,#list > p,#list > .eventos,#list > .ev-cab,#list > .empty,#list > .cargando-lista{grid-column:1/-1}
+    #list > .pager,#list > .hint,#list > p,#list > .eventos,#list > .ev-cab,#list > .empty,#list > .cargando-lista,#list > .sel-bar{grid-column:1/-1}
     /* [CORREGIDO · app PC] Usuarios en dos columnas: los títulos de sección ocupan el ancho, las tarjetas se reparten */
     #ulist{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
     #ulist .usec,#ulist .empty{grid-column:1/-1}
@@ -1056,6 +1076,7 @@
       <div class="field"><label for="lg-id">ID de usuario</label><input id="lg-id" type="text" autocapitalize="characters" autocomplete="username" placeholder="Ej.: JUAPER"></div>
       <div class="field"><label for="lg-pin">PIN</label><input id="lg-pin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="4 a 6 dígitos"></div>
       <button class="primary" id="lg-ok" type="button">Entrar</button>
+      <p class="hint" style="text-align:center">¿Te crearon el usuario y te dieron un código? Escribí tu ID y tocá Entrar sin PIN.</p>
       <p class="hint" style="text-align:center"><button type="button" class="link-btn" id="lg-olvide">Olvidé mi PIN</button></p>
     </section>
     <section class="card hidden" id="login-crear">
@@ -1232,6 +1253,22 @@
     <h1>Usuarios</h1>
     <p class="lead">Solicitudes pendientes de aprobar y usuarios activos. Tocá la pestaña para actualizar.</p>
     <div class="sync" id="sync-users" role="status"><span class="spin"></span><span></span></div><!-- [NUEVO · cargando] -->
+    <!-- crear un usuario ya activo desde el panel (coordinación, supervisión, administración), sin límite -->
+    <div class="u-crear">
+      <button type="button" class="primary" id="uc-abrir">Crear usuario</button>
+      <section class="card hidden" id="uc-form">
+        <div class="row">
+          <div class="field"><label for="uc-nombre">Nombre</label><input id="uc-nombre" type="text" autocomplete="off"></div>
+          <div class="field"><label for="uc-apellido">Apellido</label><input id="uc-apellido" type="text" autocomplete="off"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="uc-rol">Rol</label><select id="uc-rol"></select></div>
+          <div class="field"><label for="uc-celular">Celular <small>(opcional)</small></label><input id="uc-celular" type="tel" autocomplete="off"></div>
+        </div>
+        <p class="hint">Queda activo al instante. Te damos su ID y un código: la persona entra con su ID, escribe el código y elige su propio PIN.</p>
+        <div class="uc-botones"><button type="button" class="link-btn" id="uc-cancelar">Cancelar</button><button type="button" class="primary" id="uc-ok">Crear</button></div>
+      </section>
+    </div>
     <input class="search" id="uq" type="search" placeholder="Buscar por nombre, ID o rol">
     <div id="ulist"></div>
   </div>
@@ -1562,13 +1599,16 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-27 f';
+  const VERSION = '2026-09-28 b';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-28 b', para: 'coord', texto: 'Usuarios: "Crear usuario" da de alta a una persona ya activa, con su rol y sin límite. Te muestra su ID y un código (vale 7 días) y te deja copiar un mensaje para mandárselo: la persona entra con su ID sin PIN, escribe el código y elige su PIN.' },
+    { v: '2026-09-28 b', para: 'todos', texto: 'Si coordinación te creó el usuario y te dio un código: escribí tu ID, tocá Entrar sin PIN, poné el código y elegí tu PIN.' },
+    { v: '2026-09-28 a', para: 'coord', texto: 'Administración: en Registros, "Seleccionar para eliminar" permite marcar varios registros (o todos los de un evento, una búsqueda o unas fechas con "Seleccionar los N") y eliminarlos juntos. Quedan guardados en la hoja Eliminados.' },
     { v: '2026-09-27 f', para: 'coord', texto: 'Tablero: "Por móvil" y "Por evento" muestran todos (antes solo los 8 primeros; si son muchos, el cuadro se desliza), y un mismo evento escrito con mayúsculas distintas cuenta como uno solo, igual que en Registros.' },
     { v: '2026-09-27 e', para: 'todos', texto: 'Si entrás con tu usuario en otro celular (o borraste los datos del navegador), la app te trae los registros que cargaste en los últimos 30 días, con sus mensajes y fotos.' },
     { v: '2026-09-27 e', para: 'coord', texto: 'Cada registro muestra, sin desplegarlo, quién lo cargó y su rol (Médico, Enfermero…). El médico que atendió sigue en el detalle.' },
@@ -2391,8 +2431,8 @@
     : noVistosDe(r) ? ' <span class="pill nuevo">Respuesta nueva</span>'
     : versionDe(r) > 1 ? ` <span class="pill resp">Editado · v${versionDe(r)}</span>` : '';   // [CORREGIDO · tarjetas] sin "Con mensajes": el globo con el número ya lo dice
   const tarjetaCompacta = r => `
-      <article class="rec compact ${abiertos.has(r.id) ? 'open' : ''}" data-id="${esc(r.id)}">
-        <div class="top"><b>${esc(r.evento)}${etiquetaTop(r)}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
+      <article class="rec compact ${abiertos.has(r.id) && !seleccionando ? 'open' : ''} ${seleccionando ? 'sel-modo' : ''} ${seleccion.has(r.id) ? 'sel-si' : ''}" data-id="${esc(r.id)}">
+        <div class="top"><b>${seleccionando ? `<span class="sel-caja" role="checkbox" aria-checked="${seleccion.has(r.id)}" aria-label="Seleccionar"></span>` : ''}${esc(r.evento)}${etiquetaTop(r)}</b><span class="when">${fmtFecha(r.fecha)} · ${fmtHora(r.createdAt)}</span></div>
         ${filasIconos(r)}<!-- [NUEVO · tarjetas con íconos] reemplaza la línea de texto "Móvil · paciente · …" -->
         <div class="detalle">
           <dl>
@@ -2424,6 +2464,24 @@
     $('.tabs button[data-tab="form"]').click(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   $('#cancelar-edicion').addEventListener('click', () => { limpiar(); toast('Edición cancelada'); });
+
+  // ---- Selección para eliminar varios (solo administrador) ----
+  // "Seleccionar para eliminar" pone una casilla en cada tarjeta; tocar la tarjeta la marca. "Seleccionar los N" marca
+  // todos los que coinciden con lo que se ve (evento abierto, búsqueda y fechas), no solo la página actual.
+  let seleccionando = false, filasSeleccionables = [];
+  const seleccion = new Set();
+  const puedeSeleccionar = () => MODO_COORD && !db && esAdminActual();
+  function barraSeleccion(rows){
+    if (!puedeSeleccionar()) return '';
+    if (!seleccionando) return '<div class="sel-bar"><button type="button" class="link-btn peligro sel-empezar">Seleccionar para eliminar</button></div>';
+    const n = seleccion.size, todos = rows.length && rows.every(r => seleccion.has(r.id));
+    return `<div class="sel-bar activa" role="toolbar" aria-label="Selección">
+        <b>${n ? plural(n, 'seleccionado', 'seleccionados') : 'Tocá los registros para marcarlos'}</b>
+        ${todos ? '' : `<button type="button" class="link-btn sel-todos">Seleccionar ${rows.length > 1 ? `los ${rows.length}` : 'este'}</button>`}
+        ${n ? '<button type="button" class="link-btn sel-ninguno">Quitar selección</button>' : ''}
+        <span class="sel-der"><button type="button" class="link-btn sel-listo">Cancelar</button><button type="button" class="primary sel-eliminar" ${n ? '' : 'disabled'}>Eliminar${n ? ' ' + n : ''}</button></span>
+      </div>`;
+  }
 
   // ---- Panel de coordinación agrupado por evento ----
   // Sin búsqueda, el panel muestra un cuadro por evento (cantidad de registros y traslados, último registro, cuántos
@@ -2501,7 +2559,7 @@
     if (delEvento) cab = cabeceraEvento(delEvento, rows.length);
     if (hayFechas) cab += `<p class="hint rango-activo">Registros con fecha ${textoRango(rango)}.</p>`;
     if (!rows.length && !q && !hayFechas && MODO_COORD && !db && cargandoCentral){ $('#list').innerHTML = cargandoHTML('Cargando registros…'); return; }   // [NUEVO · cargando]
-    if (agrupaEventos() && eventoAbierto === null && !q && rows.length){ renderEventos(rows, cab); return; }
+    if (agrupaEventos() && eventoAbierto === null && !q && rows.length){ seleccionando = false; seleccion.clear(); renderEventos(rows, cab); return; }
     if (agrupaEventos() && eventoAbierto === null && q) cab += '<p class="hint" style="margin:0 0 10px">Resultados en todos los eventos. Borrá la búsqueda para volver a los eventos.</p>';
     if (!rows.length){
       const vacio = hayFechas && rango.desde && rango.hasta && rango.desde > rango.hasta ? 'La fecha "Desde" es posterior a "Hasta".'
@@ -2518,11 +2576,28 @@
     const visibles = rows.slice(pagina * por, (pagina + 1) * por);
     const nav = total > por ? pagerHTML('lista', pagina, total, por) : '';
     const borrador = borradorAbierto();                                     // [CORREGIDO · chat]
-    $('#list').innerHTML = cab + nav + visibles.map(MODO_COORD && !db ? tarjetaCompacta : tarjetaCampo).join('') + nav;
+    filasSeleccionables = rows;
+    $('#list').innerHTML = cab + barraSeleccion(rows) + nav + visibles.map(MODO_COORD && !db ? tarjetaCompacta : tarjetaCampo).join('') + nav;
     bajarHilos($('#list'));
     restaurarBorrador(borrador);                                            // [CORREGIDO · chat]
   }
   $('#q').addEventListener('input', () => { pagina = 0; paginaEventos = 0; renderList(); });
+  // Clics de la selección. Va antes que el manejador general de la lista (10-registros-clics.js): con la selección
+  // activa, tocar una tarjeta la marca en vez de desplegarla.
+  $('#list').addEventListener('click', e => {
+    const t = e.target;
+    if (t.closest('.sel-empezar')){ seleccionando = true; seleccion.clear(); abiertos.clear(); renderList(); return; }
+    if (t.closest('.sel-listo')){ seleccionando = false; seleccion.clear(); renderList(); return; }
+    if (t.closest('.sel-todos')){ filasSeleccionables.forEach(r => seleccion.add(r.id)); renderList(); return; }
+    if (t.closest('.sel-ninguno')){ seleccion.clear(); renderList(); return; }
+    if (t.closest('.sel-eliminar')){ eliminarSeleccion(t.closest('.sel-eliminar')); return; }
+    const art = seleccionando && t.closest('#list .rec.compact');
+    if (art && !t.closest('.pager')){
+      e.stopImmediatePropagation();
+      const id = art.dataset.id; seleccion.has(id) ? seleccion.delete(id) : seleccion.add(id);
+      renderList();
+    }
+  });
   ['#q-desde', '#q-hasta'].forEach(s => $(s).addEventListener('change', () => { pagina = 0; paginaEventos = 0; renderList(); }));
   $('#q-limpiar').addEventListener('click', () => { $('#q-desde').value = ''; $('#q-hasta').value = ''; pagina = 0; paginaEventos = 0; renderList(); });
 
@@ -2955,6 +3030,30 @@
       toast('Registro eliminado', 'ok');
     } catch (err){ btn.disabled = false; btn.textContent = 'Eliminar registro'; toast('No se pudo eliminar: ' + err.message, 'err'); }
   }
+  // Eliminación masiva (administrador): confirma con la cantidad y los eventos, y manda de a tandas de 300. Si una tanda
+  // falla, lo ya eliminado queda eliminado y se avisa cuántos faltaron.
+  async function eliminarSeleccion(btn){
+    const ids = [...seleccion].filter(id => registros.some(r => r.id === id)); if (!ids.length) return;
+    const porEvento = {}; registros.filter(r => seleccion.has(r.id)).forEach(r => { const k = nombreEvento(claveEvento(r)); porEvento[k] = (porEvento[k] || 0) + 1; });
+    const detalle = Object.entries(porEvento).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => `· ${k}: ${n}`).join('\n') + (Object.keys(porEvento).length > 6 ? '\n· y otros eventos' : '');
+    const ok = await confirmar(`¿Eliminar ${plural(ids.length, 'registro', 'registros')}?\n${detalle}\n\nDejan de verse en la app y en la hoja Registros. Quedan guardados en la hoja "Eliminados" de la planilla, con tu nombre y la fecha.`, { ok: `Eliminar ${ids.length}`, peligro: true });
+    if (!ok) return;
+    btn.disabled = true;
+    const hechos = new Set(); let error = null;
+    for (let i = 0; i < ids.length; i += 300){
+      btn.textContent = `Eliminando… ${Math.min(i, ids.length)} de ${ids.length}`;
+      try { const res = await postCoord({ accion: 'eliminarRegistros', ids: ids.slice(i, i + 300) }); (res.ids || []).forEach(id => hechos.add(id)); }
+      catch (err){ error = err; break; }
+    }
+    // lo que el script no encontró (ya eliminado o archivado por otro) también sale de la lista
+    const fuera = new Set(error ? hechos : ids);
+    registros = registros.filter(r => !fuera.has(r.id)); fuera.forEach(id => { seleccion.delete(id); abiertos.delete(id); });
+    try { const c = copiaLocalCoord(); if (c) localStorage.setItem('coord_copia', JSON.stringify({ ...c, registros: c.registros.filter(x => !fuera.has(x.id)) })); } catch {}
+    if (!error){ seleccionando = false; seleccion.clear(); }
+    renderList(); renderBoard(); pintarNoVistos(contarPendientes());
+    if (error) toast(`Se eliminaron ${hechos.size} de ${ids.length}. El resto no: ${error.message}`, 'err');
+    else toast(`${plural(hechos.size, 'registro eliminado', 'registros eliminados')}`, 'ok');
+  }
   $('#lb').addEventListener('click', () => $('#lb').classList.remove('open'));
   // [NUEVO · foto] descarga la foto ampliada. Se pasa a Blob porque varios navegadores ignoran "download" en dataURLs largas.
   $('#lb-dl').addEventListener('click', e => {
@@ -3309,7 +3408,7 @@
   let pinNuevoDe = '', fotoUsuario = null, sondeoAprobacion = null;
   async function entrar(){
     const id = $('#lg-id').value.trim().toUpperCase(), pin = $('#lg-pin').value.trim();
-    if (!id || !pin){ toast('Completá ID y PIN', 'err'); return; }
+    if (!id){ toast('Escribí tu ID', 'err'); return; }   // sin PIN se manda igual: si tiene un código para elegir PIN, el script lo pide
     const btn = $('#lg-ok'); btn.disabled = true; btn.textContent = 'Entrando…';
     try {
       const res = await postUsuario({ accion: 'ingresar', id, pin });
@@ -3409,7 +3508,7 @@
         : `<button type="button" class="link-btn" data-que="reactivar">Reactivar</button>${elim}`;   // [NUEVO · usuarios] eliminar, solo administrador
     return `<div class="urow ${pend ? 'pend' : ''}" data-id="${esc(u.id)}">
       <div class="avatar" data-foto="${esc(u.id)}">${esc(iniciales(u))}</div>
-      <div class="datos"><b>${esc(u.nombre)} ${esc(u.apellido)} <span class="pill rol">${esc(u.id)}</span>${u.rol && !pend ? ` <span class="pill rol">${esc(u.rol)}</span>` : ''} ${est}${u.pideReset ? ' <span class="pill reset">Pide restablecer PIN</span>' : ''}${u.cambioPin ? ' <span class="pill reset">Cambio de PIN habilitado</span>' : ''}</b>
+      <div class="datos"><b>${esc(u.nombre)} ${esc(u.apellido)} <span class="pill rol">${esc(u.id)}</span>${u.rol && !pend ? ` <span class="pill rol">${esc(u.rol)}</span>` : ''} ${est}${u.pideReset ? ' <span class="pill reset">Pide restablecer PIN</span>' : ''}${u.sinPin ? ` <span class="pill reset">${u.cambioPin ? 'Todavía no eligió su PIN' : 'Código vencido: Restablecer PIN'}</span>` : u.cambioPin ? ' <span class="pill reset">Cambio de PIN habilitado</span>' : ''}</b>
         <small>${pend ? 'Solicitó el ' + fmtFechaHora(u.creado) : (u.aprobado ? 'Aprobado el ' + fmtFechaHora(u.aprobado) : '')}${u.celular ? ` · Cel. ${esc(u.celular)}` : ''}${u.mail ? ` · ${esc(u.mail)}` : ''}</small></div>
       <div class="acciones">${acciones}</div></div>`;
   }
@@ -3465,11 +3564,35 @@
 
 ${res.codigo.slice(0, 3)} ${res.codigo.slice(3)}
 
-Pasáselo a la persona. Al entrar con su ID lo va a tener que escribir para elegir su PIN nuevo. Vale 15 minutos y se muestra una sola vez: si se pierde, volvé a tocar "Restablecer PIN".`, { ok: 'Listo, ya lo anoté', soloAceptar: true });
+Pasáselo a la persona. Al entrar con su ID lo va a tener que escribir para elegir su PIN nuevo. Vale ${u.sinPin ? '7 días' : '15 minutos'} y se muestra una sola vez: si se pierde, volvé a tocar "Restablecer PIN".`, { ok: 'Listo, ya lo anoté', soloAceptar: true });
       }
       else if (!/^\d{4,6}$/.test(v)) toast('El PIN debe tener entre 4 y 6 dígitos', 'err');
       else if (await accionUsuario(id, 'resetPin', { pin: v })) toast('PIN asignado. Pasáselo a la persona; sus sesiones abiertas se cerraron.', 'ok');
     }
+  });
+  // Crear usuario desde el panel: queda activo; se muestra una sola vez su ID y el código para que elija su PIN
+  $('#uc-abrir').addEventListener('click', () => {
+    $('#uc-rol').innerHTML = '<option value="">Elegí un rol…</option>' + opcionesRol('');
+    $('#uc-form').classList.remove('hidden'); $('#uc-abrir').classList.add('hidden'); $('#uc-nombre').focus();
+  });
+  const cerrarCrear = () => { ['uc-nombre', 'uc-apellido', 'uc-celular'].forEach(i => { $('#' + i).value = ''; }); $('#uc-form').classList.add('hidden'); $('#uc-abrir').classList.remove('hidden'); };
+  $('#uc-cancelar').addEventListener('click', cerrarCrear);
+  $('#uc-ok').addEventListener('click', async () => {
+    const nombre = $('#uc-nombre').value.trim(), apellido = $('#uc-apellido').value.trim(), rol = $('#uc-rol').value, celular = $('#uc-celular').value.trim();
+    if (nombre.length < 2 || apellido.length < 2){ toast('Completá nombre y apellido', 'err'); return; }
+    if (!rol){ toast('Elegí un rol', 'err'); return; }
+    const btn = $('#uc-ok'); btn.disabled = true; btn.textContent = 'Creando…';
+    try {
+      const res = await postCoord({ accion: 'crearUsuario', nombre, apellido, rol, celular });
+      usuarios = [...usuarios.filter(x => x.id !== res.usuario.id), res.usuario]; renderUsuarios(); cerrarCrear();
+      try { localStorage.setItem('coord_usuarios', JSON.stringify({ usuarios, roles: rolesDisp })); } catch {}
+      const link = location.origin + location.pathname + '?modo=usuario', c = res.codigo;
+      const texto = `Hola ${res.usuario.nombre}, ya tenés usuario para Registro de atenciones.\nEntrá a ${link}\nID: ${res.usuario.id}\nCódigo: ${c}\nEscribí tu ID, tocá Entrar sin PIN, poné el código y elegí tu PIN. El código vale 7 días.`;
+      if (await confirmar(`Usuario creado: ${res.usuario.nombre} ${res.usuario.apellido} · ${res.usuario.rol}\n\nID: ${res.usuario.id}\nCódigo: ${c.slice(0, 3)} ${c.slice(3)}\n\nPasale estos datos. Entra con su ID sin PIN, escribe el código y elige su PIN. El código vale 7 días y se muestra una sola vez: si se pierde, "Restablecer PIN" da uno nuevo.`, { ok: 'Copiar mensaje para enviarle', cancelar: 'Cerrar' })){
+        try { await navigator.clipboard.writeText(texto); toast('Mensaje copiado: pegalo en WhatsApp', 'ok'); } catch { toast('No se pudo copiar; anotá el ID y el código', 'err'); }
+      }
+    } catch (e){ toast('No se pudo crear: ' + e.message, 'err'); }
+    finally { btn.disabled = false; btn.textContent = 'Crear'; }
   });
   $('#ulist').addEventListener('change', async e => {
     const s = e.target.closest('select.u-rol[data-que="rol"]'); if (!s) return;
