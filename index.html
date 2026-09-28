@@ -317,6 +317,8 @@
   .rec .fila .it{display:inline-flex;align-items:center;gap:6px;min-width:0}
   .rec .fila .it svg{width:16px;height:16px;flex:none;color:var(--muted)}
   .rec .fila .quien{color:var(--muted);font-size:12px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rec .fila .quien svg{width:14px;height:14px;vertical-align:-2px;margin-right:5px;color:var(--muted)}
+  .rec .fila .quien .pill.rol{margin-left:4px;font-size:10.5px;padding:1px 7px;vertical-align:1px}
   .rec .fila .der{display:inline-flex;align-items:center;gap:10px;font-size:12px;font-weight:700;color:var(--ink);flex:none}
   .rec .fila .der .it svg{width:15px;height:15px}
   .rec .fila .der .it.msg{color:var(--brand-txt)}
@@ -1214,7 +1216,7 @@
     <h1>Registros</h1>
     <p class="lead">Últimos registros cargados por el equipo.</p>
     <div class="sync" id="sync-list" role="status"><span class="spin"></span><span></span></div><!-- [NUEVO · cargando] -->
-    <input class="search" id="q" type="search" placeholder="Buscar por evento, lugar, móvil, paciente o médico">
+    <input class="search" id="q" type="search" placeholder="Buscar por evento, móvil, paciente, médico, quién cargó o N.º">
     <!-- filtro por fecha de atención: se combina con la búsqueda y con el evento abierto -->
     <div class="filtro-fechas">
       <label>Desde <input type="date" id="q-desde"></label>
@@ -1559,13 +1561,17 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-27 c';
+  const VERSION = '2026-09-27 e';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-27 e', para: 'todos', texto: 'Si entrás con tu usuario en otro celular (o borraste los datos del navegador), la app te trae los registros que cargaste en los últimos 30 días, con sus mensajes y fotos.' },
+    { v: '2026-09-27 e', para: 'coord', texto: 'Cada registro muestra, sin desplegarlo, quién lo cargó y su rol (Médico, Enfermero…). El médico que atendió sigue en el detalle.' },
+    { v: '2026-09-27 d', para: 'todos', texto: 'Si tu sesión vence o te restablecen el PIN, la app te avisa y te lleva a entrar de nuevo para enviar lo pendiente. Y al cerrar sesión te avisa si quedan registros sin enviar.' },
+    { v: '2026-09-27 d', para: 'coord', texto: 'El buscador de Registros también encuentra por quién cargó el registro, por motivo y por número.' },
     { v: '2026-09-27 c', para: 'coord', texto: 'Arreglado: con más de 300 registros en la planilla, al actualizar el panel se veían solo los últimos 300. Ahora se ven todos.' },
     { v: '2026-09-27 b', para: 'todos', texto: 'Los registros se guardan más rápido cuando muchos cargan al mismo tiempo. Y si alguno no llega a enviarse, la app lo vuelve a intentar sola cada minuto: ya no hace falta tocar Reintentar.' },
     { v: '2026-09-27 a', para: 'todos', texto: 'La app abre más rápido y consume menos datos. Y ahora abre aunque no haya señal: usa la última versión guardada en tu celular, y tus registros se envían solos cuando vuelve la conexión.' },
@@ -1675,7 +1681,19 @@
   const sesionCoord = () => (sesion && sesion.token && sesion.estado === 'activo' && esRolCoord(sesion.rol)) ? sesion : null;
   const sesionAdmin = () => (sesionCoord() && esRolAdmin(sesion.rol)) ? sesion : null;
   const esAdminActual = () => MODO_ADMIN || !!sesionAdmin();   // [NUEVO · admin] decide qué acciones de limpieza se muestran
-  const persistirLocal = () => { try { localStorage.setItem(claveLocal(), JSON.stringify(registros.slice(0,200))); } catch {} };
+  // El celular guarda sus registros en localStorage. Antes se guardaban solo los 200 más nuevos: en un celular compartido
+  // (link genérico) con más de 200, un pendiente viejo se descartaba sin llegar nunca al script. Ahora los pendientes se
+  // guardan siempre, más los 200 enviados más nuevos. Si el almacenamiento se llena, se achican los enviados (que ya
+  // están en la planilla) y se avisa; antes el error se tragaba y al reabrir faltaban registros.
+  let avisoLleno = false;
+  const persistirLocal = () => {
+    const pend = registros.filter(r => FLOW_URL && !r.enviado), env = registros.filter(r => !(FLOW_URL && !r.enviado));
+    for (const n of [200, 50, 0]){
+      const keep = new Set([...pend, ...env.slice(0, n)]);
+      try { localStorage.setItem(claveLocal(), JSON.stringify(registros.filter(r => keep.has(r)))); return; } catch {}
+    }
+    if (!avisoLleno){ avisoLleno = true; toast('El celular no tiene espacio para guardar los registros. No cierres la app hasta que se envíen.', 'err'); }
+  };
 
   // [CORREGIDO · fotos] Las fotos del celular iban a localStorage, que admite ~5 MB: 3 o 4 registros con
   // fotos sin señal y los más viejos se enviaban sin fotos. Ahora van a IndexedDB (registroId → lista de
@@ -1930,9 +1948,12 @@
   // [NUEVO · envío] Manda un registro con sus fotos al script. Devuelve true si el script confirmó.
   // OJO: no se pone Content-Type application/json a propósito. Con text/plain (el default) el navegador
   // no hace preflight CORS, y Apps Script no responde preflights: con el header puesto, fallaría siempre.
-  const paraEnvio = r => { const c = { ...r }; ['enviado', 'vistoMsgHasta', 'mensajes', 'devolucion', 'fotoIds', 'carpetaId'].forEach(k => delete c[k]); return c; };
+  const paraEnvio = r => { const c = { ...r }; ['enviado', 'vistoMsgHasta', 'mensajes', 'devolucion', 'fotoIds', 'carpetaId', 'recuperado'].forEach(k => delete c[k]); return c; };
   async function enviarAlFlujo(reg, fotosReg){
     if (!FLOW_URL) return false;
+    // con el link de usuarios y la sesión recién cerrada o vencida, se espera a que vuelva a entrar: si no, el registro
+    // salía como "genérico" y perdía el nombre de quien lo cargó
+    if (MODO_USUARIO && !sesion?.token) return false;
     try {
       const r = await fetch(FLOW_URL, {
         method: 'POST',
@@ -1942,6 +1963,7 @@
         body: JSON.stringify({ accion: (reg.version || 1) > 1 ? 'actualizar' : 'alta', token: sesion?.token, llave: llaveDispositivo, registro: paraEnvio(reg), fila: filaExcel(reg), fotos: fotosReg || [] }),   // [NUEVO · seguridad] llave
       });
       const res = await r.json();
+      if (!res.ok && /sesión inválida/i.test(res.error || '')) sesionVencidaAlEnviar();
       if (!res.ok) throw new Error(res.error || 'Respuesta no válida del script');
       if (res.id && res.id !== reg.id) await renombrarRegistro(reg, res.id);   // [NUEVO · id numérico] llegó el definitivo
       return true;
@@ -1955,6 +1977,77 @@
     if (memFotos[viejo]){ memFotos[nuevoId] = memFotos[viejo]; delete memFotos[viejo]; }
     if (editandoId === viejo) editandoId = nuevoId;
     persistirLocal();
+  }
+
+  // El script rechaza el registro si la sesión del usuario ya no vale (venció a los 30 días, le restablecieron el PIN o lo
+  // dieron de baja). Antes el celular reintentaba en silencio para siempre y el registro nunca llegaba. Ahora se avisa y
+  // se lleva al ingreso: al volver a entrar con el mismo usuario, los pendientes siguen en el celular y se envían solos.
+  let avisoSesion = false;
+  function sesionVencidaAlEnviar(){
+    if (avisoSesion || !MODO_USUARIO || !sesion) return; avisoSesion = true;
+    const n = registros.filter(r => !r.enviado).length;
+    saliendo = true; guardarSesion(null);
+    toast(`Tu sesión ya no es válida. Volvé a entrar para enviar ${n > 1 ? `tus ${n} registros pendientes` : 'tu registro pendiente'}.`, 'err');
+    setTimeout(irAlIngreso, 3000);
+  }
+  // Texto para confirmar el cierre de sesión en campo: antes decía "tus registros quedan guardados acá" aunque hubiera
+  // pendientes, que no se envían hasta que ese mismo usuario vuelva a entrar en ese celular. Primero se intenta mandarlos.
+  async function textoCerrarSesion(){
+    const base = '¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.';
+    if (MODO_COORD || !FLOW_URL) return base;
+    await reintentarPendientes();
+    const n = registros.filter(r => !r.enviado).length;
+    return n ? `Tenés ${n > 1 ? `${n} registros sin enviar` : '1 registro sin enviar'}. Si cerrás sesión, ${n > 1 ? 'se van a enviar' : 'se va a enviar'} recién cuando vuelvas a entrar con tu usuario en este celular. ¿Cerrar sesión igual?` : base;
+  }
+
+  // Un coordinador que carga desde el panel ("Cargar un registro") usa el formulario de campo, que guarda en otra lista del
+  // celular (reg_u_<su ID> con su usuario, reg_demo con la clave). Si volvía al panel antes de que se enviara, el registro
+  // quedaba pendiente hasta volver a abrir el formulario. Ahora el panel manda esos pendientes por detrás, cada minuto.
+  let enviandoDeCampo = false;
+  async function enviarPendientesDeCampo(){
+    if (!FLOW_URL || !MODO_COORD || enviandoDeCampo) return;
+    enviandoDeCampo = true;
+    try {
+      const listas = [['reg_demo', undefined], ...(sesion && sesion.token ? [['reg_u_' + sesion.id, sesion.token]] : [])];
+      for (const [clave, token] of listas){
+        let lista = []; try { lista = JSON.parse(localStorage.getItem(clave) || '[]'); } catch {}
+        const enviados = new Map();                                   // ID provisorio → ID definitivo
+        for (const reg of lista.filter(r => !r.enviado)){
+          try {
+            const res = await (await fetch(FLOW_URL, { method: 'POST', body: JSON.stringify({ accion: (reg.version || 1) > 1 ? 'actualizar' : 'alta', token, llave: llaveDispositivo, registro: paraEnvio(reg), fila: filaExcel(reg), fotos: await leerFotos(reg.id) }) })).json();
+            if (!res.ok) continue;
+            const nuevo = res.id || reg.id;
+            if (nuevo !== reg.id){ try { const f = await idb.get(reg.id); if (f){ await idb.put(nuevo, f); await idb.del(reg.id); } } catch {} }
+            enviados.set(reg.id, nuevo);
+          } catch {}
+        }
+        if (!enviados.size) continue;
+        // se relee la lista justo antes de guardar, por si el formulario está abierto en otra pestaña
+        let actual = []; try { actual = JSON.parse(localStorage.getItem(clave) || '[]'); } catch {}
+        actual.forEach(r => { const nuevo = enviados.get(r.id); if (nuevo === undefined) return; if (nuevo !== r.id){ r.idLocal = r.id; r.id = nuevo; } r.enviado = true; });
+        try { localStorage.setItem(clave, JSON.stringify(actual)); } catch {}
+        toast(enviados.size > 1 ? `Se enviaron ${enviados.size} registros que habías cargado` : 'Se envió un registro que habías cargado', 'ok');
+      }
+    } finally { enviandoDeCampo = false; }
+  }
+
+  // Con usuario: al entrar se piden al script los registros que cargó en los últimos 30 días y se suman los que este
+  // celular no tiene (celular nuevo, datos del navegador borrados). Quedan marcados "recuperado": sus fotos se piden al
+  // script al tocar "Ver fotos", y no se editan desde acá (el celular no tiene las fotos para reenviarlas).
+  async function traerMisRegistros(){
+    if (!FLOW_URL || !MODO_USUARIO || !sesion?.token) return;
+    try {
+      const u = new URL(FLOW_URL); u.searchParams.set('misRegistros', '1'); u.searchParams.set('token', sesion.token);
+      const res = await (await fetch(u)).json(); if (!res.ok || !Array.isArray(res.registros)) return;
+      const conocidos = new Set(registros.flatMap(r => [r.id, r.idLocal].filter(Boolean)));
+      const nuevos = res.registros.filter(r => r && r.id && !conocidos.has(r.id) && !(r.idLocal && conocidos.has(r.idLocal)));
+      if (!nuevos.length) return;
+      // lo que ya estaba en el hilo se da por visto: no es una novedad, es historia
+      nuevos.forEach(r => { r.enviado = true; r.recuperado = true; r.vistoMsgHasta = mensajesDe(r).reduce((m, x) => Math.max(m, x.fecha || 0, x.reacFecha || 0), 0); });
+      registros = [...registros, ...nuevos].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      persistirLocal(); renderList();
+      toast(nuevos.length > 1 ? `Se recuperaron ${nuevos.length} registros que cargaste en otro celular` : 'Se recuperó un registro que cargaste en otro celular', 'ok');
+    } catch {}
   }
 
   // [NUEVO · envío] Reintenta los registros que quedaron sin enviar (al abrir la app, al volver la señal
@@ -2171,7 +2264,7 @@
               : `<span class="pill pend">Pendiente de envío</span><button type="button" class="link retry">Reintentar</button>`;
   // [NUEVO · edición] línea de estado en campo: envío, versión si se editó, y el botón Editar
   const lineaEstado = r => MODO_COORD ? '' :
-    `<div class="estado">${estadoEnvio(r)}${versionDe(r) > 1 ? `<span class="pill resp">Editado · v${versionDe(r)}</span>` : ''}<button type="button" class="link editar">Editar</button></div>`;
+    `<div class="estado">${estadoEnvio(r)}${versionDe(r) > 1 ? `<span class="pill resp">Editado · v${versionDe(r)}</span>` : ''}${r.recuperado ? '' : '<button type="button" class="link editar">Editar</button>'}</div>`;   // recuperado de otro celular: sin las fotos acá, editarlo las borraría
   const botonFotos = r => { const n = nFotosDe(r); return n ? `<button type="button" class="link fotos-btn">Ver ${n} foto${n>1?'s':''}</button>` : `<span class="hint">Sin fotos</span>`; };
 
   // [NUEVO · mensajes] Hilo anidado bajo el registro, con scroll propio. Los mensajes ajenos posteriores a la última
@@ -2285,7 +2378,7 @@
     const nMsg = mensajesDe(r).filter(m => m.de !== 'sistema').length;
     return `
         <div class="fila"><span class="it">${I.movil}Móvil ${esc(r.movil)}</span><span class="it">${I.persona}${esc(r.paciente || '—')}${r.edad ? `, ${esc(r.edad)}` : ''}</span></div>
-        <div class="fila dos"><span class="quien" title="Quién atendió">${esc(r.medico || (r.usuarioNombre || 'genérico'))}</span>
+        <div class="fila dos"><span class="quien" title="Quién cargó el registro">${I.persona}${r.usuarioNombre ? `${esc(r.usuarioNombre)}${r.rol ? ` <span class="pill rol">${esc(r.rol)}</span>` : ''}` : 'Link genérico'}</span>
           <span class="der"><span class="it" title="Fotos">${I.foto}${nFotosDe(r)}</span>${nMsg ? `<span class="it msg" title="Mensajes">${I.msg}${nMsg}</span>` : ''}<span class="tras ${r.traslada === 'si' ? '' : 'no'}" title="${r.traslada === 'si' ? 'Traslada' : 'No traslada'}" aria-label="${r.traslada === 'si' ? 'Traslada' : 'No traslada'}">${r.traslada === 'si' ? I.tras : I.noTras}</span></span></div>`;   // [NUEVO · ícono traslado]
   };
 
@@ -2402,7 +2495,7 @@
       if (delEvento.length) base = delEvento;
       else { if (registros.length) eventoAbierto = null; else base = []; delEvento = null; }
     }
-    const rows = base.filter(r => enRango(r, rango) && (!q || [r.evento, r.lugar, r.movil, r.medico, r.paciente].some(x => String(x||'').toLowerCase().includes(q))));
+    const rows = base.filter(r => enRango(r, rango) && (!q || [r.evento, r.lugar, r.movil, r.medico, r.paciente, r.usuarioNombre, r.motivo, r.id].some(x => String(x||'').toLowerCase().includes(q))));
     if (delEvento) cab = cabeceraEvento(delEvento, rows.length);
     if (hayFechas) cab += `<p class="hint rango-activo">Registros con fecha ${textoRango(rango)}.</p>`;
     if (!rows.length && !q && !hayFechas && MODO_COORD && !db && cargandoCentral){ $('#list').innerHTML = cargandoHTML('Cargando registros…'); return; }   // [NUEVO · cargando]
@@ -2816,6 +2909,12 @@
           list = ((res.fotos && res.fotos[id]) || []).map((data, orden) => ({ data, orden }));
         }
         else list = (await leerFotos(id)).map((data,orden)=>({data,orden}));   // [CORREGIDO · fotos] desde IndexedDB
+        // registro recuperado de otro celular: las fotos no están acá, se piden al script (solo el dueño las recibe)
+        if (!list.length && !MODO_COORD && sesion?.token && registros.find(x => x.id === id)?.recuperado){
+          const u = new URL(FLOW_URL); u.searchParams.set('misFotos', id); u.searchParams.set('token', sesion.token);
+          const res = await (await fetch(u)).json();
+          list = ((res.ok && res.fotos) || []).map((data, orden) => ({ data, orden }));
+        }
         if (!list.length){ b.disabled=false; b.textContent='No se encontraron las fotos de este registro'; return; }
         const regFotos = registros.find(x => x.id === id);
         art.querySelector('.fotos').innerHTML = `<div class="grid">${list.map((f,i)=>`<div class="thumb"><img src="${f.data}" alt="Foto ${i+1}" data-nombre="${esc(nombreFoto(regFotos, i))}"></div>`).join('')}</div>`;
@@ -3125,6 +3224,7 @@
     renderList();
     if (FLOW_URL) pintarNoVistos(registros.reduce((n, r) => n + noVistosDe(r), 0));   // [NUEVO · campana] lo que quedó sin leer de la sesión anterior
     reintentarPendientes();                                            // [NUEVO · envío] lo que quedó sin señal
+    traerMisRegistros();                                               // con usuario: lo que cargó en otro celular (últimos 30 días)
     window.addEventListener('online', () => reintentarPendientes());   // [NUEVO · envío] y al volver la conexión
     // y solo, sin que nadie toque Reintentar: cada minuto (más unos segundos al azar, para que los celulares rechazados
     // en el mismo momento no vuelvan todos juntos) y al volver a la app. Antes un registro que el script rechazaba por
@@ -3164,7 +3264,7 @@
     }
     await iniciarCampo();
   }
-  $('#sc-salir').addEventListener('click', async () => { if (await confirmar('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.', { ok: 'Cerrar sesión', peligro: true })){ saliendo = true; guardarSesion(null); limpiarCopiasCoord(); irAlIngreso(); } });
+  $('#sc-salir').addEventListener('click', async () => { if (await confirmar(await textoCerrarSesion(), { ok: 'Cerrar sesión', peligro: true })){ saliendo = true; guardarSesion(null); limpiarCopiasCoord(); irAlIngreso(); } });
 
   // ---- [NUEVO · usuarios] ingreso, registro, espera de aprobación y PIN (modo usuario) ----
   const guardarSesion = s => { sesion = s; try { if (s) localStorage.setItem('sesion_usuario', JSON.stringify(s)); else localStorage.removeItem('sesion_usuario'); } catch {} };
@@ -3266,7 +3366,7 @@
   $('#cr-gal').addEventListener('change', e => fotoDePerfil(e.target));
   $('#cr-thumb').addEventListener('click', e => { if (e.target.closest('#cr-quitar')){ fotoUsuario = null; $('#cr-thumb').innerHTML = ''; } });
   $('#esp-salir').addEventListener('click', () => { clearInterval(sondeoAprobacion); guardarSesion(null); mostrarLogin('entrar'); });
-  $('#ses-salir').addEventListener('click', async () => { if (await confirmar('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.', { ok: 'Cerrar sesión', peligro: true })){ guardarSesion(null); location.reload(); } });
+  $('#ses-salir').addEventListener('click', async () => { if (await confirmar(await textoCerrarSesion(), { ok: 'Cerrar sesión', peligro: true })){ guardarSesion(null); location.reload(); } });
 
   // ---- [NUEVO · usuarios] panel del coordinador ----
   let usuarios = [], rolesDisp = [], cargandoUsuarios = false; const avatarCache = {};
@@ -4120,7 +4220,7 @@ Pasáselo a la persona. Al entrar con su ID lo va a tener que escribir para eleg
   $('#my-salir').addEventListener('click', async () => {
     cerrarMenu();
     if (sesionMenu()){                                        // [CORREGIDO · menú] con clave no se toca la sesión del usuario de campo
-      if (await confirmar('¿Cerrar sesión en este dispositivo? Tus registros quedan guardados acá.', { ok: 'Cerrar sesión', peligro: true })){ saliendo = true; guardarSesion(null); if (MODO_COORD) limpiarCopiasCoord(); irAlIngreso(); }
+      if (await confirmar(await textoCerrarSesion(), { ok: 'Cerrar sesión', peligro: true })){ saliendo = true; guardarSesion(null); if (MODO_COORD) limpiarCopiasCoord(); irAlIngreso(); }
     } else if (await confirmar('¿Salir? Se borra la clave guardada en este dispositivo.', { ok: 'Salir', peligro: true })){ saliendo = true; try { localStorage.removeItem(MODO_ADMIN ? 'admin_clave' : 'coord_clave'); } catch {} limpiarCopiasCoord(); irAlIngreso(); }   // [NUEVO · rapidez] y las copias locales
   });
 
@@ -4244,6 +4344,7 @@ Pasáselo a la persona. Al entrar con su ID lo va a tener que escribir para eleg
         sondeoAdaptativo(sondearNuevos);                         // [NUEVO · rapidez] cada 5 s con actividad, 15 s en reposo
         iniciarDM();                                             // [NUEVO · mensajes privados]
         document.addEventListener('visibilitychange', sondearNuevos);
+        setTimeout(enviarPendientesDeCampo, 5000); setInterval(enviarPendientesDeCampo, 60000);   // lo que cargó desde "Cargar un registro" y quedó sin enviar
         return;
       }
       // [NUEVO · usuarios] Modo usuario: primero se valida la sesión guardada; sin sesión, pantalla de ingreso.
