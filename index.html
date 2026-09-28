@@ -244,6 +244,7 @@
   .mini .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
   .mini h3{margin:0 0 8px;font-size:14px}
   .bar{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;font-size:13px;margin:4px 0}
+  #by-movil,#by-evento{max-height:196px;overflow-y:auto;padding-right:4px}   /* todos los móviles y eventos: pasados los 8, se desliza */
   .bar i{display:block;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--brand),var(--accent))}
   .bar em{font-style:normal;color:var(--muted);min-width:70px}
 
@@ -1561,13 +1562,14 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-27 e';
+  const VERSION = '2026-09-27 f';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-27 f', para: 'coord', texto: 'Tablero: "Por móvil" y "Por evento" muestran todos (antes solo los 8 primeros; si son muchos, el cuadro se desliza), y un mismo evento escrito con mayúsculas distintas cuenta como uno solo, igual que en Registros.' },
     { v: '2026-09-27 e', para: 'todos', texto: 'Si entrás con tu usuario en otro celular (o borraste los datos del navegador), la app te trae los registros que cargaste en los últimos 30 días, con sus mensajes y fotos.' },
     { v: '2026-09-27 e', para: 'coord', texto: 'Cada registro muestra, sin desplegarlo, quién lo cargó y su rol (Médico, Enfermero…). El médico que atendió sigue en el detalle.' },
     { v: '2026-09-27 d', para: 'todos', texto: 'Si tu sesión vence o te restablecen el PIN, la app te avisa y te lleva a entrar de nuevo para enviar lo pendiente. Y al cerrar sesión te avisa si quedan registros sin enviar.' },
@@ -2973,9 +2975,16 @@
     const a = $('#desde').value, b = $('#hasta').value;
     return registros.filter(r => (!a || r.fecha >= a) && (!b || r.fecha <= b));
   };
+  // Cantidades por móvil o por evento, de mayor a menor, todas (el cuadro se desliza si son muchas). Antes se veían solo
+  // las 8 primeras sin avisar: con muchos registros de un evento, los móviles de los demás no aparecían. Los eventos se
+  // agrupan igual que en Registros ("River Plate" y "river plate " son uno) y se muestran con el nombre más reciente.
   const agrupar = (rows, key) => {
-    const m = {}; rows.forEach(r => { const k = r[key] || '—'; m[k] = (m[k]||0)+1; });
-    return Object.entries(m).sort((x,y)=>y[1]-x[1]).slice(0,8);
+    const m = new Map();
+    rows.forEach(r => {
+      const k = key === 'evento' ? claveEvento(r) : String(r[key] ?? '').trim();
+      m.set(k, (m.get(k) || 0) + 1);
+    });
+    return [...m.entries()].sort((x, y) => y[1] - x[1]).map(([k, n]) => [key === 'evento' ? nombreEvento(k) : (k || '—'), n]);
   };
   function barras(el, pares, total){
     el.innerHTML = pares.length ? pares.map(([k,n]) =>
@@ -2988,7 +2997,7 @@
     $('#k-total').textContent = rows.length;
     $('#k-tras').textContent = tras;
     $('#k-pct').textContent = rows.length ? Math.round(tras/rows.length*100)+'%' : '0%';
-    $('#k-mov').textContent = new Set(rows.map(r=>r.movil)).size;
+    $('#k-mov').textContent = new Set(rows.map(r => String(r.movil ?? '').trim())).size;
     // [NUEVO · paginado] la tabla muestra porPaginaTabla() filas por página; los KPIs, las barras y el Excel usan todas
     const total = rows.length, por = porPaginaTabla();
     paginaTabla = acotar(paginaTabla, total, por);
@@ -3038,7 +3047,7 @@
     ws['!autofilter'] = { ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:datos.length, c:16}}) };
     XLSX.utils.book_append_sheet(wb, ws, 'Registros');
     const res = (key, nombre) => {
-      const m = {}; rows.forEach(r => { const k = r[key]||'—'; m[k] = m[k]||{n:0,t:0}; m[k].n++; if(r.traslada==='si') m[k].t++; });
+      const m = {}; rows.forEach(r => { const k = (key === 'evento' ? nombreEvento(claveEvento(r)) : String(r[key] ?? '').trim()) || '—'; m[k] = m[k]||{n:0,t:0}; m[k].n++; if(r.traslada==='si') m[k].t++; });   // mismos grupos que el tablero
       const arr = Object.entries(m).sort((a,b)=>b[1].n-a[1].n).map(([k,v]) => ({ [nombre]: k, 'Registros': v.n, 'Traslados': v.t, 'Sin traslado': v.n-v.t, '% traslado': v.n ? +(v.t/v.n).toFixed(3) : 0 }));
       const w = XLSX.utils.json_to_sheet(arr); w['!cols']=[{wch:28},{wch:10},{wch:10},{wch:12},{wch:11}];
       return w;
