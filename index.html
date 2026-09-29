@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <!-- Las librerías de Excel (SheetJS) y ZIP (JSZip) ya no se bajan al abrir: las carga cargarLibs() recién cuando se
-    descarga o importa algo (ver 03-utilidades.js). El personal de campo nunca las usa y abre la app mucho más liviana. -->
+     descarga o importa algo (ver 03-utilidades.js). El personal de campo nunca las usa y abre la app mucho más liviana. -->
 <style>
   /* ===== Colores de marca (cambiá acá si querés ajustar al manual de IHSA) ===== */
   :root{
@@ -1614,13 +1614,14 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-28 c';
+  const VERSION = '2026-09-29 a';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-29 a', para: 'coord', texto: 'Descargas con el período en el nombre: "Registros 2026-09-01 al 2026-09-28". El paquete trae todo dentro de una sola carpeta con ese nombre (Excel, fotos y el LEEME), así no se mezcla con otras descargas.' },
     { v: '2026-09-28 c', para: 'coord', texto: 'Usuarios más compacto: separados por rol (Coordinadores, Médicos, Enfermeros…), cada grupo muestra unos 5 y el resto se desliza. Tocá un usuario para ver sus opciones (rol, PIN, editar, dar de baja).' },
     { v: '2026-09-28 b', para: 'coord', texto: 'Usuarios: "Crear usuario" da de alta a una persona ya activa, con su rol y sin límite. Te muestra su ID y un código (vale 7 días) y te deja copiar un mensaje para mandárselo: la persona entra con su ID sin PIN, escribe el código y elige su PIN.' },
     { v: '2026-09-28 b', para: 'todos', texto: 'Si coordinación te creó el usuario y te dio un código: escribí tu ID, tocá Entrar sin PIN, poné el código y elegí tu PIN.' },
@@ -3181,13 +3182,20 @@
     }
     return XLSX.write(wb, { bookType:'xlsx', type:'array' });
   }
+  // Nombre de una descarga según las fechas de atención que trae: "Registros 2026-09-01 al 2026-09-28" (o un solo día).
+  // Va con el formato año-mes-día para que en la carpeta de descargas queden ordenadas por período.
+  function nombreDescarga(rows){
+    const fechas = rows.map(r => r.fecha).filter(Boolean).sort();
+    const a = fechas[0] || todayISO(), b = fechas[fechas.length - 1] || a;
+    return a === b ? `Registros ${a}` : `Registros ${a} al ${b}`;
+  }
   async function descargarExcel(){
     const rows = filtrados(); if (!rows.length){ toast('No hay registros en ese rango', 'err'); return; }
     const btn = $('#xlsx'); btn.disabled = true; btn.textContent = 'Armando…';
     try {
       await cargarLibs('XLSX');                             // la librería de Excel se baja recién ahora (la primera vez)
       const buf = armarExcel(rows);
-      const f = `registros-emergencias-${$('#desde').value || 'inicio'}_${$('#hasta').value || todayISO()}.xlsx`;   // el nombre dice el período
+      const f = nombreDescarga(rows) + '.xlsx';   // el nombre dice el período
       if (downloads){ await downloads.save({ filename: f, data: buf }); toast('Excel descargado', 'ok'); }
       else {
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf],{type:'application/octet-stream'})); a.download = f; a.click();
@@ -3268,14 +3276,17 @@
   });
 
   // Paquete: Excel + fotos en carpetas, en un ZIP. Las fotos se piden al script de a 5 registros por llamada.
+  // Todo va dentro de UNA carpeta con el período en el nombre ("Registros 2026-09-01 al 2026-09-28"): al abrir el ZIP
+  // queda esa carpeta sola y no archivos sueltos mezclados con otras descargas. Adentro, el Excel lleva el mismo nombre.
   async function descargarPaquete(){
     const rows = filtrados(); if (!rows.length){ toast('No hay registros en ese rango', 'err'); return; }
     try { await cargarLibs('XLSX', 'JSZip'); } catch (e){ toast(e.message, 'err'); return; }
     const btn = $('#paquete'); btn.disabled = true;
     try {
-      const zip = new JSZip();
-      zip.file('registros.xlsx', armarExcel(rows));
-      zip.file('datos.json', JSON.stringify(rows));   // [NUEVO · importar] la ficha completa de cada registro, para reimportar exacto
+      const nombre = nombreDescarga(rows);
+      const zip = new JSZip(), dir = zip.folder(nombre);
+      dir.file(nombre + '.xlsx', armarExcel(rows));
+      dir.file('datos.json', JSON.stringify(rows));   // [NUEVO · importar] la ficha completa de cada registro, para reimportar exacto
       const conFotos = rows.filter(r => r.fotoIds && r.fotoIds.length);
       const total = conFotos.reduce((n, r) => n + r.fotoIds.length, 0);
       let hechas = 0;
@@ -3284,16 +3295,19 @@
         btn.textContent = `Bajando fotos ${hechas} de ${total}…`;
         const res = await pedirCentral({ fotosDe: lote.map(r => r.id).join(',') });
         lote.forEach(r => (res.fotos?.[r.id] || []).forEach((d, k) => {
-          const b64 = String(d).split(',')[1]; if (b64){ zip.file(`fotos/${carpetaDe(r)}/foto-${k + 1}.jpg`, b64, { base64: true }); hechas++; }
+          const b64 = String(d).split(',')[1]; if (b64){ dir.file(`fotos/${carpetaDe(r)}/foto-${k + 1}.jpg`, b64, { base64: true }); hechas++; }
         }));
       }
-      zip.file('LEEME.txt', [`Paquete generado el ${fmtFechaHora(Date.now())}`, `Registros: ${rows.length}`, `Fotos: ${hechas}`, '',
-        'registros.xlsx: hojas Registros, Por móvil, Por evento, Por día, Por médico y Conversaciones.',
+      const eventos = [...new Set(rows.map(r => nombreEvento(claveEvento(r))))];
+      dir.file('LEEME.txt', [nombre, `Paquete generado el ${fmtFechaHora(Date.now())}`, `Registros: ${rows.length}`, `Fotos: ${hechas}`,
+        `Eventos: ${eventos.slice(0, 20).join(', ')}${eventos.length > 20 ? '…' : ''}`, '',
+        `${nombre}.xlsx: hojas Registros, Por móvil, Por evento, Por lugar, Por día, Por médico y Conversaciones.`,
         'fotos/: una carpeta por registro, con nombre fecha_evento_id, y adentro foto-1.jpg, foto-2.jpg, etc.',
-        'La columna "Carpeta de fotos" del Excel tiene la ruta exacta de la carpeta de cada registro.'].join('\n'));
+        'La columna "Carpeta de fotos" del Excel tiene la ruta exacta de la carpeta de cada registro.',
+        'datos.json: la ficha completa de cada registro; sirve para volver a importar el paquete desde Configuración.'].join('\n'));
       btn.textContent = 'Comprimiendo…';
       const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });   // las fotos ya vienen comprimidas
-      const f = `paquete-registros-${todayISO()}.zip`;
+      const f = nombre + '.zip';
       if (downloads){ await downloads.save({ filename: f, data: await blob.arrayBuffer() }); }
       else { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = f; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
       toast(`Paquete listo: ${rows.length} registros, ${hechas} fotos`, 'ok');
@@ -4102,11 +4116,12 @@ Pasáselo a la persona. Al entrar con su ID lo va a tener que escribir para eleg
     try {
       const zip = await JSZip.loadAsync(f);
       // Paquetes nuevos traen datos.json (ficha exacta); los anteriores se reconstruyen desde el Excel
-      const dj = zip.file('datos.json');
+      // Los paquetes nuevos traen todo dentro de una carpeta ("Registros … al …/"); los anteriores, sueltos en la raíz
+      const dj = zip.file(/(^|\/)datos\.json$/)[0];
       const fichas = dj ? JSON.parse(await dj.async('string')) : await fichasDesdeExcel(zip);
       const fotosPor = {};                                        // id → [{n, entry}] según la carpeta fotos/<fecha_evento_id>/foto-N.jpg
       for (const [ruta, entry] of Object.entries(zip.files)){
-        const m = ruta.match(/^fotos\/([^\/]+)\/foto-(\d+)\.jpe?g$/i); if (!m || entry.dir) continue;
+        const m = ruta.match(/^(?:[^\/]+\/)?fotos\/([^\/]+)\/foto-(\d+)\.jpe?g$/i); if (!m || entry.dir) continue;
         const id = m[1].slice(m[1].lastIndexOf('_') + 1);
         (fotosPor[id] = fotosPor[id] || []).push({ n: +m[2], entry });
       }
@@ -4131,7 +4146,7 @@ Pasáselo a la persona. Al entrar con su ID lo va a tener que escribir para eleg
   }
   // Paquetes sin datos.json: la ficha se arma desde las hojas Registros y Conversaciones del Excel
   async function fichasDesdeExcel(zip){
-    const x = zip.file('registros.xlsx'); if (!x) throw new Error('El ZIP no tiene registros.xlsx ni datos.json');
+    const x = zip.file('registros.xlsx') || zip.file(/^(?:[^\/]+\/)?[^\/]+\.xlsx$/i)[0]; if (!x) throw new Error('El ZIP no tiene el Excel de registros ni datos.json');
     const wb = XLSX.read(await x.async('arraybuffer'), { type: 'array' });
     const filas = XLSX.utils.sheet_to_json(wb.Sheets['Registros'] || wb.Sheets[wb.SheetNames[0]], { defval: '' });
     const conv = wb.Sheets['Conversaciones'] ? XLSX.utils.sheet_to_json(wb.Sheets['Conversaciones'], { defval: '' }) : [];
