@@ -1614,13 +1614,14 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-29 a';
+  const VERSION = '2026-09-29 b';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-29 b', para: 'coord', texto: 'Coordinación y Supervisión también pueden eliminar varios registros a la vez: en Registros, "Seleccionar para eliminar". Quedan guardados en la hoja Eliminados con tu nombre.' },
     { v: '2026-09-29 a', para: 'coord', texto: 'Descargas con el período en el nombre: "Registros 2026-09-01 al 2026-09-28". El paquete trae todo dentro de una sola carpeta con ese nombre (Excel, fotos y el LEEME), así no se mezcla con otras descargas.' },
     { v: '2026-09-28 c', para: 'coord', texto: 'Usuarios más compacto: separados por rol (Coordinadores, Médicos, Enfermeros…), cada grupo muestra unos 5 y el resto se desliza. Tocá un usuario para ver sus opciones (rol, PIN, editar, dar de baja).' },
     { v: '2026-09-28 b', para: 'coord', texto: 'Usuarios: "Crear usuario" da de alta a una persona ya activa, con su rol y sin límite. Te muestra su ID y un código (vale 7 días) y te deja copiar un mensaje para mandárselo: la persona entra con su ID sin PIN, escribe el código y elige su PIN.' },
@@ -2482,12 +2483,12 @@
   }
   $('#cancelar-edicion').addEventListener('click', () => { limpiar(); toast('Edición cancelada'); });
 
-  // ---- Selección para eliminar varios (solo administrador) ----
+  // ---- Selección para eliminar varios (Coordinador, Supervisor y Administrador) ----
   // "Seleccionar para eliminar" pone una casilla en cada tarjeta; tocar la tarjeta la marca. "Seleccionar los N" marca
   // todos los que coinciden con lo que se ve (evento abierto, búsqueda y fechas), no solo la página actual.
   let seleccionando = false, filasSeleccionables = [];
   const seleccion = new Set();
-  const puedeSeleccionar = () => MODO_COORD && !db && esAdminActual();
+  const puedeSeleccionar = () => MODO_COORD && !db;   // todo el panel de coordinación (el script valida el permiso)
   function barraSeleccion(rows){
     if (!puedeSeleccionar()) return '';
     if (!seleccionando) return '<div class="sel-bar"><button type="button" class="link-btn peligro sel-empezar">Seleccionar para eliminar</button></div>';
@@ -3047,7 +3048,7 @@
       toast('Registro eliminado', 'ok');
     } catch (err){ btn.disabled = false; btn.textContent = 'Eliminar registro'; toast('No se pudo eliminar: ' + err.message, 'err'); }
   }
-  // Eliminación masiva (administrador): confirma con la cantidad y los eventos, y manda de a tandas de 300. Si una tanda
+  // Eliminación masiva (panel de coordinación y administración): confirma con la cantidad y los eventos, y manda de a tandas de 300. Si una tanda
   // falla, lo ya eliminado queda eliminado y se avisa cuántos faltaron.
   async function eliminarSeleccion(btn){
     const ids = [...seleccion].filter(id => registros.some(r => r.id === id)); if (!ids.length) return;
