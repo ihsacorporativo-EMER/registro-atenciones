@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <!-- Las librerías de Excel (SheetJS) y ZIP (JSZip) ya no se bajan al abrir: las carga cargarLibs() recién cuando se
-     descarga o importa algo (ver 03-utilidades.js). El personal de campo nunca las usa y abre la app mucho más liviana. -->
+    descarga o importa algo (ver 03-utilidades.js). El personal de campo nunca las usa y abre la app mucho más liviana. -->
 <style>
   /* ===== Colores de marca (cambiá acá si querés ajustar al manual de IHSA) ===== */
   :root{
@@ -532,13 +532,28 @@
   .link-btn{border:0;background:none;color:var(--brand);font-weight:700;cursor:pointer;padding:0;text-decoration:underline;font:inherit;font-weight:700}
   .avatar{width:46px;height:46px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px;flex:none;overflow:hidden}
   .avatar img{width:100%;height:100%;object-fit:cover;display:block}
-  .urow{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow);flex-wrap:wrap}
-  .urow.pend{border-color:var(--accent)}
-  .urow .datos{flex:1;min-width:180px}
-  .urow .datos b{display:block;line-height:1.7}
-  .urow .datos small{color:var(--muted)}
-  .urow .acciones{display:flex;gap:12px;flex-wrap:wrap;align-items:center;width:100%}
-  .urow select{background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;color:var(--ink);font:inherit}
+  /* Usuarios: un cuadro por grupo (pendientes, cada rol, bajas); adentro, filas compactas con scroll pasadas las ~5 */
+  .ugrupo{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
+  .ugrupo.pend{border-color:var(--accent)}
+  .ugrupo-cab{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--line);font-size:13px}
+  .ugrupo-cab b{text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:800}
+  .ugrupo-cab span{min-width:24px;text-align:center;border-radius:999px;padding:1px 8px;font-weight:800;background:color-mix(in srgb,var(--brand) 12%,var(--card));color:var(--brand-txt)}
+  .ugrupo.pend .ugrupo-cab span{background:color-mix(in srgb,var(--accent) 18%,var(--card));color:var(--accent-deep)}
+  .ugrupo-lista{max-height:292px;overflow-y:auto;overscroll-behavior:contain}
+  .urow{display:flex;gap:10px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;cursor:pointer}
+  .urow:last-child{border-bottom:0}
+  .urow.pend{cursor:default}
+  .urow .avatar{width:34px;height:34px;font-size:12px}
+  .urow .datos{flex:1;min-width:0}
+  .urow .datos b{display:block;line-height:1.35;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .urow .datos b .pill{font-size:10.5px;padding:1px 7px;margin-left:3px;vertical-align:1px}
+  .urow .datos small{display:block;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .urow .u-flecha{color:var(--muted);font-size:20px;line-height:1;transition:transform .2s;flex:none}
+  .urow.abierta .u-flecha{transform:rotate(90deg)}
+  .urow .acciones{display:none;gap:10px 14px;flex-wrap:wrap;align-items:center;width:100%;padding:4px 0 2px 44px;font-size:13px}
+  .urow.abierta .acciones,.urow.pend .acciones{display:flex}
+  .urow.abierta{background:color-mix(in srgb,var(--brand) 5%,var(--card))}
+  .urow select{background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:6px 9px;color:var(--ink);font:inherit}
   .urow .primary{width:auto;min-height:38px;padding:7px 14px;font-size:14px;border-radius:10px}
   .usec{font-size:13px;font-weight:800;margin:16px 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
   .u-crear{margin:0 0 12px}
@@ -926,9 +941,9 @@
     #list .rec{margin-bottom:0}
     #list > .pager,#list > .hint,#list > p,#list > .eventos,#list > .ev-cab,#list > .empty,#list > .cargando-lista,#list > .sel-bar{grid-column:1/-1}
     /* [CORREGIDO · app PC] Usuarios en dos columnas: los títulos de sección ocupan el ancho, las tarjetas se reparten */
-    #ulist{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
-    #ulist .usec,#ulist .empty{grid-column:1/-1}
-    #ulist .urow{margin-bottom:0}
+    #ulist{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+    #ulist .ugrupo.pend,#ulist .empty{grid-column:1/-1}
+    #ulist .ugrupo{margin-bottom:0}
     /* Tablero compacto: indicadores y barras a la izquierda; paquete y mails a la derecha; la tabla abajo a todo el ancho */
     #view-board{display:grid;grid-template-columns:minmax(0,2fr) minmax(320px,1fr);gap:0 16px;align-items:start}
     #view-board > h1,#view-board > .lead,#view-board > .filters,#view-board > .kpis,#view-board > .tabla-titulo,#view-board > #pager-tabla-top,#view-board > .tablewrap,#view-board > #pager-tabla-bottom{grid-column:1/-1}
@@ -1599,13 +1614,14 @@
   // [NUEVO · novedades] Cada vez que se publica una versión nueva del HTML se cambia VERSION y se escribe qué cambió.
   // Quien abre la app y todavía no vio esa versión ve un aviso en la campana; al tocarla se muestran las novedades
   // y con "Entendido" se apaga. Sirve en campo y en coordinador. La fecha con letra funciona como número de versión.
-  const VERSION = '2026-09-28 b';
+  const VERSION = '2026-09-28 c';
   // [NUEVO · novedades por rol] cada novedad dice a quién va: 'todos' (la ve cualquiera) o 'coord' (solo Coordinador,
   // Supervisor y Administrador). Lo que cambia en paneles con permisos elevados no se le cuenta al personal de campo.
   // [CORREGIDO · novedades] cada ítem lleva la versión en que salió (v). El aviso muestra solo lo posterior a la última
   // versión que esa persona ya vio (version_vista); antes mostraba la lista entera en cada publicación. Al publicar:
   // subir VERSION, agregar los ítems nuevos con v = VERSION y, cada tanto, podar los más viejos.
   const NOVEDADES = [
+    { v: '2026-09-28 c', para: 'coord', texto: 'Usuarios más compacto: separados por rol (Coordinadores, Médicos, Enfermeros…), cada grupo muestra unos 5 y el resto se desliza. Tocá un usuario para ver sus opciones (rol, PIN, editar, dar de baja).' },
     { v: '2026-09-28 b', para: 'coord', texto: 'Usuarios: "Crear usuario" da de alta a una persona ya activa, con su rol y sin límite. Te muestra su ID y un código (vale 7 días) y te deja copiar un mensaje para mandárselo: la persona entra con su ID sin PIN, escribe el código y elige su PIN.' },
     { v: '2026-09-28 b', para: 'todos', texto: 'Si coordinación te creó el usuario y te dio un código: escribí tu ID, tocá Entrar sin PIN, poné el código y elegí tu PIN.' },
     { v: '2026-09-28 a', para: 'coord', texto: 'Administración: en Registros, "Seleccionar para eliminar" permite marcar varios registros (o todos los de un evento, una búsqueda o unas fechas con "Seleccionar los N") y eliminarlos juntos. Quedan guardados en la hoja Eliminados.' },
@@ -3506,18 +3522,29 @@
       : u.estado === 'activo'
         ? `<select class="u-rol" data-que="rol">${opcionesRol(u.rol)}</select><button type="button" class="link-btn" data-que="resetPin">Restablecer PIN</button><button type="button" class="link-btn" data-que="editar">Editar</button><button type="button" class="link-btn" data-que="baja">Dar de baja</button>${elim}`
         : `<button type="button" class="link-btn" data-que="reactivar">Reactivar</button>${elim}`;   // [NUEVO · usuarios] eliminar, solo administrador
-    return `<div class="urow ${pend ? 'pend' : ''}" data-id="${esc(u.id)}">
+    // compacta: nombre, ID y avisos en una línea; los botones aparecen al tocarla (las pendientes los muestran siempre)
+    const avisos = `${est}${u.pideReset ? ' <span class="pill reset">Pide restablecer PIN</span>' : ''}${u.sinPin ? ` <span class="pill reset">${u.cambioPin ? 'Todavía no eligió su PIN' : 'Código vencido: Restablecer PIN'}</span>` : u.cambioPin ? ' <span class="pill reset">Cambio de PIN habilitado</span>' : ''}`;
+    return `<div class="urow ${pend ? 'pend' : ''} ${uAbiertos.has(u.id) ? 'abierta' : ''}" data-id="${esc(u.id)}">
       <div class="avatar" data-foto="${esc(u.id)}">${esc(iniciales(u))}</div>
-      <div class="datos"><b>${esc(u.nombre)} ${esc(u.apellido)} <span class="pill rol">${esc(u.id)}</span>${u.rol && !pend ? ` <span class="pill rol">${esc(u.rol)}</span>` : ''} ${est}${u.pideReset ? ' <span class="pill reset">Pide restablecer PIN</span>' : ''}${u.sinPin ? ` <span class="pill reset">${u.cambioPin ? 'Todavía no eligió su PIN' : 'Código vencido: Restablecer PIN'}</span>` : u.cambioPin ? ' <span class="pill reset">Cambio de PIN habilitado</span>' : ''}</b>
+      <div class="datos"><b><span class="nom">${esc(u.nombre)} ${esc(u.apellido)}</span> <span class="pill rol">${esc(u.id)}</span>${avisos}</b>
         <small>${pend ? 'Solicitó el ' + fmtFechaHora(u.creado) : (u.aprobado ? 'Aprobado el ' + fmtFechaHora(u.aprobado) : '')}${u.celular ? ` · Cel. ${esc(u.celular)}` : ''}${u.mail ? ` · ${esc(u.mail)}` : ''}</small></div>
+      ${pend ? '' : '<span class="u-flecha" aria-hidden="true">›</span>'}
       <div class="acciones">${acciones}</div></div>`;
   }
+  // Grupos: pendientes arriba; los activos, uno por rol (en este orden); al final, dados de baja y rechazados. Cada grupo
+  // muestra unas 5 filas y el resto se desliza adentro del cuadro.
+  const ORDEN_ROLES = ['Administrador', 'Coordinador', 'Supervisor', 'Médico', 'Enfermero', 'Socorrista', 'Chofer'];
+  const uAbiertos = new Set();
+  const grupoHTML = (titulo, arr, clase) => arr.length ? `<section class="ugrupo ${clase || ''}"><div class="ugrupo-cab"><b>${esc(titulo)}</b><span>${arr.length}</span></div><div class="ugrupo-lista">${arr.map(filaUsuario).join('')}</div></section>` : '';
   function renderUsuarios(){
     const q = $('#uq').value.trim().toLowerCase();
     const f = usuarios.filter(u => !q || [u.nombre, u.apellido, u.id, u.rol].some(x => String(x || '').toLowerCase().includes(q)));
     const pend = f.filter(u => u.estado === 'pendiente'), act = f.filter(u => u.estado === 'activo'), otros = f.filter(u => u.estado !== 'pendiente' && u.estado !== 'activo');
-    const sec = (t, arr) => arr.length ? `<div class="usec">${t} (${arr.length})</div>` + arr.map(filaUsuario).join('') : '';
-    $('#ulist').innerHTML = (sec('Solicitudes pendientes', pend) + sec('Activos', act) + sec('Dados de baja y rechazados', otros))
+    const porNombre = (a, b) => `${a.nombre} ${a.apellido}`.localeCompare(`${b.nombre} ${b.apellido}`, 'es');
+    const roles = [...ORDEN_ROLES, ...new Set(act.map(u => u.rol).filter(r => r && !ORDEN_ROLES.includes(r)))];
+    const porRol = roles.map(r => grupoHTML(r === 'Médico' ? 'Médicos' : r === 'Administrador' ? 'Administradores' : r + (/[aeiou]$/i.test(r) ? 's' : 'es'), act.filter(u => u.rol === r).sort(porNombre))).join('')
+      + grupoHTML('Sin rol', act.filter(u => !u.rol).sort(porNombre));
+    $('#ulist').innerHTML = (grupoHTML('Solicitudes pendientes', pend, 'pend') + porRol + grupoHTML('Dados de baja y rechazados', otros.sort(porNombre), 'otros'))
       || '<div class="empty">Todavía no hay usuarios. Compartí el link de usuarios (?modo=usuario) para que se registren.</div>';
     cargarAvatares();
   }
@@ -3541,7 +3568,13 @@
   }
   $('#uq').addEventListener('input', renderUsuarios);
   $('#ulist').addEventListener('click', async e => {
-    const b = e.target.closest('button[data-que]'); if (!b) return;
+    const b = e.target.closest('button[data-que]');
+    if (!b){
+      // tocar la fila (no un botón, el selector de rol ni la foto) despliega o pliega sus acciones
+      const row = e.target.closest('.urow'); if (!row || row.classList.contains('pend') || e.target.closest('select, .acciones, .avatar img')) return;
+      const id = row.dataset.id; row.classList.toggle('abierta'); row.classList.contains('abierta') ? uAbiertos.add(id) : uAbiertos.delete(id);
+      return;
+    }
     const row = b.closest('.urow'), id = row.dataset.id, u = usuarios.find(x => x.id === id) || {}, que = b.dataset.que, quien = `${u.nombre} ${u.apellido}`;
     if (que === 'aprobar'){ const rol = row.querySelector('.u-rol').value; if (!rol){ toast('Elegí un rol antes de aprobar', 'err'); return; } if (await accionUsuario(id, 'aprobar', { rol })) toast(`${quien} aprobado como ${rol}`, 'ok'); }
     else if (que === 'rechazar'){ if (await confirmar(`¿Rechazar la solicitud de ${quien}?`, { ok: 'Rechazar', peligro: true })) await accionUsuario(id, 'rechazar'); }
